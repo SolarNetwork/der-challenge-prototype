@@ -76,6 +76,7 @@ service DerFacilityService {
 
   // Provide pricing data to the facility.
   rpc ProvidePrices(stream solarnetwork.esi.domain.PriceDatum) returns (google.protobuf.Empty);
+
 }
 
 // The ESI operator service API, where an operator is something that manages the energy system that
@@ -94,4 +95,5 @@ service DerOperatorService {
   // The facility can call this method to find current or optionally future predicted grid price
   // details. For the current grid price, the request should 
   rpc ListPrices(solarnetwork.esi.domain.DatumRequest) returns (stream solarnetwork.esi.domain.PriceDatum);
+
 }
