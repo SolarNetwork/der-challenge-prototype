@@ -1,0 +1,4 @@
+rootProject.name = "esi"
+include ":esi-api"
+
+project(':esi-api').projectDir = "$rootDir/api" as File

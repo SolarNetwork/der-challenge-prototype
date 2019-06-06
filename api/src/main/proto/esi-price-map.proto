@@ -1,0 +1,49 @@
+// Copyright 2019 SolarNetwork Foundation.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package solarnetwork.esi.domain;
+
+option cc_enable_arenas = true;
+option java_multiple_files = true;
+option java_outer_classname = "PriceMapProto";
+option java_package = "net.solarnetwork.esi.domain";
+option objc_class_prefix = "ESI";
+
+import "google/protobuf/duration.proto";
+import "esi-duration-range.proto";
+import "esi-power-components.proto";
+import "esi-price-components.proto";
+import "money.proto";
+
+
+// Defines a single physical capability (or a agregated set of similar capabilities) that cam be
+// offered in the energy market.
+message PriceMap {
+
+  // The power components in the offer.
+  PowerComponents power_components = 1;
+
+  // The time duration offered by this price map.
+  google.protobuf.Duration duration = 2;
+
+  // The expected minimum/maximum response time to start/finish executing power changes.
+  DurationRange reponse_time = 3;
+
+  // The power price on offer.
+  PriceComponents price = 4;
+
+}
