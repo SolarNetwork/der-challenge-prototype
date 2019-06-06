@@ -1,4 +1,4 @@
-# SolarNetwork DER Challenge -- API
+# SolarNetwork DER Challenge: API
 
 This repository contains a Protobuf/gRPC based API definition for the concept of an energy services
 interface (ESI). The [Protobuf definitions][protos] are the starting point for this project, and
