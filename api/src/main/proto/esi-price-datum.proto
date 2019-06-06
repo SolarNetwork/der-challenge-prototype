@@ -26,6 +26,7 @@ option objc_class_prefix = "ESI";
 import "google/protobuf/timestamp.proto";
 import "esi-price-components.proto";
 import "esi-time-unit.proto";
+import "esi-location.proto";
 
 // Price components associated with a date or time span.
 message PriceDatum {
@@ -42,4 +43,7 @@ message PriceDatum {
   // The power components of this datum.
   PriceComponents price_components = 4;
   
+  // The location associated with this price.
+  Location location = 5;
+
 }
