@@ -1,0 +1,92 @@
+// Copyright 2019 SolarNetwork Foundation.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package solarnetwork.esi.service;
+
+option cc_enable_arenas = true;
+option java_multiple_files = true;
+option java_outer_classname = "DerOperatorServiceProto";
+option java_package = "net.solarnetwork.esi.service";
+option objc_class_prefix = "ESI";
+
+import "google/protobuf/empty.proto";
+import "solarnetwork/esi/domain/datum_request.proto";
+import "solarnetwork/esi/domain/der_facility_registration.proto";
+import "solarnetwork/esi/domain/der_facility_registration_form.proto";
+import "solarnetwork/esi/domain/der_facility_registration_form_data.proto";
+import "solarnetwork/esi/domain/der_facility_registration_form_request.proto";
+import "solarnetwork/esi/domain/der_operator_info.proto";
+import "solarnetwork/esi/domain/der_operator_request.proto";
+import "solarnetwork/esi/domain/der_program.proto";
+import "solarnetwork/esi/domain/der_resource_characteristics.proto";
+import "solarnetwork/esi/domain/der_route.proto";
+import "solarnetwork/esi/domain/power_parameters.proto";
+import "solarnetwork/esi/domain/power_profile_datum.proto";
+import "solarnetwork/esi/domain/price_datum.proto";
+import "solarnetwork/esi/domain/price_map.proto";
+import "solarnetwork/esi/domain/price_map_offer.proto";
+import "solarnetwork/esi/domain/price_map_offer_feedback.proto";
+import "solarnetwork/esi/domain/price_map_offer_response.proto";
+import "solarnetwork/esi/domain/price_map_offer_status.proto";
+import "solarnetwork/esi/domain/price_map_offer_status_request.proto";
+import "solarnetwork/esi/domain/price_map_offer_status_response.proto";
+
+// The ESI operator service API, where an operator is something that manages the
+// energy system that facilities interact with.
+service DerOperatorService {
+
+  // ===========================================================================
+  // DerFacility registration
+  // ===========================================================================
+	
+  // Request the registration form for a DerFacility to use.
+  rpc GetDerFacilityRegistrationForm(
+  	solarnetwork.esi.domain.DerFacilityRegistrationFormRequest)
+  returns (solarnetwork.esi.domain.DerFacilityRegistrationForm);
+
+  // Submit a registration form for a DerFacility.
+  // 
+  // When called, the form data will be validated by the operator, and any
+  // problems will be expressed via standard error details. If the form data is
+  // submitted successfully, the DerOperator must call the
+  // CompleteDerFacilityRegistration() method on DerFacilityService to complete
+  // the process.
+  rpc SubmitDerFacilityRegistrationForm(
+  	solarnetwork.esi.domain.DerFacilityRegistrationFormData)
+  returns (google.protobuf.Empty);
+
+  // ==========================================================================
+  // 
+  // ===========================================================================
+  
+  // Inform the operator on a facility's price map offer status.
+  // 
+  // The facility should call this method at a minimum once the price map offer
+  // event completes. It may choose to call this method when transitioning to
+  // different status values over the course of an event.
+  rpc ProvidePriceMapOfferStatus(solarnetwork.esi.domain.PriceMapOfferStatus)
+  returns (solarnetwork.esi.domain.PriceMapOfferStatusResponse);
+	
+  // Query for list of price datum over a time range.
+  // 
+  // The facility can call this method to find current or optionally future
+  // predicted grid price details. For the current grid price, the request
+  // should specify the `time_concept` as `MOST_RECENT`.
+  rpc ListPrices(solarnetwork.esi.domain.DatumRequest)
+  returns (stream solarnetwork.esi.domain.PriceDatum);
+
+}

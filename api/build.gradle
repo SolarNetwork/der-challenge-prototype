@@ -25,7 +25,6 @@ checkstyle {
 }
 	
 dependencies {
-	compile "io.grpc:grpc-netty-shaded:${grpcVersion}"
 	compile "io.grpc:grpc-protobuf:${grpcVersion}"
 	compile "io.grpc:grpc-stub:${grpcVersion}"
 }
