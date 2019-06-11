@@ -50,7 +50,8 @@ public class SimpleDerOperatorRegistryService extends DerOperatorRegistryService
    */
   public SimpleDerOperatorRegistryService(List<DerOperatorInfo> infos) {
     super();
-    this.infos = (infos != null ? Collections.unmodifiableList(new ArrayList<>(infos))
+    this.infos = (infos != null && !infos.isEmpty()
+        ? Collections.unmodifiableList(new ArrayList<>(infos))
         : Collections.emptyList());
   }
 
