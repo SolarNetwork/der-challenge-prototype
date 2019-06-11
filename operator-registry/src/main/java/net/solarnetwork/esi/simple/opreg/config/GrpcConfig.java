@@ -17,7 +17,22 @@
 
 package net.solarnetwork.esi.simple.opreg.config;
 
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+
+import net.solarnetwork.esi.domain.DerOperatorInfo;
+import net.solarnetwork.esi.simple.opreg.impl.CsvDerOperatorInfoParser;
+import net.solarnetwork.esi.simple.opreg.impl.SimpleDerOperatorRegistryService;
 
 /**
  * gRPC configuration.
@@ -27,5 +42,54 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class GrpcConfig {
+
+  // CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINE
+  @Value("${opreg.registry.csv:classpath:net/solarnetwork/esi/simple/opreg/impl/default-registry.csv}")
+  private Resource registryCsvResource = new ClassPathResource("default-registry.csv",
+      SimpleDerOperatorRegistryService.class);
+
+  private static final Logger log = LoggerFactory.getLogger(GrpcConfig.class);
+
+  private List<DerOperatorInfo> operatorInfos() throws IOException {
+    List<DerOperatorInfo> infos = new ArrayList<>(8);
+    try (CsvDerOperatorInfoParser parser = new CsvDerOperatorInfoParser(
+        new InputStreamReader(registryCsvResource.getInputStream(), "UTF-8"))) {
+      for (DerOperatorInfo info : parser) {
+        infos.add(info);
+      }
+    }
+    if (log.isInfoEnabled()) {
+      StringBuilder buf = new StringBuilder();
+      String fmt = "%-20s | %-20s | %-40s\n";
+      buf.append(String.format(fmt, "Name", "UID", "URI"));
+      buf.append(String.format(fmt, "--------------------", "--------------------",
+          "----------------------------------------"));
+      for (DerOperatorInfo info : infos) {
+        buf.append(String.format(fmt, info.getName(), info.getUid(), info.getEndpointUri()));
+      }
+      log.info("Loaded {} DerOperatorInfo registry entries:\n\n{}", infos.size(), buf);
+    }
+    return infos;
+  }
+
+  /**
+   * Configure the {@link SimpleDerOperatorRegistryService}.
+   * 
+   * <p>
+   * The registry is populated from the data loaded from the CSV resource configured by the
+   * {@literal opreg.registry.csv} setting.
+   * </p>
+   * 
+   * @return the configured service
+   */
+  @Bean
+  public SimpleDerOperatorRegistryService operatorRegistryService() {
+    try {
+      return new SimpleDerOperatorRegistryService(operatorInfos());
+    } catch (IOException e) {
+      throw new RuntimeException("Error loading registry data from CSV "
+          + registryCsvResource.getDescription() + ": " + e.getMessage());
+    }
+  }
 
 }
