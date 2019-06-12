@@ -93,9 +93,8 @@ public class OperatorRegistryTool implements ApplicationRunner {
 
   @Override
   public void run(ApplicationArguments args) throws Exception {
-    List<String> nonOptionArgs = args.getNonOptionArgs();
     boolean wantHelp = args.getOptionNames().contains(ARG_HELP);
-    if (nonOptionArgs.size() < 1 || wantHelp) {
+    if (args.getOptionNames().isEmpty() || wantHelp) {
       showHelp();
       return;
     }

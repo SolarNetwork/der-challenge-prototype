@@ -1,6 +1,6 @@
 Command Help
 
-list     List ESI operators in the registry.
+list     List system operators in the registry.
 
 quit
 q
