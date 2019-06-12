@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
+	<wb-module deploy-name="esi-operator-service">
+        <dependent-module archiveName="esi-api.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/esi-api/esi-api">
+            <dependency-type>uses</dependency-type>
+        </dependent-module>
+		<property name="context-root" value="esi-operator-service"/>
+		<wb-resource deploy-path="/WEB-INF/classes" source-path="src/main/resources"/>
+		<wb-resource deploy-path="/WEB-INF/classes" source-path="src/main/java"/>
+	</wb-module>
+</project-modules>
