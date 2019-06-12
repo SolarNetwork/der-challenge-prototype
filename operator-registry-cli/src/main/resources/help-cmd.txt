@@ -1,0 +1,11 @@
+Command Help
+
+list     List ESI operators in the registry.
+
+quit
+q
+exit     Quit.
+
+help
+h
+?        Show this help.

@@ -15,24 +15,14 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.opreg;
-
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import net.solarnetwork.esi.simple.opreg.config.AppConfiguration;
-import net.solarnetwork.esi.simple.opreg.impl.AppServices;
+package net.solarnetwork.esi.simple.opreg.impl;
 
 /**
- * Main entry point for ESI Simple Operator Registry App.
+ * Marker interface for the application services package.
  * 
  * @author matt
+ * @version 1.0
  */
-@SpringBootApplication(scanBasePackageClasses = { AppConfiguration.class, AppServices.class })
-public class Application {
-
-  public static void main(String[] args) {
-    SpringApplication.run(Application.class, args);
-  }
-
+public interface AppServices {
+  // empty
 }

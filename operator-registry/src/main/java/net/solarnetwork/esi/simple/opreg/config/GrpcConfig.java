@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,13 +51,28 @@ public class GrpcConfig {
 
   private static final Logger log = LoggerFactory.getLogger(GrpcConfig.class);
 
-  private List<DerOperatorInfo> operatorInfos() throws IOException {
+  /**
+   * The list of operator services to provide in the registry.
+   * 
+   * <p>
+   * The registry is populated from the data loaded from the CSV resource configured by the
+   * {@literal opreg.registry.csv} setting.
+   * </p>
+   * 
+   * @return the parsed operator infos
+   */
+  @Bean
+  @Qualifier("operator-list")
+  public List<DerOperatorInfo> operatorInfos() {
     List<DerOperatorInfo> infos = new ArrayList<>(8);
     try (CsvDerOperatorInfoParser parser = new CsvDerOperatorInfoParser(
         new InputStreamReader(registryCsvResource.getInputStream(), "UTF-8"))) {
       for (DerOperatorInfo info : parser) {
         infos.add(info);
       }
+    } catch (IOException e) {
+      throw new RuntimeException("Error loading registry data from CSV "
+          + registryCsvResource.getDescription() + ": " + e.getMessage());
     }
     if (log.isInfoEnabled()) {
       StringBuilder buf = new StringBuilder();
@@ -70,26 +86,6 @@ public class GrpcConfig {
       log.info("Loaded {} DerOperatorInfo registry entries:\n\n{}", infos.size(), buf);
     }
     return infos;
-  }
-
-  /**
-   * Configure the {@link SimpleDerOperatorRegistryService}.
-   * 
-   * <p>
-   * The registry is populated from the data loaded from the CSV resource configured by the
-   * {@literal opreg.registry.csv} setting.
-   * </p>
-   * 
-   * @return the configured service
-   */
-  @Bean
-  public SimpleDerOperatorRegistryService operatorRegistryService() {
-    try {
-      return new SimpleDerOperatorRegistryService(operatorInfos());
-    } catch (IOException e) {
-      throw new RuntimeException("Error loading registry data from CSV "
-          + registryCsvResource.getDescription() + ": " + e.getMessage());
-    }
   }
 
 }

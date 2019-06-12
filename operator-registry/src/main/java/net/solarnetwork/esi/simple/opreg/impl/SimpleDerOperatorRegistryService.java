@@ -21,7 +21,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import io.grpc.stub.StreamObserver;
+import net.devh.boot.grpc.server.service.GrpcService;
 import net.solarnetwork.esi.domain.DerOperatorInfo;
 import net.solarnetwork.esi.domain.DerOperatorRequest;
 import net.solarnetwork.esi.service.DerOperatorRegistryServiceGrpc.DerOperatorRegistryServiceImplBase;
@@ -38,6 +42,7 @@ import net.solarnetwork.esi.service.DerOperatorRegistryServiceGrpc.DerOperatorRe
  * @author matt
  * @version 1.0
  */
+@GrpcService
 public class SimpleDerOperatorRegistryService extends DerOperatorRegistryServiceImplBase {
 
   private final List<DerOperatorInfo> infos;
@@ -48,7 +53,8 @@ public class SimpleDerOperatorRegistryService extends DerOperatorRegistryService
    * @param infos
    *        the operator information to serve
    */
-  public SimpleDerOperatorRegistryService(List<DerOperatorInfo> infos) {
+  @Autowired
+  public SimpleDerOperatorRegistryService(@Qualifier("operator-list") List<DerOperatorInfo> infos) {
     super();
     this.infos = (infos != null && !infos.isEmpty()
         ? Collections.unmodifiableList(new ArrayList<>(infos))

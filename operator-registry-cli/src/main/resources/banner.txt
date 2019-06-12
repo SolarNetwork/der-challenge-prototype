@@ -1,0 +1,1 @@
+ :: ESI Operator Registry CLI :: (${application.version})

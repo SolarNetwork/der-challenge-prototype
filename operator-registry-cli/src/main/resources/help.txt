@@ -1,0 +1,11 @@
+<options>
+
+--uri=uri                The input data aggregation level. One of day, month.
+                         Defaults to month of not specified.
+
+--help                   Show this help.
+                         Use do-help=(true|false) in application.properties.
+
+--no-ssl                 Do not use SSL.
+                         Use do-no-ssl=(true|false) in application.properties.
+

@@ -1,2 +1,4 @@
 name,uid,uri
-Monopoly Utility,monopoly-utility,dns:///localhost:7443
+Monopoly Utility,monopoly-utility,dns:///monopoly.example.com
+Earth Utility,earth-utility,dns:///earth.localhost
+My ESI,my-esi,dns:///localhost:9090
