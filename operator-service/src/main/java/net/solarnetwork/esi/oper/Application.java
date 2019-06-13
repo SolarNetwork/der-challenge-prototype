@@ -17,6 +17,7 @@
 
 package net.solarnetwork.esi.oper;
 
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import net.solarnetwork.esi.oper.config.AppConfiguration;
@@ -32,5 +33,15 @@ import net.solarnetwork.esi.oper.web.config.WebConfiguration;
 @SpringBootApplication(scanBasePackageClasses = { Application.class, AppConfiguration.class,
     AppServices.class, WebConfiguration.class })
 public class Application {
+
+  /**
+   * Executable JAR deployment main entry point.
+   * 
+   * @param args
+   *        the command line arguments
+   */
+  public static void main(String[] args) {
+    SpringApplication.run(Application.class, args);
+  }
 
 }

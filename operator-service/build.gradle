@@ -55,7 +55,15 @@ eclipse {
 	}
 }
 
+war {
+	enabled = true
+	manifest {
+		attributes 'Implementation-Version': version
+	}
+}
+
 bootWar {
+	classifier = 'app'
 	manifest {
 		attributes 'Implementation-Version': version
    	}
