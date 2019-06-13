@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.opreg.impl.test;
+package net.solarnetwork.esi.util.test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -30,7 +30,7 @@ import java.util.List;
 import org.junit.Test;
 
 import net.solarnetwork.esi.domain.DerOperatorInfo;
-import net.solarnetwork.esi.simple.opreg.impl.CsvDerOperatorInfoParser;
+import net.solarnetwork.esi.util.CsvDerOperatorInfoParser;
 
 /**
  * Test cases for the {@link CsvDerOperatorInfoParser} class.

@@ -1,0 +1,33 @@
+plugins {
+    id 'checkstyle'
+    id 'java-library'
+    id 'eclipse'
+}
+
+description = 'ESI: Common'
+version = '0.1.0'
+archivesBaseName = 'esi-common'
+
+checkstyle {
+	toolVersion = "${checkstyleVersion}"
+	configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+}
+	
+dependencies {
+	api project(':esi-api')
+
+	// Utilities
+	implementation 'net.sf.supercsv:super-csv:2.4.0'
+	implementation 'org.slf4j:slf4j-api:1.7.26'
+}
+
+eclipse {
+	project {
+		natures 'net.sf.eclipsecs.core.CheckstyleNature'
+		buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+	}
+}
+
+jar.manifest {
+    attributes('Implementation-Version': version)
+}

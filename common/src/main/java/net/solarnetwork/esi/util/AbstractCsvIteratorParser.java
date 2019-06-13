@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.opreg.impl;
+package net.solarnetwork.esi.util;
 
 import java.io.Closeable;
 import java.io.IOException;

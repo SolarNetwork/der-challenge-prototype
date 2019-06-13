@@ -1,11 +1,13 @@
 rootProject.name = "esi"
 
 include "api"
+include "common"
 include "operator-registry"
 include "operator-registry-cli"
 include "operator-service"
 
 project(':api').name = "esi-api"
+project(':common').name = "esi-common"
 project(':operator-registry').name = "esi-operator-registry"
 project(':operator-registry-cli').name = "esi-operator-registry-cli"
 project(':operator-service').name = "esi-operator-service"

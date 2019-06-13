@@ -32,8 +32,8 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 
 import net.solarnetwork.esi.domain.DerOperatorInfo;
-import net.solarnetwork.esi.simple.opreg.impl.CsvDerOperatorInfoParser;
 import net.solarnetwork.esi.simple.opreg.impl.SimpleDerOperatorRegistryService;
+import net.solarnetwork.esi.util.CsvDerOperatorInfoParser;
 
 /**
  * gRPC configuration.

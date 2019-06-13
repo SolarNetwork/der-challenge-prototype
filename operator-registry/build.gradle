@@ -26,6 +26,7 @@ checkstyle {
 	
 dependencies {
 	implementation project(':esi-api')
+	implementation project(':esi-common')
 	
 	// gRPC
 	implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
