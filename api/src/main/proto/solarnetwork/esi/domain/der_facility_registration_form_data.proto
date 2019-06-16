@@ -43,10 +43,10 @@ message DerFacilityRegistrationFormData {
   // for example as a UUID. If a facility sits behind a proxy or aggregator
   // service, then the proxy or aggregator service might be responsible for
   // generating unique IDs. In that case, this facility must provide some
-  // external method of obtaining its ID from that service. For example, an EV
-  // charger first boots it might come pre-configured to register itself with a
-  // proxy service, or prompt for registration with a proxy service; either way
-  // it obtains its facility ID which is then passed to the operator here.
+  // external method of obtaining its ID from that service. For example, when an
+  // EV charger first boots it might come pre-configured to register itself with
+  // a proxy service, or prompt for registration with a proxy service; either
+  // way it obtains its facility ID which is then passed to the operator here.
   string facilityUid = 2;
   
   // The gRPC compliant URI the operator can access the facility on.
