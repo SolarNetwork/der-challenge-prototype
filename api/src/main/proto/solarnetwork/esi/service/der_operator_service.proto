@@ -63,11 +63,11 @@ service DerOperatorService {
   // When called, the form data will be validated by the operator, and any
   // problems will be expressed via standard error details. If the form data is
   // submitted successfully, the DerOperator must call the
-  // CompleteDerFacilityRegistration() method on DerFacilityService to complete
-  // the process.
+  // `CompleteDerFacilityRegistration()` method on `DerFacilityService` to
+  // complete the process.
   rpc SubmitDerFacilityRegistrationForm(
   	solarnetwork.esi.domain.DerFacilityRegistrationFormData)
-  returns (google.protobuf.Empty);
+  returns (solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt);
 
   // ==========================================================================
   // 
