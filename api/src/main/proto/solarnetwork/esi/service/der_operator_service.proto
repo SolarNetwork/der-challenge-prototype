@@ -28,6 +28,7 @@ import "solarnetwork/esi/domain/datum_request.proto";
 import "solarnetwork/esi/domain/der_facility_registration.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_data.proto";
+import "solarnetwork/esi/domain/der_facility_registration_form_data_receipt.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_request.proto";
 import "solarnetwork/esi/domain/der_operator_info.proto";
 import "solarnetwork/esi/domain/der_operator_request.proto";
