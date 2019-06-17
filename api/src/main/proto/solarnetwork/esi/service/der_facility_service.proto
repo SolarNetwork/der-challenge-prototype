@@ -42,10 +42,16 @@ import "solarnetwork/esi/domain/price_parameters.proto";
 
 // The energy services interface (ESI) facility service API, where a facility is
 // something that manages distributed energy resources (DER).
+// ---
+// Note: In external documentation created by EcogyEnergy, a DerFacility or
+// "DER Facility" is often refered to as a DERF for short (for those familar
+// with this external documentation, from here on, please remember that
+// DerFacility or Facility = DERF).
+
 service DerFacilityService {
 
   // ===========================================================================
-  // DerFacility registration
+  // DerFacility registration (Note: this is a callback from DerOperator/IPER)
   // ===========================================================================
 
   // Complete the facility registration process, either successfully or as an

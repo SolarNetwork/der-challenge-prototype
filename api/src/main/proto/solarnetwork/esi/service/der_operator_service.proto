@@ -48,6 +48,13 @@ import "solarnetwork/esi/domain/price_map_offer_status_response.proto";
 
 // The ESI operator service API, where an operator is something that manages the
 // energy system that facilities interact with.
+// ---
+// Note: In external documentation created by the GridWise Architechture Council
+// (GWAC) and EcogyEnergy, the entities that this DerOperatorService represent
+// are often refered to as an "Interfacing Party with External Responsibility"
+// or IPER for short (for those familar with this external documentation, from
+// here on, please remember that DerOperator or Operator = IPER).
+
 service DerOperatorService {
 
   // ===========================================================================
