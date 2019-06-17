@@ -72,7 +72,7 @@ public class SimpleDerOperatorRegistryServiceTests {
   }
 
   @Test
-  public void foo() {
+  public void listOperators() {
     // given
     DerOperatorRegistryServiceBlockingStub client = DerOperatorRegistryServiceGrpc
         .newBlockingStub(channel);
