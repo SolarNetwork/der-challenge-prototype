@@ -17,13 +17,12 @@
 
 package net.solarnetwork.esi.oper.impl;
 
-import com.google.protobuf.Empty;
-
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import net.solarnetwork.esi.domain.DatumRequest;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
+import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
 import net.solarnetwork.esi.domain.PriceDatum;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
@@ -55,7 +54,7 @@ public class SimpleOperatorService extends DerOperatorServiceImplBase {
 
   @Override
   public void submitDerFacilityRegistrationForm(DerFacilityRegistrationFormData request,
-      StreamObserver<Empty> responseObserver) {
+      StreamObserver<DerFacilityRegistrationFormDataReceipt> responseObserver) {
     // TODO Auto-generated method stub
     super.submitDerFacilityRegistrationForm(request, responseObserver);
   }
