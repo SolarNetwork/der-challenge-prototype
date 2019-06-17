@@ -31,7 +31,13 @@ message Form {
   // A unique identifier for this form.
   string key = 1;
 
+  // The language used in the form settings.
+  //
+  // The BCP-47 language code the form setting text is in. Examples: "en", "ja",
+  // "zh-Hant".
+  string languageCode = 2;
+
   // The form settings (fields).
-  repeated FormSetting settings = 2;
+  repeated FormSetting settings = 3;
   
 }
