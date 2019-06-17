@@ -42,21 +42,27 @@ import "solarnetwork/esi/domain/price_parameters.proto";
 
 // The energy services interface (ESI) facility service API, where a facility is
 // something that manages distributed energy resources (DER).
-// ---
-// Note: In external documentation created by EcogyEnergy, a DerFacility or
-// "DER Facility" is often refered to as a DERF for short (for those familar
-// with this external documentation, from here on, please remember that
-// DerFacility or Facility = DERF).
-
+// 
+// In the Interoperability Strategic Vision document created by the Grid
+// Modernization Laboratory Consortium, this API is often refered to as an
+// "Distributed Energy Resource Facility" or DERF for short. See
+// https://gridmod.labworks.org/resources/interoperability-strategic-vision
+// for more information.
 service DerFacilityService {
 
   // ===========================================================================
-  // DerFacility registration (Note: this is a callback from DerOperator/IPER)
+  // DerFacility registration
   // ===========================================================================
 
   // Complete the facility registration process, either successfully or as an
-  // error. This method is called at some point after a call was made to
-  // `DerOperatorService.SubmitDerFacilityRegistrationForm()`.
+  // error.
+  //
+  // This method is called at some point after a call was made to
+  // `DerOperatorService.SubmitDerFacilityRegistrationForm()`, after the
+  // operator has completed its validation of the submitted registration form
+  // data. A fully automated system might invoke this method within seconds of
+  // that submission, or a manual verification process might require multiple
+  // days to complete before this method can  be invoked.
   rpc CompleteDerFacilityRegistration(
   	solarnetwork.esi.domain.DerFacilityRegistration)
   returns (google.protobuf.Empty);
