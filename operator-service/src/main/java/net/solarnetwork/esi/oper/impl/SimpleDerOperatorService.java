@@ -17,6 +17,14 @@
 
 package net.solarnetwork.esi.oper.impl;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import net.solarnetwork.esi.domain.DatumRequest;
@@ -24,6 +32,7 @@ import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
+import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.PriceDatum;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusResponse;
@@ -36,20 +45,56 @@ import net.solarnetwork.esi.service.DerOperatorServiceGrpc.DerOperatorServiceImp
  * @version 1.0
  */
 @GrpcService
-public class SimpleOperatorService extends DerOperatorServiceImplBase {
+public class SimpleDerOperatorService extends DerOperatorServiceImplBase {
+
+  private final String operatorUid;
+  private final List<Form> registrationForms;
 
   /**
    * Constructor.
+   * 
+   * @param operatorUid
+   *        the UID to use for this service
+   * @param registrationForms
+   *        the registration form, as a list to support multiple languages
+   * @throws IllegalArgumentException
+   *         if either {@code operatorUid} or {@code registreationForms} are {@literal null} or
+   *         empty
    */
-  public SimpleOperatorService() {
+  @Autowired
+  public SimpleDerOperatorService(@Qualifier("operator-uid") String operatorUid,
+      @Qualifier("regform-list") List<Form> registrationForms) {
     super();
+    if (operatorUid == null || operatorUid.isEmpty()) {
+      throw new IllegalArgumentException("The operator UID must not be empty.");
+    }
+    this.operatorUid = operatorUid;
+    if (registrationForms == null || registrationForms.isEmpty()) {
+      throw new IllegalArgumentException("The registration forms list must not be empty.");
+    }
+    this.registrationForms = Collections.unmodifiableList(new ArrayList<>(registrationForms));
   }
 
   @Override
   public void getDerFacilityRegistrationForm(DerFacilityRegistrationFormRequest request,
       StreamObserver<DerFacilityRegistrationForm> responseObserver) {
-    // TODO Auto-generated method stub
-    super.getDerFacilityRegistrationForm(request, responseObserver);
+    // try to match the request language to an available form language
+    Locale reqLocale = (request.getLanguageCode() != null && !request.getLanguageCode().isEmpty()
+        ? Locale.forLanguageTag(request.getLanguageCode())
+        : null);
+    Form form;
+    if (registrationForms.size() == 1 || reqLocale == null) {
+      form = registrationForms.get(0);
+    } else {
+      form = registrationForms.stream().filter(f -> {
+        return (f.getLanguageCode() != null && !f.getLanguageCode().isEmpty() && Locale
+            .forLanguageTag(f.getLanguageCode()).getLanguage().equals(reqLocale.getLanguage()));
+      }).findFirst().orElse(registrationForms.get(0));
+    }
+    DerFacilityRegistrationForm regForm = DerFacilityRegistrationForm.newBuilder()
+        .setOperatorUid(operatorUid).setForm(form).build();
+    responseObserver.onNext(regForm);
+    responseObserver.onCompleted();
   }
 
   @Override
