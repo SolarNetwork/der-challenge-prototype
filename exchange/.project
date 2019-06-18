@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>esi-operator-service</name>
+	<name>esi-exchange</name>
 	<comment>Project esi-operator-service created by Buildship.</comment>
 	<projects>
 		<project>esi-api</project>

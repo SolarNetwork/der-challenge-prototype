@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project-modules id="moduleCoreId" project-version="1.5.0">
-	<wb-module deploy-name="esi-operator-service">
-		<property name="context-root" value="esi-simple-operator-service"/>
+	<wb-module deploy-name="esi-exchange">
+		<property name="context-root" value="esi-simple-facility-exchange"/>
 		<wb-resource deploy-path="/WEB-INF/classes" source-path="src/main/resources"/>
 		<wb-resource deploy-path="/WEB-INF/classes" source-path="src/main/java"/>
 		<dependent-module deploy-path="/WEB-INF/lib" handle="module:/resource/esi-api/esi-api">

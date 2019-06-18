@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>esi-operator-registry-cli</name>
-	<comment>Project operator-registry-cli created by Buildship.</comment>
+	<name>esi-exchange-registry</name>
+	<comment>Project operator-registry created by Buildship.</comment>
 	<projects>
 	</projects>
 	<buildSpec>

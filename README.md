@@ -1,16 +1,16 @@
 # SolarNetwork DER Challenge Prototypes
 
 This repository contains prototypes for [SEPA DER Challenge][der-challenge] components. This work
-has funding support from the [Pacific Northwest National Laboratory][pnnl] and [Ecogy
-Energy][ecogy].
+has funding support from the [Pacific Northwest National Laboratory][pnnl] and 
+[Ecogy Energy][ecogy].
 
 This top-level directory serves as an umbrella project for various sub-projects:
 
  * [api](api/) - API definitions
  * [common](common/) - Common/shared implementation resources for other projects
- * [operator-registry](operator-registry/) - Facility Exchange Registry server proof-of-concept
- * [operator-registry-cli](operator-registry/) - Facility Exchange Registry client proof-of-concept
- * [operator-service](operator-service/) - Facility Exchange server proof-of-concept
+ * [exchange](exchange/) - Facility Exchange server proof-of-concept
+ * [exchange-registry](exchange-registry/) - Facility Exchange Registry server proof-of-concept
+ * [exchange-registry-cli](exchange-registry-cli/) - Facility Exchange Registry client proof-of-concept
 
 ## Building
 
