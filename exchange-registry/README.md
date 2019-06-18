@@ -1,7 +1,7 @@
 # SolarNetwork DER Challenge: Operator Registry
 
 This repository contains a proof-of-concept Protobuf/gRPC based server implementation of the
-`DerOperatorRegistryService` defined in [der_facility_exchange_registry_service][der_facility_exchange_registry].
+`DerOperatorRegistryService` defined in [der_facility_exchange_registry][der_facility_exchange_registry].
 
 ## Building
 

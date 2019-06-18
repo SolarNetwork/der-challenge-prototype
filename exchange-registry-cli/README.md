@@ -2,7 +2,7 @@
 
 This repository contains a proof-of-concept interactive command line application using a 
 Protobuf/gRPC based client implementation of the `DerFacilityExchangeRegistryService` defined in 
-[der_facility_exchange_registry_service][der_facility_exchange_registry].
+[der_facility_exchange_registry][der_facility_exchange_registry].
 
 ![CLI App Demo](docs/opreg-cli.gif)
 
@@ -57,4 +57,4 @@ Result 3
   URI        dns:///localhost:9090
 ```
 
-[der_facility_exchange_registry]: ../api/src/main/proto/solarnetwork/esi/service/der_facility_exchange_registry_service.proto
+[der_facility_exchange_registry]: ../api/src/main/proto/solarnetwork/esi/service/der_facility_exchange_registry.proto
