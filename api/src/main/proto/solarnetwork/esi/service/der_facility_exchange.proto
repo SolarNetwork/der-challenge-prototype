@@ -23,27 +23,13 @@ option java_outer_classname = "DerFacilityExchangeProto";
 option java_package = "net.solarnetwork.esi.service";
 option objc_class_prefix = "ESI";
 
-import "google/protobuf/empty.proto";
 import "solarnetwork/esi/domain/datum_request.proto";
-import "solarnetwork/esi/domain/der_facility_exchange_info.proto";
-import "solarnetwork/esi/domain/der_facility_exchange_request.proto";
-import "solarnetwork/esi/domain/der_facility_registration.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_data.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_data_receipt.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_request.proto";
-import "solarnetwork/esi/domain/der_program.proto";
-import "solarnetwork/esi/domain/der_resource_characteristics.proto";
-import "solarnetwork/esi/domain/der_route.proto";
-import "solarnetwork/esi/domain/power_parameters.proto";
-import "solarnetwork/esi/domain/power_profile_datum.proto";
 import "solarnetwork/esi/domain/price_datum.proto";
-import "solarnetwork/esi/domain/price_map.proto";
-import "solarnetwork/esi/domain/price_map_offer.proto";
-import "solarnetwork/esi/domain/price_map_offer_feedback.proto";
-import "solarnetwork/esi/domain/price_map_offer_response.proto";
 import "solarnetwork/esi/domain/price_map_offer_status.proto";
-import "solarnetwork/esi/domain/price_map_offer_status_request.proto";
 import "solarnetwork/esi/domain/price_map_offer_status_response.proto";
 
 // The ESI facility exchange API, where the exchange is something that manages
