@@ -1,6 +1,6 @@
 Command Help
 
-list     List system operators in the registry.
+list     List facility exchanges in the registry.
 
 quit
 q

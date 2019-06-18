@@ -17,7 +17,7 @@ apply plugin: 'io.spring.dependency-management'
 
 description = 'ESI: Simple Operator Registry'
 version = '0.1.0'
-archivesBaseName = 'esi-simple-operator-registry'
+archivesBaseName = 'esi-simple-exchange-registry'
 
 checkstyle {
 	toolVersion = "${checkstyleVersion}"

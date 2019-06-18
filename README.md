@@ -8,9 +8,9 @@ This top-level directory serves as an umbrella project for various sub-projects:
 
  * [api](api/) - API definitions
  * [common](common/) - Common/shared implementation resources for other projects
- * [operator-registry](operator-registry/) - Operator Registry server proof-of-concept
- * [operator-registry-cli](operator-registry/) - Operator Registry client proof-of-concept
- * [operator-service](operator-service/) - Operator Service server proof-of-concept
+ * [operator-registry](operator-registry/) - Facility Exchange Registry server proof-of-concept
+ * [operator-registry-cli](operator-registry/) - Facility Exchange Registry client proof-of-concept
+ * [operator-service](operator-service/) - Facility Exchange server proof-of-concept
 
 ## Building
 

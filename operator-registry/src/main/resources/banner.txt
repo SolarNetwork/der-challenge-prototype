@@ -1,1 +1,1 @@
- :: ESI Simple Operator Registry :: (${application.version})
+ :: ESI Simple Facility Exchange Registry :: (${application.version})

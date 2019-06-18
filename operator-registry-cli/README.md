@@ -1,8 +1,8 @@
-# SolarNetwork DER Challenge: Operator Registry CLI
+# SolarNetwork DER Challenge: Facility Exchange Registry CLI
 
 This repository contains a proof-of-concept interactive command line application using a 
-Protobuf/gRPC based client implementation of the `DerOperatorRegistryService` defined in 
-[der_operator_registry_service][der_operator_registry].
+Protobuf/gRPC based client implementation of the `DerFacilityExchangeRegistryService` defined in 
+[der_facility_exchange_registry_service][der_facility_exchange_registry].
 
 ![CLI App Demo](docs/opreg-cli.gif)
 
@@ -12,11 +12,11 @@ Gradle is used for building. Run the `build` task via `gradlew`:
 
 	$ ../gradlew build
 
-This will generate a `build/libs/esi-cli-operator-registry-X.jar` where `X` is a version number.
+This will generate a `build/libs/esi-cli-exchange-registry-X.jar` where `X` is a version number.
 
 ## Running
 
-Run via `java -jar esi-cli-operator-registry-X.jar`. The following command line arguments are
+Run via `java -jar esi-cli-exchange-registry-X.jar`. The following command line arguments are
 supported:
 
 | Argument | Default | Description |
@@ -28,10 +28,10 @@ supported:
 For example:
 
 ```sh
-java -jar build/libs/esi-cli-operator-registry-0.1.0.jar --no-ssl --uri=esi.example.com:9090
+java -jar build/libs/esi-cli-exchange-registry-0.1.0.jar --no-ssl --uri=esi.example.com:9090
 ```
 
-Once started, an `OpReg>` prompt will be shown. The following commands are supported:
+Once started, an `XReg>` prompt will be shown. The following commands are supported:
 
 | Command | Description |
 |:--------|:------------|
@@ -42,7 +42,7 @@ Once started, an `OpReg>` prompt will be shown. The following commands are suppo
 For example:
 
 ```
-OpReg> list
+XReg> list
 Result 1
   Name       Monopoly Utility
   ID         monopoly-utility
@@ -57,4 +57,4 @@ Result 3
   URI        dns:///localhost:9090
 ```
 
-[der_operator_registry]: ../api/src/main/proto/solarnetwork/esi/service/der_operator_registry_service.proto
+[der_facility_exchange_registry]: ../api/src/main/proto/solarnetwork/esi/service/der_facility_exchange_registry_service.proto

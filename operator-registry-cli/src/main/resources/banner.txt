@@ -1,1 +1,1 @@
- :: ESI Operator Registry CLI :: (${application.version})
+ :: ESI Facility Exchange Registry CLI :: (${application.version})
