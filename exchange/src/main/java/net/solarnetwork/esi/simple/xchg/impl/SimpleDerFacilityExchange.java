@@ -36,7 +36,7 @@ import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.PriceDatum;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusResponse;
-import net.solarnetwork.esi.service.DerFacilityExchangeServiceGrpc.DerFacilityExchangeServiceImplBase;
+import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
 
 /**
  * Really, really, really simple gRPC implementation of a DER operator service.
@@ -45,7 +45,7 @@ import net.solarnetwork.esi.service.DerFacilityExchangeServiceGrpc.DerFacilityEx
  * @version 1.0
  */
 @GrpcService
-public class SimpleDerFacilityExchange extends DerFacilityExchangeServiceImplBase {
+public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
   private final String operatorUid;
   private final List<Form> registrationForms;

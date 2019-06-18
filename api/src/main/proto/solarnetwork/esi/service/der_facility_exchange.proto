@@ -19,7 +19,7 @@ package solarnetwork.esi.service;
 
 option cc_enable_arenas = true;
 option java_multiple_files = true;
-option java_outer_classname = "DerFacilityExchangeServiceProto";
+option java_outer_classname = "DerFacilityExchangeProto";
 option java_package = "net.solarnetwork.esi.service";
 option objc_class_prefix = "ESI";
 
@@ -54,7 +54,7 @@ import "solarnetwork/esi/domain/price_map_offer_status_response.proto";
 // "Interfacing Party with External Responsibility" or IPER for short. See
 // https://gridmod.labworks.org/resources/interoperability-strategic-vision
 // for more information.
-service DerFacilityExchangeService {
+service DerFacilityExchange {
 
   // ===========================================================================
   // DerFacility registration

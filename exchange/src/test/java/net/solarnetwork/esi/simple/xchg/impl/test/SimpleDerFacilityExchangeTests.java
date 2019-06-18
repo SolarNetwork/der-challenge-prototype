@@ -42,8 +42,8 @@ import io.grpc.testing.GrpcCleanupRule;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
 import net.solarnetwork.esi.domain.Form;
-import net.solarnetwork.esi.service.DerFacilityExchangeServiceGrpc;
-import net.solarnetwork.esi.service.DerFacilityExchangeServiceGrpc.DerFacilityExchangeServiceBlockingStub;
+import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
+import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeBlockingStub;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
 
 /**
@@ -94,7 +94,7 @@ public class SimpleDerFacilityExchangeTests {
   @Test
   public void registrationFormForLang() {
     // given
-    DerFacilityExchangeServiceBlockingStub client = DerFacilityExchangeServiceGrpc
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc
         .newBlockingStub(channel);
 
     //when
@@ -113,7 +113,7 @@ public class SimpleDerFacilityExchangeTests {
   @Test
   public void registrationFormForLangAlt() {
     // given
-    DerFacilityExchangeServiceBlockingStub client = DerFacilityExchangeServiceGrpc
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc
         .newBlockingStub(channel);
 
     //when
@@ -132,7 +132,7 @@ public class SimpleDerFacilityExchangeTests {
   @Test
   public void registrationFormForLangUnsupported() {
     // given
-    DerFacilityExchangeServiceBlockingStub client = DerFacilityExchangeServiceGrpc
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc
         .newBlockingStub(channel);
 
     //when
