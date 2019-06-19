@@ -49,6 +49,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation "io.grpc:grpc-testing:${grpcVersion}"
     testImplementation 'org.flywaydb.flyway-test-extensions:flyway-spring5-test:5.2.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter-api'
 }
 
 eclipse {
