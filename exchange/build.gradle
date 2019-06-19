@@ -27,6 +27,7 @@ checkstyle {
 	
 dependencies {
 	implementation project(':esi-api')
+	implementation project(':esi-common')
 	
 	// gRPC
 	implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
@@ -34,13 +35,20 @@ dependencies {
 
 	// Spring
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// DB
+	implementation 'org.flywaydb:flyway-core'
+	implementation "org.hibernate:hibernate-entitymanager"
+	runtime 'org.apache.derby:derby:10.14.2.0'
 	
 	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 	
 	// Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation "io.grpc:grpc-testing:${grpcVersion}"
+    testImplementation 'org.flywaydb.flyway-test-extensions:flyway-spring5-test:5.2.4'
 }
 
 eclipse {
@@ -50,6 +58,7 @@ eclipse {
 	}
 	wtp {
 		facet {
+			facet name: 'jpt.jpa', version: '2.1'
 			facet name: 'jst.java', version: 1.8
 			facet name: 'jst.web', version: '4.0'
 		}
