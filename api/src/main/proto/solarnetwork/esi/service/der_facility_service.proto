@@ -35,6 +35,7 @@ import "solarnetwork/esi/domain/price_datum.proto";
 import "solarnetwork/esi/domain/price_map.proto";
 import "solarnetwork/esi/domain/price_map_offer.proto";
 import "solarnetwork/esi/domain/price_map_offer_feedback.proto";
+import "solarnetwork/esi/domain/price_map_offer_feedback_response.proto";
 import "solarnetwork/esi/domain/price_map_offer_response.proto";
 import "solarnetwork/esi/domain/price_map_offer_status.proto";
 import "solarnetwork/esi/domain/price_map_offer_status_request.proto";
@@ -91,7 +92,7 @@ service DerFacilityService {
   // Provide feedback on a price map offer, after the offer event is over.
   rpc ProvidePriceMapOfferFeedback(
   	solarnetwork.esi.domain.PriceMapOfferFeedback)
-  returns (solarnetwork.esi.domain.PriceMapOfferFeedback);
+  returns (solarnetwork.esi.domain.PriceMapOfferFeedbackResponse);
   
   // Query for list of power profile datum over a time range.
   rpc ListPowerProfile(solarnetwork.esi.domain.DatumRequest)
