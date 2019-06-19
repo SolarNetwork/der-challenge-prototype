@@ -21,6 +21,7 @@ import java.time.Instant;
 
 import javax.persistence.Column;
 import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 /**
  * A helpful base entity for application-defined string keys.
@@ -28,6 +29,7 @@ import javax.persistence.Id;
  * @author matt
  * @version 1.0
  */
+@MappedSuperclass
 public abstract class BaseStringEntity extends BaseEntity<String> {
 
   private static final long serialVersionUID = -1007750822014142165L;

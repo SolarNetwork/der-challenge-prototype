@@ -23,6 +23,7 @@ import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 /**
  * A helpful base class for auto-generated Long primary key based entities.
@@ -30,6 +31,7 @@ import javax.persistence.Id;
  * @author matt
  * @version 1.0
  */
+@MappedSuperclass
 public abstract class BaseLongEntity extends BaseEntity<Long> {
 
   private static final long serialVersionUID = 4943764965909917227L;

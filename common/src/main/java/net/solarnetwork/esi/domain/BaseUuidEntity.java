@@ -23,6 +23,7 @@ import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.MappedSuperclass;
 
 /**
  * A helpful base class for auto-generated UUID primary key based entities.
@@ -30,6 +31,7 @@ import javax.persistence.Id;
  * @author matt
  * @version 1.0
  */
+@MappedSuperclass
 public abstract class BaseUuidEntity extends BaseEntity<UUID> {
 
   private static final long serialVersionUID = 4582556470770011903L;
