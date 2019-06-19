@@ -17,6 +17,11 @@
 
 package net.solarnetwork.esi.simple.xchg.impl;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,7 +29,12 @@ import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.google.protobuf.ByteString;
+
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import net.solarnetwork.esi.domain.DatumRequest;
@@ -33,10 +43,14 @@ import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
 import net.solarnetwork.esi.domain.Form;
+import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.PriceDatum;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusResponse;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 
 /**
  * Really, really, really simple gRPC implementation of a DER operator service.
@@ -47,8 +61,23 @@ import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeI
 @GrpcService
 public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
+  /** The form field key for the Utility Interconnection Customer Identifier value. */
+  public static final String FORM_KEY_UICI = "uici";
+
+  /** The form field key for the cutomer's ID value. */
+  public static final String FORM_KEY_CUSTOMER_ID = "cust-id";
+
+  /** The form field key for the cutomer's surname value. */
+  public static final String FORM_KEY_CUSTOMER_SURNAME = "cust-surname";
+
   private final String operatorUid;
   private final List<Form> registrationForms;
+
+  @Autowired
+  private FacilityEntityDao facilityDao;
+
+  @Autowired
+  private FacilityRegistrationEntityDao facilityRegistrationDao;
 
   /**
    * Constructor.
@@ -97,11 +126,97 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
     responseObserver.onCompleted();
   }
 
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
   public void submitDerFacilityRegistrationForm(DerFacilityRegistrationFormData request,
       StreamObserver<DerFacilityRegistrationFormDataReceipt> responseObserver) {
-    // TODO Auto-generated method stub
-    super.submitDerFacilityRegistrationForm(request, responseObserver);
+
+    try {
+      if (!operatorUid.equals(request.getOperatorUid())) {
+        throw new IllegalArgumentException("Operator UID not valid");
+      }
+
+      String facilityUid = request.getFacilityUid();
+      if (facilityUid == null || facilityUid.trim().isEmpty()) {
+        throw new IllegalArgumentException("Facility UID missing");
+      }
+
+      String facilityEndpointUri = request.getFacilityEndpointUri();
+      if (facilityEndpointUri == null || facilityEndpointUri.trim().isEmpty()) {
+        throw new IllegalArgumentException("Facility endpoint URI missing");
+      }
+      try {
+        new URI(facilityEndpointUri);
+      } catch (URISyntaxException e) {
+        throw new IllegalArgumentException("Facility endpoint URI syntax not valid", e);
+      }
+
+      ByteString facilityNonce = request.getFacilityNonce();
+      if (facilityNonce == null || facilityNonce.isEmpty()) {
+        throw new IllegalArgumentException("Facility nonce missing");
+      } else if (facilityNonce.size() < 8) {
+        throw new IllegalArgumentException("Facility nonce must be at least 8 bytes long");
+      } else if (facilityNonce.size() > 24) {
+        throw new IllegalArgumentException("Facility nonce must be at most 24 bytes long");
+      }
+
+      FormData formData = request.getData();
+      if (formData == null) {
+        throw new IllegalArgumentException("Form data missing");
+      }
+      String formKey = formData.getKey();
+      if (formKey == null || formKey.trim().isEmpty()) {
+        throw new IllegalArgumentException("Form key missing");
+      }
+      Form form = registrationForms.stream().filter(f -> formKey.equals(f.getKey())).findFirst()
+          .orElse(null);
+      if (form == null) {
+        throw new IllegalArgumentException("Form key invalid");
+      }
+
+      String uici = formData.getDataOrDefault(FORM_KEY_UICI, null);
+      if (uici == null || uici.trim().isEmpty()) {
+        throw new IllegalArgumentException("UICI value missing");
+      } else if (!uici.matches("[1-9]{3}-[1-9]{4}-[1-9]{4}")) {
+        throw new IllegalArgumentException("UICI invliad syntax; must be in form 123-1234-1234");
+      }
+
+      String custId = formData.getDataOrDefault(FORM_KEY_CUSTOMER_ID, null);
+      if (custId == null || custId.trim().isEmpty()) {
+        throw new IllegalArgumentException("Customer number value missing");
+      } else if (!custId.matches("[A-Z]{3}[0-9]{9}")) {
+        throw new IllegalArgumentException(
+            "Customer number invalid syntax; must be in form ABC123456789");
+      }
+
+      String custSurname = formData.getDataOrDefault(FORM_KEY_CUSTOMER_SURNAME, null);
+      if (custSurname == null || custSurname.trim().isEmpty()) {
+        throw new IllegalArgumentException("Customer surname value missing");
+      }
+
+      // wow, it passed validation checks; generate our nonce and persist registration entity
+      byte[] opNonce = new byte[24];
+      SecureRandom.getInstanceStrong().nextBytes(opNonce);
+
+      FacilityRegistrationEntity entity = new FacilityRegistrationEntity(Instant.now());
+      entity.setCustomerId(custId);
+      entity.setUici(uici);
+      entity.setFacilityEndpoint(facilityEndpointUri);
+      entity.setFacilityNonce(facilityNonce.toByteArray());
+      entity.setOperatorNonce(opNonce);
+      entity = facilityRegistrationDao.save(entity);
+
+      responseObserver.onNext(DerFacilityRegistrationFormDataReceipt.newBuilder()
+          .setOperatorUid(operatorUid).setOperatorNonce(ByteString.copyFrom(opNonce)).build());
+      responseObserver.onCompleted();
+
+    } catch (IllegalArgumentException e) {
+      responseObserver.onError(
+          Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
+    } catch (NoSuchAlgorithmException e) {
+      responseObserver.onError(Status.INTERNAL.withDescription("Internal crypto setup error")
+          .withCause(e).asException());
+    }
   }
 
   @Override
@@ -115,6 +230,26 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   public void listPrices(DatumRequest request, StreamObserver<PriceDatum> responseObserver) {
     // TODO Auto-generated method stub
     super.listPrices(request, responseObserver);
+  }
+
+  /**
+   * Set the DAO to use for facility data.
+   * 
+   * @param facilityDao
+   *        the facility DAO to use
+   */
+  public void setFacilityDao(FacilityEntityDao facilityDao) {
+    this.facilityDao = facilityDao;
+  }
+
+  /**
+   * Set the DAO to use for facility registration data.
+   * 
+   * @param facilityRegistrationDao
+   *        the facility registration DAO to use
+   */
+  public void setFacilityRegistrationDao(FacilityRegistrationEntityDao facilityRegistrationDao) {
+    this.facilityRegistrationDao = facilityRegistrationDao;
   }
 
 }

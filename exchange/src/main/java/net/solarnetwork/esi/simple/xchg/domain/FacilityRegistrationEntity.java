@@ -18,43 +18,54 @@
 package net.solarnetwork.esi.simple.xchg.domain;
 
 import java.time.Instant;
-import java.util.UUID;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-import net.solarnetwork.esi.domain.BaseUuidEntity;
+import net.solarnetwork.esi.domain.BaseLongEntity;
 
 /**
- * Entity for DER facilities that have been registered.
+ * Entity for DER facilities undergoing registration.
+ * 
+ * <p>
+ * This is a short-lived entity, in that once registration is complete this entity is discarded.
+ * </p>
  * 
  * @author matt
  * @version 1.0
  */
 @Entity
-@Table(name = "FACILITIES")
-public class FacilityEntity extends BaseUuidEntity {
+@Table(name = "FACILITY_REGS")
+public class FacilityRegistrationEntity extends BaseLongEntity {
 
-  private static final long serialVersionUID = 1583057782830681381L;
+  private static final long serialVersionUID = -2134611054441693836L;
 
   @Basic
-  @Column(name = "UICI", nullable = false, insertable = true, updatable = true, length = 20)
+  @Column(name = "UICI", nullable = false, insertable = true, updatable = false, length = 20)
   private String uici;
 
   @Basic
-  @Column(name = "CUST_ID", nullable = false, insertable = true, updatable = true, length = 20)
+  @Column(name = "CUST_ID", nullable = false, insertable = true, updatable = false, length = 20)
   private String customerId;
 
   @Basic
-  @Column(name = "FAC_URI", nullable = false, insertable = true, updatable = true, length = 255)
+  @Column(name = "FAC_URI", nullable = false, insertable = true, updatable = false, length = 255)
   private String facilityEndpoint;
+
+  @Basic
+  @Column(name = "FAC_NONCE", nullable = false, insertable = true, updatable = false, length = 24)
+  private byte[] facilityNonce;
+
+  @Basic
+  @Column(name = "OP_NONCE", nullable = false, insertable = true, updatable = false, length = 24)
+  private byte[] operatorNonce;
 
   /**
    * Default constructor.
    */
-  public FacilityEntity() {
+  public FacilityRegistrationEntity() {
     super();
   }
 
@@ -64,7 +75,7 @@ public class FacilityEntity extends BaseUuidEntity {
    * @param created
    *        the creation date
    */
-  public FacilityEntity(Instant created) {
+  public FacilityRegistrationEntity(Instant created) {
     super(created);
   }
 
@@ -76,7 +87,7 @@ public class FacilityEntity extends BaseUuidEntity {
    * @param id
    *        the ID
    */
-  public FacilityEntity(Instant created, UUID id) {
+  public FacilityRegistrationEntity(Instant created, Long id) {
     super(created, id);
   }
 
@@ -135,6 +146,44 @@ public class FacilityEntity extends BaseUuidEntity {
    */
   public void setFacilityEndpoint(String facilityEndpoint) {
     this.facilityEndpoint = facilityEndpoint;
+  }
+
+  /**
+   * Set the facility nonce value.
+   * 
+   * @return the nonce
+   */
+  public byte[] getFacilityNonce() {
+    return facilityNonce;
+  }
+
+  /**
+   * Get the facility nonce value.
+   * 
+   * @param facilityNonce
+   *        the nonce
+   */
+  public void setFacilityNonce(byte[] facilityNonce) {
+    this.facilityNonce = facilityNonce;
+  }
+
+  /**
+   * Set the operator nonce value.
+   * 
+   * @return the nonce
+   */
+  public byte[] getOperatorNonce() {
+    return operatorNonce;
+  }
+
+  /**
+   * Get the operator nonce value.
+   * 
+   * @param operatorNonce
+   *        the nonce
+   */
+  public void setOperatorNonce(byte[] operatorNonce) {
+    this.operatorNonce = operatorNonce;
   }
 
 }

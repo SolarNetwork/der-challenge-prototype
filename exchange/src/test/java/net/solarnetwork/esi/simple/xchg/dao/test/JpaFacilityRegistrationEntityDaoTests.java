@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
 import java.time.Instant;
+import java.util.Arrays;
 
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
@@ -42,12 +43,12 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
-import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
-import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.test.SpringTestSupport;
 
 /**
- * Test cases for the {@link FacilityEntityDao} JPA implementation.
+ * Test cases for the {@link FacilityRegistrationEntityDao} JPA implementation.
  * 
  * @author matt
  * @version 1.0
@@ -56,19 +57,21 @@ import net.solarnetwork.esi.simple.xchg.test.SpringTestSupport;
 @FlywayTest(invokeCleanDB = false)
 @TestExecutionListeners({ DependencyInjectionTestExecutionListener.class,
     TransactionalTestExecutionListener.class, FlywayTestExecutionListener.class })
-public class JpaFacilityDaoTests extends SpringTestSupport {
+public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
 
   private static final String TEST_CUSTOMER_ID = "A123456789";
   private static final String TEST_UICI = "123-1234-12345";
   private static final String TEST_ENDPOINT_URI = "dns:///localhost:9090";
+  private static final byte[] TEST_FAC_NONCE = new byte[] { 1, 2, 3, 4 };
+  private static final byte[] TEST_OP_NONCE = new byte[] { 5, 6, 7, 8 };
 
   @Autowired
   private EntityManager em;
 
   private JdbcTemplate jdbcTemplate;
-  private FacilityEntityDao dao;
+  private FacilityRegistrationEntityDao dao;
 
-  private FacilityEntity last;
+  private FacilityRegistrationEntity last;
 
   @Autowired
   public void setDataSource(DataSource ds) {
@@ -78,20 +81,22 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
   @Before
   public void setup() {
     RepositoryFactorySupport factory = new JpaRepositoryFactory(em);
-    dao = factory.getRepository(FacilityEntityDao.class);
+    dao = factory.getRepository(FacilityRegistrationEntityDao.class);
   }
 
-  private void assertFacilityRowCountEqualTo(final int expected) {
-    assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "FACILITIES"), equalTo(expected));
+  private void assertFacilityRegistrationRowCountEqualTo(final int expected) {
+    assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "FACILITY_REGS"), equalTo(expected));
   }
 
   @Test
   public void insert() {
-    FacilityEntity obj = new FacilityEntity(Instant.now());
+    FacilityRegistrationEntity obj = new FacilityRegistrationEntity(Instant.now());
     obj.setCustomerId(TEST_CUSTOMER_ID);
     obj.setUici(TEST_UICI);
     obj.setFacilityEndpoint(TEST_ENDPOINT_URI);
-    FacilityEntity entity = dao.save(obj);
+    obj.setFacilityNonce(TEST_FAC_NONCE);
+    obj.setOperatorNonce(TEST_OP_NONCE);
+    FacilityRegistrationEntity entity = dao.save(obj);
     this.last = entity;
     em.flush();
     assertThat("ID", entity.getId(), notNullValue());
@@ -100,14 +105,20 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     assertThat("Customer ID", entity.getCustomerId(), equalTo(TEST_CUSTOMER_ID));
     assertThat("UICI", entity.getUici(), equalTo(TEST_UICI));
     assertThat("Facility endpoint", entity.getFacilityEndpoint(), equalTo(TEST_ENDPOINT_URI));
-    assertFacilityRowCountEqualTo(1);
+    assertThat("Facility nonce", entity.getFacilityNonce(), notNullValue());
+    assertThat("Facility nonce value matches",
+        Arrays.equals(entity.getFacilityNonce(), TEST_FAC_NONCE), equalTo(true));
+    assertThat("Operator nonce", entity.getOperatorNonce(), notNullValue());
+    assertThat("Operator nonce value matches",
+        Arrays.equals(entity.getOperatorNonce(), TEST_OP_NONCE), equalTo(true));
+    assertFacilityRegistrationRowCountEqualTo(1);
     em.clear();
   }
 
   @Test
   public void getById() {
     insert();
-    FacilityEntity entity = dao.findById(last.getId()).get();
+    FacilityRegistrationEntity entity = dao.findById(last.getId()).get();
     assertThat("Different instance", entity, not(sameInstance(last)));
     assertThat("ID", entity.getId(), equalTo(last.getId()));
     assertThat("Created", entity.getCreated(), equalTo(last.getCreated()));
@@ -116,5 +127,9 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     assertThat("UICI", entity.getUici(), equalTo(last.getUici()));
     assertThat("Facility endpoint URI", entity.getFacilityEndpoint(),
         equalTo(last.getFacilityEndpoint()));
+    assertThat("Facility nonce", Arrays.equals(entity.getFacilityNonce(), last.getFacilityNonce()),
+        equalTo(true));
+    assertThat("Operator nonce", Arrays.equals(entity.getOperatorNonce(), last.getOperatorNonce()),
+        equalTo(true));
   }
 }
