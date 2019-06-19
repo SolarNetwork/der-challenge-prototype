@@ -21,6 +21,7 @@ import static net.solarnetwork.esi.simple.xchg.test.TestUtils.invocationArg;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
@@ -44,6 +45,8 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.util.JsonFormat;
 
 import io.grpc.ManagedChannel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
@@ -71,7 +74,7 @@ public class SimpleDerFacilityExchangeTests {
   private static final String TEST_LANG_ALT = "mi";
   private static final String TEST_FACILITY_ENDPOINT_URI = "dns:///localhost:9090";
   private static final String TEST_FORM_KEY = "simple-oper-reg-form";
-  private static final byte[] TEST_NONCE = generateNonce();
+  private static final byte[] TEST_NONCE = generateNonce(8);
   private static final String TEST_CUST_ID = "ABC123456789";
   private static final String TEST_CUST_SURNAME = "Doe-Smith";
   private static final String TEST_UICI = "123-1234-1234";
@@ -105,8 +108,8 @@ public class SimpleDerFacilityExchangeTests {
         .register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
   }
 
-  private static byte[] generateNonce() {
-    byte[] nonce = new byte[8];
+  private static byte[] generateNonce(int size) {
+    byte[] nonce = new byte[size];
     try {
       SecureRandom.getInstanceStrong().nextBytes(nonce);
     } catch (NoSuchAlgorithmException e) {
@@ -179,6 +182,18 @@ public class SimpleDerFacilityExchangeTests {
         equalTo(registrationForms.get(0)));
   }
 
+  private DerFacilityRegistrationFormData defaultFacilityRegFormData() {
+    return DerFacilityRegistrationFormData.newBuilder().setOperatorUid(operatorUid)
+        .setFacilityUid(UUID.randomUUID().toString())
+        .setFacilityEndpointUri(TEST_FACILITY_ENDPOINT_URI)
+        .setFacilityNonce(ByteString.copyFrom(TEST_NONCE))
+        .setData(FormData.newBuilder().setKey(TEST_FORM_KEY)
+            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_ID, TEST_CUST_ID)
+            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_SURNAME, TEST_CUST_SURNAME)
+            .putData(SimpleDerFacilityExchange.FORM_KEY_UICI, TEST_UICI).build())
+        .build();
+  }
+
   @Test
   public void submitRegistrationOk() throws NoSuchAlgorithmException {
     // given
@@ -189,20 +204,7 @@ public class SimpleDerFacilityExchangeTests {
         .willAnswer(invocationArg(0, FacilityRegistrationEntity.class));
 
     // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = DerFacilityRegistrationFormData.newBuilder()
-        .setOperatorUid(operatorUid)
-        .setFacilityUid(UUID.randomUUID().toString())
-        .setFacilityEndpointUri(TEST_FACILITY_ENDPOINT_URI)
-        .setFacilityNonce(ByteString.copyFrom(TEST_NONCE))
-        .setData(FormData.newBuilder()
-            .setKey(TEST_FORM_KEY)
-            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_ID, TEST_CUST_ID)
-            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_SURNAME, TEST_CUST_SURNAME)
-            .putData(SimpleDerFacilityExchange.FORM_KEY_UICI, TEST_UICI)
-            .build())
-        .build();
-    // @formatter:on
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
     DerFacilityRegistrationFormDataReceipt receipt = client
         .submitDerFacilityRegistrationForm(formData);
 
@@ -221,5 +223,227 @@ public class SimpleDerFacilityExchangeTests {
         equalTo(formData.getFacilityUid()));
     assertThat("Registration facility nonce", ByteString.copyFrom(reg.getFacilityNonce()),
         equalTo(formData.getFacilityNonce()));
+  }
+
+  @Test
+  public void submitRegistrationBadOperatorUid() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
+        .setOperatorUid("not.the.right.operator.uid")
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
+  }
+
+  @Test
+  public void submitRegistrationMissingFacilityUid() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
+        .clearFacilityUid()
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
+  }
+
+  @Test
+  public void submitRegistrationMissingFacilityEndpointUri() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
+        .clearFacilityEndpointUri()
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
+  }
+
+  @Test
+  public void submitRegistrationMalformedFacilityEndpointUri() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
+        .setFacilityEndpointUri("not a URI")
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
+  }
+
+  @Test
+  public void submitRegistrationSmallFacilityNonce() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
+        .setFacilityNonce(ByteString.copyFrom(generateNonce(7)))
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
+  }
+
+  @Test
+  public void submitRegistrationLargeFacilityNonce() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
+        .setFacilityNonce(ByteString.copyFrom(generateNonce(25)))
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
+  }
+
+  @Test
+  public void submitRegistrationBadFormKey() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
+    formData = formData.toBuilder()
+        .setData(formData.getData().toBuilder()
+            .setKey("not.the.form.key")
+            .build())
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
+  }
+
+  @Test
+  public void submitRegistrationMalformedUici() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
+    formData = formData.toBuilder()
+        .setData(formData.getData().toBuilder()
+            .putData(SimpleDerFacilityExchange.FORM_KEY_UICI, "not a uici")
+            .build())
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
+  }
+
+  @Test
+  public void submitRegistrationCustomerId() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
+    formData = formData.toBuilder()
+        .setData(formData.getData().toBuilder()
+            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_ID, "not a customer id")
+            .build())
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
+  }
+
+  @Test
+  public void submitRegistrationMissingCustomerSurname() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
+    formData = formData.toBuilder()
+        .setData(formData.getData().toBuilder()
+            .removeData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_SURNAME)
+            .build())
+        .build();
+    // @formatter:on
+
+    try {
+      client.submitDerFacilityRegistrationForm(formData);
+      fail("Validation exception expected");
+    } catch (StatusRuntimeException e) {
+      assertThat("Invalid argument", e.getStatus().getCode(),
+          equalTo(Status.INVALID_ARGUMENT.getCode()));
+    }
   }
 }
