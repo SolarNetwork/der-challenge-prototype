@@ -48,6 +48,10 @@ public class FacilityEntity extends BaseUuidEntity {
   private String customerId;
 
   @Basic
+  @Column(name = "FAC_UID", nullable = false, insertable = true, updatable = false, length = 255)
+  private String facilityUid;
+
+  @Basic
   @Column(name = "FAC_URI", nullable = false, insertable = true, updatable = true, length = 255)
   private String facilityEndpoint;
 
@@ -116,6 +120,25 @@ public class FacilityEntity extends BaseUuidEntity {
    */
   public void setCustomerId(String customerId) {
     this.customerId = customerId;
+  }
+
+  /**
+   * Get the facility UID.
+   * 
+   * @return the facility UID
+   */
+  public String getFacilityUid() {
+    return facilityUid;
+  }
+
+  /**
+   * Set the facility UID.
+   * 
+   * @param facilityUid
+   *        the facility UID to use
+   */
+  public void setFacilityUid(String facilityUid) {
+    this.facilityUid = facilityUid;
   }
 
   /**

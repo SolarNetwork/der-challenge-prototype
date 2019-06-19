@@ -25,6 +25,7 @@ import static org.hamcrest.Matchers.sameInstance;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
@@ -61,6 +62,7 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
 
   private static final String TEST_CUSTOMER_ID = "A123456789";
   private static final String TEST_UICI = "123-1234-12345";
+  private static final String TEST_UID = UUID.randomUUID().toString();
   private static final String TEST_ENDPOINT_URI = "dns:///localhost:9090";
   private static final byte[] TEST_FAC_NONCE = new byte[] { 1, 2, 3, 4 };
   private static final byte[] TEST_OP_NONCE = new byte[] { 5, 6, 7, 8 };
@@ -93,7 +95,8 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
     FacilityRegistrationEntity obj = new FacilityRegistrationEntity(Instant.now());
     obj.setCustomerId(TEST_CUSTOMER_ID);
     obj.setUici(TEST_UICI);
-    obj.setFacilityEndpoint(TEST_ENDPOINT_URI);
+    obj.setFacilityUid(TEST_UID);
+    obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
     obj.setFacilityNonce(TEST_FAC_NONCE);
     obj.setOperatorNonce(TEST_OP_NONCE);
     FacilityRegistrationEntity entity = dao.save(obj);
@@ -104,7 +107,8 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
     assertThat("Modified set", entity.getModified(), notNullValue());
     assertThat("Customer ID", entity.getCustomerId(), equalTo(TEST_CUSTOMER_ID));
     assertThat("UICI", entity.getUici(), equalTo(TEST_UICI));
-    assertThat("Facility endpoint", entity.getFacilityEndpoint(), equalTo(TEST_ENDPOINT_URI));
+    assertThat("Facility UID", entity.getFacilityUid(), equalTo(TEST_UID));
+    assertThat("Facility endpoint", entity.getFacilityEndpointUri(), equalTo(TEST_ENDPOINT_URI));
     assertThat("Facility nonce", entity.getFacilityNonce(), notNullValue());
     assertThat("Facility nonce value matches",
         Arrays.equals(entity.getFacilityNonce(), TEST_FAC_NONCE), equalTo(true));
@@ -125,8 +129,9 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
     assertThat("Modified", entity.getModified(), equalTo(last.getModified()));
     assertThat("Customer ID", entity.getCustomerId(), equalTo(last.getCustomerId()));
     assertThat("UICI", entity.getUici(), equalTo(last.getUici()));
-    assertThat("Facility endpoint URI", entity.getFacilityEndpoint(),
-        equalTo(last.getFacilityEndpoint()));
+    assertThat("Facility UID", entity.getFacilityUid(), equalTo(last.getFacilityUid()));
+    assertThat("Facility endpoint URI", entity.getFacilityEndpointUri(),
+        equalTo(last.getFacilityEndpointUri()));
     assertThat("Facility nonce", Arrays.equals(entity.getFacilityNonce(), last.getFacilityNonce()),
         equalTo(true));
     assertThat("Operator nonce", Arrays.equals(entity.getOperatorNonce(), last.getOperatorNonce()),

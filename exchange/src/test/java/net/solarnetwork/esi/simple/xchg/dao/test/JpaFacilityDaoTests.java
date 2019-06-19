@@ -24,6 +24,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
@@ -60,6 +61,7 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
 
   private static final String TEST_CUSTOMER_ID = "A123456789";
   private static final String TEST_UICI = "123-1234-12345";
+  private static final String TEST_UID = UUID.randomUUID().toString();
   private static final String TEST_ENDPOINT_URI = "dns:///localhost:9090";
 
   @Autowired
@@ -90,6 +92,7 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     FacilityEntity obj = new FacilityEntity(Instant.now());
     obj.setCustomerId(TEST_CUSTOMER_ID);
     obj.setUici(TEST_UICI);
+    obj.setFacilityUid(TEST_UID);
     obj.setFacilityEndpoint(TEST_ENDPOINT_URI);
     FacilityEntity entity = dao.save(obj);
     this.last = entity;
@@ -99,6 +102,7 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     assertThat("Modified set", entity.getModified(), notNullValue());
     assertThat("Customer ID", entity.getCustomerId(), equalTo(TEST_CUSTOMER_ID));
     assertThat("UICI", entity.getUici(), equalTo(TEST_UICI));
+    assertThat("Facility UID", entity.getFacilityUid(), equalTo(TEST_UID));
     assertThat("Facility endpoint", entity.getFacilityEndpoint(), equalTo(TEST_ENDPOINT_URI));
     assertFacilityRowCountEqualTo(1);
     em.clear();
@@ -114,6 +118,7 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     assertThat("Modified", entity.getModified(), equalTo(last.getModified()));
     assertThat("Customer ID", entity.getCustomerId(), equalTo(last.getCustomerId()));
     assertThat("UICI", entity.getUici(), equalTo(last.getUici()));
+    assertThat("Facility UID", entity.getFacilityUid(), equalTo(last.getFacilityUid()));
     assertThat("Facility endpoint URI", entity.getFacilityEndpoint(),
         equalTo(last.getFacilityEndpoint()));
   }

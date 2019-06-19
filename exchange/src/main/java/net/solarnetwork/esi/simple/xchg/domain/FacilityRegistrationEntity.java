@@ -51,8 +51,12 @@ public class FacilityRegistrationEntity extends BaseLongEntity {
   private String customerId;
 
   @Basic
+  @Column(name = "FAC_UID", nullable = false, insertable = true, updatable = false, length = 255)
+  private String facilityUid;
+
+  @Basic
   @Column(name = "FAC_URI", nullable = false, insertable = true, updatable = false, length = 255)
-  private String facilityEndpoint;
+  private String facilityEndpointUri;
 
   @Basic
   @Column(name = "FAC_NONCE", nullable = false, insertable = true, updatable = false, length = 24)
@@ -130,22 +134,41 @@ public class FacilityRegistrationEntity extends BaseLongEntity {
   }
 
   /**
+   * Get the facility UID.
+   * 
+   * @return the facility UID
+   */
+  public String getFacilityUid() {
+    return facilityUid;
+  }
+
+  /**
+   * Set the facility UID.
+   * 
+   * @param facilityUid
+   *        the facility UID to use
+   */
+  public void setFacilityUid(String facilityUid) {
+    this.facilityUid = facilityUid;
+  }
+
+  /**
    * Set the facility gRPC endpoint URI.
    * 
    * @return the facility endpoint URI
    */
-  public String getFacilityEndpoint() {
-    return facilityEndpoint;
+  public String getFacilityEndpointUri() {
+    return facilityEndpointUri;
   }
 
   /**
    * Get the facility gRPC endpoint URI.
    * 
-   * @param facilityEndpoint
+   * @param facilityEndpointUri
    *        the endpoint URL to use
    */
-  public void setFacilityEndpoint(String facilityEndpoint) {
-    this.facilityEndpoint = facilityEndpoint;
+  public void setFacilityEndpointUri(String facilityEndpointUri) {
+    this.facilityEndpointUri = facilityEndpointUri;
   }
 
   /**

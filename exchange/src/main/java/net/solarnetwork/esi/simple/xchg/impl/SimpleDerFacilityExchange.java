@@ -201,7 +201,8 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       FacilityRegistrationEntity entity = new FacilityRegistrationEntity(Instant.now());
       entity.setCustomerId(custId);
       entity.setUici(uici);
-      entity.setFacilityEndpoint(facilityEndpointUri);
+      entity.setFacilityUid(facilityUid);
+      entity.setFacilityEndpointUri(facilityEndpointUri);
       entity.setFacilityNonce(facilityNonce.toByteArray());
       entity.setOperatorNonce(opNonce);
       entity = facilityRegistrationDao.save(entity);

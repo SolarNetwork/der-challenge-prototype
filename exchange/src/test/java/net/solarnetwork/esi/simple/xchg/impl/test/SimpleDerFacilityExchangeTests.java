@@ -17,22 +17,30 @@
 
 package net.solarnetwork.esi.simple.xchg.impl.test;
 
+import static net.solarnetwork.esi.simple.xchg.test.TestUtils.invocationArg;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
+import com.google.protobuf.ByteString;
 import com.google.protobuf.util.JsonFormat;
 
 import io.grpc.ManagedChannel;
@@ -40,10 +48,15 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
+import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
+import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
 import net.solarnetwork.esi.domain.Form;
+import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeBlockingStub;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
 
 /**
@@ -56,6 +69,12 @@ public class SimpleDerFacilityExchangeTests {
 
   private static final String TEST_LANG = "en-NZ";
   private static final String TEST_LANG_ALT = "mi";
+  private static final String TEST_FACILITY_ENDPOINT_URI = "dns:///localhost:9090";
+  private static final String TEST_FORM_KEY = "simple-oper-reg-form";
+  private static final byte[] TEST_NONCE = generateNonce();
+  private static final String TEST_CUST_ID = "ABC123456789";
+  private static final String TEST_CUST_SURNAME = "Doe-Smith";
+  private static final String TEST_UICI = "123-1234-1234";
 
   @Rule
   public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
@@ -64,6 +83,7 @@ public class SimpleDerFacilityExchangeTests {
   private String operatorUid;
   private SimpleDerFacilityExchange service;
   private ManagedChannel channel;
+  private FacilityRegistrationEntityDao facilityRegistrationDao;
 
   @Before
   public void setUp() throws Exception {
@@ -74,12 +94,25 @@ public class SimpleDerFacilityExchangeTests {
     operatorUid = UUID.randomUUID().toString();
     service = new SimpleDerFacilityExchange(operatorUid, registrationForms);
 
+    facilityRegistrationDao = mock(FacilityRegistrationEntityDao.class);
+    service.setFacilityRegistrationDao(facilityRegistrationDao);
+
     String serverName = InProcessServerBuilder.generateName();
     grpcCleanup.register(InProcessServerBuilder.forName(serverName).directExecutor()
         .addService(service).build().start());
 
     channel = grpcCleanup
         .register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
+  }
+
+  private static byte[] generateNonce() {
+    byte[] nonce = new byte[8];
+    try {
+      SecureRandom.getInstanceStrong().nextBytes(nonce);
+    } catch (NoSuchAlgorithmException e) {
+      Arrays.fill(nonce, (byte) 8);
+    }
+    return nonce;
   }
 
   private Form loadForm(String resource) throws IOException {
@@ -94,8 +127,7 @@ public class SimpleDerFacilityExchangeTests {
   @Test
   public void registrationFormForLang() {
     // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc
-        .newBlockingStub(channel);
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
 
     //when
     DerFacilityRegistrationFormRequest req = DerFacilityRegistrationFormRequest.newBuilder()
@@ -113,8 +145,7 @@ public class SimpleDerFacilityExchangeTests {
   @Test
   public void registrationFormForLangAlt() {
     // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc
-        .newBlockingStub(channel);
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
 
     //when
     DerFacilityRegistrationFormRequest req = DerFacilityRegistrationFormRequest.newBuilder()
@@ -132,8 +163,7 @@ public class SimpleDerFacilityExchangeTests {
   @Test
   public void registrationFormForLangUnsupported() {
     // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc
-        .newBlockingStub(channel);
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
 
     //when
     DerFacilityRegistrationFormRequest req = DerFacilityRegistrationFormRequest.newBuilder()
@@ -147,5 +177,49 @@ public class SimpleDerFacilityExchangeTests {
     Form form = res.getForm();
     assertThat("First form returned for unsupported language", form,
         equalTo(registrationForms.get(0)));
+  }
+
+  @Test
+  public void submitRegistrationOk() throws NoSuchAlgorithmException {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+    ArgumentCaptor<FacilityRegistrationEntity> facilityRegCaptor = ArgumentCaptor
+        .forClass(FacilityRegistrationEntity.class);
+    given(facilityRegistrationDao.save(facilityRegCaptor.capture()))
+        .willAnswer(invocationArg(0, FacilityRegistrationEntity.class));
+
+    // when
+    // @formatter:off
+    DerFacilityRegistrationFormData formData = DerFacilityRegistrationFormData.newBuilder()
+        .setOperatorUid(operatorUid)
+        .setFacilityUid(UUID.randomUUID().toString())
+        .setFacilityEndpointUri(TEST_FACILITY_ENDPOINT_URI)
+        .setFacilityNonce(ByteString.copyFrom(TEST_NONCE))
+        .setData(FormData.newBuilder()
+            .setKey(TEST_FORM_KEY)
+            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_ID, TEST_CUST_ID)
+            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_SURNAME, TEST_CUST_SURNAME)
+            .putData(SimpleDerFacilityExchange.FORM_KEY_UICI, TEST_UICI)
+            .build())
+        .build();
+    // @formatter:on
+    DerFacilityRegistrationFormDataReceipt receipt = client
+        .submitDerFacilityRegistrationForm(formData);
+
+    // then
+    assertThat("Receipt available", receipt, notNullValue());
+    assertThat("Operator UID", receipt.getOperatorUid(), equalTo(operatorUid));
+    assertThat("Operator nonce", receipt.getOperatorNonce(), notNullValue());
+    assertThat("Operator nonce size", receipt.getOperatorNonce().size(), equalTo(24));
+
+    FacilityRegistrationEntity reg = facilityRegCaptor.getValue();
+    assertThat("Registration saved", reg, notNullValue());
+    assertThat("Registration customer ID", reg.getCustomerId(), equalTo(TEST_CUST_ID));
+    assertThat("Registration facility URI", reg.getFacilityEndpointUri(),
+        equalTo(TEST_FACILITY_ENDPOINT_URI));
+    assertThat("Registration facility ID", reg.getFacilityUid(),
+        equalTo(formData.getFacilityUid()));
+    assertThat("Registration facility nonce", ByteString.copyFrom(reg.getFacilityNonce()),
+        equalTo(formData.getFacilityNonce()));
   }
 }
