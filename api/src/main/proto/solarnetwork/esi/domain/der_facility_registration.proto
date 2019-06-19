@@ -36,8 +36,8 @@ message DerFacilityRegistration {
   // Success flag.
   bool success = 2;
   
-  // A token formed as SHA256(operatorNonce + facilityNonce + operatorUid 
-  //                          + facilityUid + facilityUri)
+  // A token formed as SHA256(operatorNonce + facilityNonce + UTF8(operatorUid) 
+  //                          + UTF8(facilityUid) + UTF8(facilityUri))
   //
   // The `operatorNonce` was previously provided via the
   // `DerFacilityRegistrationFormDataReceipt` returned from a call to
