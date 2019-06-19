@@ -24,26 +24,32 @@ option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
 import "google/protobuf/timestamp.proto";
+import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/location.proto";
 import "solarnetwork/esi/domain/price_components.proto";
 import "solarnetwork/esi/domain/time_unit.proto";
 
-// Price components associated with a date or time span.
+/**
+ * Price components associated with a date or time span.
+ */
 message PriceDatum {
 
+  // The route info.
+  DerRoute route = 1;
+
   // The start date of this power profile (inclusive).
-  google.protobuf.Timestamp ts = 1;
+  google.protobuf.Timestamp ts = 2;
   
   // The length of `time_unit` units of time this datum covers, starting from `ts`.
-  uint32 time_length = 2;
+  uint32 time_length = 3;
 
   // The time unit used by `time_length`.
-  TimeUnit time_unit = 3;
+  TimeUnit time_unit = 4;
   
   // The power components of this datum.
-  PriceComponents price_components = 4;
+  PriceComponents price_components = 5;
   
   // The location associated with this price.
-  Location location = 5;
+  Location location = 6;
 
 }

@@ -24,19 +24,20 @@ option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
 import "solarnetwork/esi/domain/form_data.proto";
+import "solarnetwork/esi/domain/der_route.proto";
 
-// A filled-in DerFacilityRegistrationForm.
+/**
+ * A filled-in DER facility registration form.
+ */
 message DerFacilityRegistrationFormData {
 
-  // The UID of the DerOperator to register with.
+  // The UID of the DerFacilityExchange to register with and a facility-
+  // provided unique ID that the operator can refer to the facility by.
   // 
-  // This value will have been previously provided via a
+  // The operator ID value will have been previously provided via a
   // `DerFacilityRegistrationForm` message.
-  string operatorUid = 1;
-  
-  // A facility-provided unique ID that the operator can refer to the facility by.
   // 
-  // This ID must be unique at least within the domain represented by
+  // The facility ID must be unique at least within the domain represented by
   // `facilityEndpointUri`. That is, the ID must be unique within the facility.
   // This ID is defined externally to this API. If a facility is directly
   // connected to an operator, the facility might generate its own unique ID,
@@ -47,14 +48,14 @@ message DerFacilityRegistrationFormData {
   // EV charger first boots it might come pre-configured to register itself with
   // a proxy service, or prompt for registration with a proxy service; either
   // way it obtains its facility ID which is then passed to the operator here.
-  string facilityUid = 2;
+  DerRoute route = 1;
   
-  // The gRPC compliant URI the operator can access the facility on.
+  // The gRPC compliant URI the exchange can access the facility on.
   // 
   // This endpoint might be a direct connection to the facility submitting the
   // registration form, or it might be a proxy facility that manages the ESI
   // service on behalf of the facility submitting the registration form.
-  string facilityEndpointUri = 3;
+  string facilityEndpointUri = 2;
   
   // A cryptographic set of random bytes to use with registration.
   // 
@@ -62,9 +63,9 @@ message DerFacilityRegistrationFormData {
   // `CompleteDerFacilityRegistration` method is called on the proxy, the
   // facility submitting the registration form can verify the operator is the
   // same during both interactions.
-  bytes facilityNonce = 4;
+  bytes facilityNonce = 3;
 
   // The completed registration form.
-  FormData data = 5;
+  FormData data = 4;
   
 }

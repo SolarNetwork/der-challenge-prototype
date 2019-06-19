@@ -25,7 +25,9 @@ option objc_class_prefix = "ESI";
 
 import "solarnetwork/esi/domain/location.proto";
 
-// Information about a DerFacilityExchange.
+/**
+ * Information about a DerFacilityExchange.
+ */
 message DerFacilityExchangeInfo {
 
   // A human-friendly name.

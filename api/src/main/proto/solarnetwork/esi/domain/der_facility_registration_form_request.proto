@@ -23,10 +23,12 @@ option java_outer_classname = "DerFacilityRegistrationFormRequestProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
-// A request for DerFacilityRegistrationForm.
+/**
+ * A request for DER facility registration form.
+ */
 message DerFacilityRegistrationFormRequest {
 
-  // The UID of the DerOperator to get the registration form for.
+  // The UID of the DerFacilityExchage to get the registration form for.
   string operatorUid = 1;
   
   // The desired language of the registration form.

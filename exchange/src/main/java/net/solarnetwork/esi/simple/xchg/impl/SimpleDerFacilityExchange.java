@@ -33,6 +33,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Empty;
 
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
@@ -42,9 +43,13 @@ import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
+import net.solarnetwork.esi.domain.DerProgram;
+import net.solarnetwork.esi.domain.DerResourceCharacteristics;
+import net.solarnetwork.esi.domain.DerRouteOrBuilder;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.PriceDatum;
+import net.solarnetwork.esi.domain.PriceMap;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusResponse;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
@@ -132,11 +137,16 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       StreamObserver<DerFacilityRegistrationFormDataReceipt> responseObserver) {
 
     try {
-      if (!operatorUid.equals(request.getOperatorUid())) {
+      DerRouteOrBuilder route = request.getRouteOrBuilder();
+      if (route == null) {
+        throw new IllegalArgumentException("Route missing");
+      }
+
+      if (!operatorUid.equals(route.getOperatorUid())) {
         throw new IllegalArgumentException("Operator UID not valid");
       }
 
-      String facilityUid = request.getFacilityUid();
+      String facilityUid = route.getFacilityUid();
       if (facilityUid == null || facilityUid.trim().isEmpty()) {
         throw new IllegalArgumentException("Facility UID missing");
       }
@@ -208,7 +218,7 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       entity = facilityRegistrationDao.save(entity);
 
       responseObserver.onNext(DerFacilityRegistrationFormDataReceipt.newBuilder()
-          .setOperatorUid(operatorUid).setOperatorNonce(ByteString.copyFrom(opNonce)).build());
+          .setOperatorNonce(ByteString.copyFrom(opNonce)).build());
       responseObserver.onCompleted();
 
     } catch (IllegalArgumentException e) {
@@ -231,6 +241,26 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   public void listPrices(DatumRequest request, StreamObserver<PriceDatum> responseObserver) {
     // TODO Auto-generated method stub
     super.listPrices(request, responseObserver);
+  }
+
+  @Override
+  public StreamObserver<DerResourceCharacteristics> provideDerResourceCharacteristics(
+      StreamObserver<Empty> responseObserver) {
+    // TODO Auto-generated method stub
+    return super.provideDerResourceCharacteristics(responseObserver);
+  }
+
+  @Override
+  public StreamObserver<PriceMap> providePriceMaps(StreamObserver<Empty> responseObserver) {
+    // TODO Auto-generated method stub
+    return super.providePriceMaps(responseObserver);
+  }
+
+  @Override
+  public StreamObserver<DerProgram> provideSupportedDerPrograms(
+      StreamObserver<Empty> responseObserver) {
+    // TODO Auto-generated method stub
+    return super.provideSupportedDerPrograms(responseObserver);
   }
 
   /**

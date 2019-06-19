@@ -26,7 +26,6 @@ option objc_class_prefix = "ESI";
 import "google/protobuf/empty.proto";
 import "solarnetwork/esi/domain/datum_request.proto";
 import "solarnetwork/esi/domain/der_facility_registration.proto";
-import "solarnetwork/esi/domain/der_program.proto";
 import "solarnetwork/esi/domain/der_resource_characteristics.proto";
 import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/power_parameters.proto";
@@ -41,14 +40,16 @@ import "solarnetwork/esi/domain/price_map_offer_status.proto";
 import "solarnetwork/esi/domain/price_map_offer_status_request.proto";
 import "solarnetwork/esi/domain/price_parameters.proto";
 
-// The energy services interface (ESI) facility service API, where a facility is
-// something that manages distributed energy resources (DER).
-// 
-// In the Interoperability Strategic Vision document created by the Grid
-// Modernization Laboratory Consortium, this API is often refered to as an
-// "Distributed Energy Resource Facility" or DERF for short. See
-// https://gridmod.labworks.org/resources/interoperability-strategic-vision
-// for more information.
+/**
+ * The energy services interface (ESI) facility service API, where a facility is
+ * something that manages distributed energy resources (DER).
+ * 
+ * In the Interoperability Strategic Vision document created by the Grid
+ * Modernization Laboratory Consortium, this API is often refered to as an
+ * "Distributed Energy Resource Facility" or DERF for short. See
+ * https://gridmod.labworks.org/resources/interoperability-strategic-vision
+ * for more information.
+ */
 service DerFacilityService {
 
   // ===========================================================================
@@ -69,17 +70,9 @@ service DerFacilityService {
   returns (google.protobuf.Empty);
 
   // ===========================================================================
-  // 
+  // PriceMap proposals/execution
   // ===========================================================================
 
-  // Query to get the DER characteristics of this service.
-  rpc GetDerResourceCharacteristics(solarnetwork.esi.domain.DerRoute) 
-  returns (solarnetwork.esi.domain.DerResourceCharacteristics);
-
-  // Query for list of available price maps.
-  rpc ListPriceMaps(solarnetwork.esi.domain.DerRoute)
-  returns (stream solarnetwork.esi.domain.PriceMap);
-  
   // Propose a price map offer for the service to accept, reject, or propose a
   // counter offer.
   rpc ProposePriceMapOffer(solarnetwork.esi.domain.PriceMapOffer)
@@ -93,13 +86,25 @@ service DerFacilityService {
   rpc ProvidePriceMapOfferFeedback(
   	solarnetwork.esi.domain.PriceMapOfferFeedback)
   returns (solarnetwork.esi.domain.PriceMapOfferFeedbackResponse);
-  
+
+  // Provide pricing data to the facility.
+  rpc ProvidePrices(stream solarnetwork.esi.domain.PriceDatum)
+  returns (google.protobuf.Empty);
+
+  // ===========================================================================
+  // Data access
+  // ===========================================================================
+
   // Query for list of power profile datum over a time range.
   rpc ListPowerProfile(solarnetwork.esi.domain.DatumRequest)
   returns (stream solarnetwork.esi.domain.PowerProfileDatum);
+  
+  // ===========================================================================
+  // Configurable parameters
+  // ===========================================================================
 
   // Get the power parameters currently used by the service.
-  rpc GetPowerParameters(google.protobuf.Empty)
+  rpc GetPowerParameters(solarnetwork.esi.domain.DerRoute)
   returns (solarnetwork.esi.domain.PowerParameters);
   
   // Set the power parameters, and return the power parameters active after the
@@ -111,13 +116,5 @@ service DerFacilityService {
   // Get the price metrics currently used by the service.
   rpc GetPriceParameters(solarnetwork.esi.domain.DerRoute)
   returns (solarnetwork.esi.domain.PriceParameters);
-  
-  // List the supported program types.
-  rpc ListSupportedDerPrograms(solarnetwork.esi.domain.DerRoute)
-  returns (stream solarnetwork.esi.domain.DerProgram);
-
-  // Provide pricing data to the facility.
-  rpc ProvidePrices(stream solarnetwork.esi.domain.PriceDatum)
-  returns (google.protobuf.Empty);
 
 }

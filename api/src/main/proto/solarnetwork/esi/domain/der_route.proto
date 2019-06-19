@@ -23,13 +23,15 @@ option java_outer_classname = "DerRouteProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
-// Routing information for a DER message.
+/**
+ * Routing information for a DER message.
+ */
 message DerRoute {
 
-  // The identifier of the operator the request is from.
+  // The identifier of the operator the request is associated with.
   string operatorUid = 1;
 
-  // The facility identifier the request is for.
+  // The facility identifier the request is associated with.
   string facilityUid = 2;
   
 }

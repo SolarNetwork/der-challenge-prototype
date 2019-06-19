@@ -23,27 +23,33 @@ option java_outer_classname = "DerResourceCharacteristicsProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
+import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/duration_range.proto";
 
-// Characteristics of a participating resource on a DER site.
+/**
+ * Characteristics of the resources provided by a DER facility.
+ */
 message DerResourceCharacteristics {
 
+  // The routing info.
+  DerRoute route = 1;
+
   // The maximum load this resource can demand, in W.
-  uint64 load_power_max = 1;
+  uint64 load_power_max = 2;
 
   // The expected power factor of load, between -1..1.
-  float load_power_factor = 2;
+  float load_power_factor = 3;
 
   // The maximum supply resource can offer, in W.
-  uint64 supply_power_max = 3;
+  uint64 supply_power_max = 4;
 
   // The expected power factor of supply, between -1..1.
-  float supply_power_factor = 4;
+  float supply_power_factor = 5;
 
   // The theoretical storage capacity of this resource, in Wh.
-  uint64 storage_energy_capacity = 5;
+  uint64 storage_energy_capacity = 6;
 
   // The expected minimum/maximum response time to start/finish executing load or supply changes.
-  DurationRange reponse_time = 6;
+  DurationRange reponse_time = 7;
 
 }

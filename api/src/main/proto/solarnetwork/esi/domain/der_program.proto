@@ -24,11 +24,17 @@ option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
 import "solarnetwork/esi/domain/der_program_type.proto";
+import "solarnetwork/esi/domain/der_route.proto";
 
-// A DER program type.
+/**
+ * A DER program type.
+ */
 message DerProgram {
 
+  // The route info.
+  DerRoute route = 1;
+
   // The DER program type.
-  DerProgramType type = 1;
+  DerProgramType type = 2;
 
 }

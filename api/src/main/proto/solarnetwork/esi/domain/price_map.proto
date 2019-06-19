@@ -24,25 +24,30 @@ option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
 import "google/protobuf/duration.proto";
+import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/duration_range.proto";
 import "solarnetwork/esi/domain/power_components.proto";
 import "solarnetwork/esi/domain/price_components.proto";
 
-
-// Defines a single physical capability (or a agregated set of similar capabilities) that can be
-// offered in the energy market.
+/**
+ * Defines a single physical capability (or a agregated set of similar
+ * capabilities) that can be offered in the energy market.
+ */
 message PriceMap {
 
+  // The routing info.
+  DerRoute route = 1;
+
   // The power components in the offer.
-  PowerComponents power_components = 1;
+  PowerComponents power_components = 2;
 
   // The time duration offered by this price map.
-  google.protobuf.Duration duration = 2;
+  google.protobuf.Duration duration = 3;
 
   // The expected minimum/maximum response time to start/finish executing power changes.
-  DurationRange reponse_time = 3;
+  DurationRange reponse_time = 4;
 
   // The power price on offer.
-  PriceComponents price = 4;
+  PriceComponents price = 5;
 
 }

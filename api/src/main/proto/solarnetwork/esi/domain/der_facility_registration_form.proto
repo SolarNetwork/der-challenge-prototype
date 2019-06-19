@@ -25,10 +25,12 @@ option objc_class_prefix = "ESI";
 
 import "solarnetwork/esi/domain/form.proto";
 
-// Form definition for a DerFacilityRegistration.
+/**
+ * Form definition for a DER facility registration.
+ */
 message DerFacilityRegistrationForm {
 
-  // The UID of the DerOperator to get the registration form for.
+  // The UID of the DerFacilityExchange to get the registration form for.
   string operatorUid = 1;
   
   // The registration form.

@@ -54,6 +54,7 @@ import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
+import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
@@ -183,15 +184,22 @@ public class SimpleDerFacilityExchangeTests {
   }
 
   private DerFacilityRegistrationFormData defaultFacilityRegFormData() {
-    return DerFacilityRegistrationFormData.newBuilder().setOperatorUid(operatorUid)
-        .setFacilityUid(UUID.randomUUID().toString())
+    // @formatter:off
+    return DerFacilityRegistrationFormData.newBuilder()
+        .setRoute(DerRoute.newBuilder()
+          .setOperatorUid(operatorUid)
+          .setFacilityUid(UUID.randomUUID().toString())
+          .build())
         .setFacilityEndpointUri(TEST_FACILITY_ENDPOINT_URI)
         .setFacilityNonce(ByteString.copyFrom(TEST_NONCE))
-        .setData(FormData.newBuilder().setKey(TEST_FORM_KEY)
+        .setData(FormData.newBuilder()
+            .setKey(TEST_FORM_KEY)
             .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_ID, TEST_CUST_ID)
             .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_SURNAME, TEST_CUST_SURNAME)
-            .putData(SimpleDerFacilityExchange.FORM_KEY_UICI, TEST_UICI).build())
+            .putData(SimpleDerFacilityExchange.FORM_KEY_UICI, TEST_UICI)
+            .build())
         .build();
+    // @formatter:on
   }
 
   @Test
@@ -210,7 +218,6 @@ public class SimpleDerFacilityExchangeTests {
 
     // then
     assertThat("Receipt available", receipt, notNullValue());
-    assertThat("Operator UID", receipt.getOperatorUid(), equalTo(operatorUid));
     assertThat("Operator nonce", receipt.getOperatorNonce(), notNullValue());
     assertThat("Operator nonce size", receipt.getOperatorNonce().size(), equalTo(24));
 
@@ -220,7 +227,7 @@ public class SimpleDerFacilityExchangeTests {
     assertThat("Registration facility URI", reg.getFacilityEndpointUri(),
         equalTo(TEST_FACILITY_ENDPOINT_URI));
     assertThat("Registration facility ID", reg.getFacilityUid(),
-        equalTo(formData.getFacilityUid()));
+        equalTo(formData.getRoute().getFacilityUid()));
     assertThat("Registration facility nonce", ByteString.copyFrom(reg.getFacilityNonce()),
         equalTo(formData.getFacilityNonce()));
   }
@@ -232,8 +239,11 @@ public class SimpleDerFacilityExchangeTests {
 
     // when
     // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
-        .setOperatorUid("not.the.right.operator.uid")
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
+    formData = formData.toBuilder()
+        .setRoute(formData.getRoute().toBuilder()
+            .setOperatorUid("not.the.right.operator.uid")
+            .build())
         .build();
     // @formatter:on
 
@@ -253,8 +263,11 @@ public class SimpleDerFacilityExchangeTests {
 
     // when
     // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
-        .clearFacilityUid()
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
+    formData = formData.toBuilder()
+        .setRoute(formData.getRoute().toBuilder()
+            .clearFacilityUid()
+            .build())
         .build();
     // @formatter:on
 

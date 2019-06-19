@@ -23,13 +23,12 @@ option java_outer_classname = "DerFacilityRegistrationFormDataReceiptProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
-// A receipt from submitting a `DerFacilityRegistrationFormData`.
+/**
+ * A receipt from submitting a filled-in DER facility registration form.
+ */
 message DerFacilityRegistrationFormDataReceipt {
 
-  // The UID of the DerOperator to get the registration form for.
-  string operatorUid = 1;
-  
   // A cryptographic set of random bytes to use with registration confirmation.
-  bytes operatorNonce = 2;
+  bytes operatorNonce = 1;
   
 }

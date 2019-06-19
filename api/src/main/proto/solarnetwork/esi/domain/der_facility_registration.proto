@@ -25,7 +25,9 @@ option objc_class_prefix = "ESI";
 
 import "solarnetwork/esi/domain/der_route.proto";
 
-// A completed DerFacility registration result.
+/**
+ * A completed DER facility registration result.
+ */
 message DerFacilityRegistration {
 
   // The routing information.
