@@ -19,7 +19,9 @@ package net.solarnetwork.esi.simple.xchg.dao.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 
 import java.time.Instant;
 
@@ -63,8 +65,9 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
   private EntityManager em;
 
   private JdbcTemplate jdbcTemplate;
-
   private FacilityEntityDao dao;
+
+  private FacilityEntity last;
 
   @Autowired
   public void setDataSource(DataSource ds) {
@@ -87,13 +90,26 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     obj.setCustomerId(TEST_CUSTOMER_ID);
     obj.setUici(TEST_UICI);
     FacilityEntity entity = dao.save(obj);
+    this.last = entity;
     em.flush();
-    assertThat(entity.getId(), notNullValue());
-    assertThat(entity.getCreated(), notNullValue());
-    assertThat(entity.getModified(), notNullValue());
-    assertThat(entity.getCustomerId(), equalTo(TEST_CUSTOMER_ID));
-    assertThat(entity.getUici(), equalTo(TEST_UICI));
+    assertThat("ID", entity.getId(), notNullValue());
+    assertThat("Created set", entity.getCreated(), notNullValue());
+    assertThat("Modified set", entity.getModified(), notNullValue());
+    assertThat("Customer ID", entity.getCustomerId(), equalTo(TEST_CUSTOMER_ID));
+    assertThat("UICI", entity.getUici(), equalTo(TEST_UICI));
     assertGuestRowCountEqualTo(1);
+    em.clear();
   }
 
+  @Test
+  public void getById() {
+    insert();
+    FacilityEntity entity = dao.findById(last.getId()).get();
+    assertThat("Different instance", entity, not(sameInstance(last)));
+    assertThat("ID", entity.getId(), equalTo(last.getId()));
+    assertThat("Created", entity.getCreated(), equalTo(last.getCreated()));
+    assertThat("Modified", entity.getModified(), equalTo(last.getModified()));
+    assertThat("Customer ID", entity.getCustomerId(), equalTo(last.getCustomerId()));
+    assertThat("UICI", entity.getUici(), equalTo(last.getUici()));
+  }
 }
