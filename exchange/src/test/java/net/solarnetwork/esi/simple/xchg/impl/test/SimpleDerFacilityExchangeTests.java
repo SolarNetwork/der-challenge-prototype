@@ -20,6 +20,7 @@ package net.solarnetwork.esi.simple.xchg.impl.test;
 import static net.solarnetwork.esi.simple.xchg.test.TestUtils.invocationArg;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
@@ -35,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -62,6 +64,7 @@ import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeB
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
+import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
 
 /**
  * Test cases for the {@link SimpleDerFacilityExchange} class.
@@ -88,6 +91,7 @@ public class SimpleDerFacilityExchangeTests {
   private SimpleDerFacilityExchange service;
   private ManagedChannel channel;
   private FacilityRegistrationEntityDao facilityRegistrationDao;
+  private FacilityRegistrationService facilityRegistrationService;
 
   @Before
   public void setUp() throws Exception {
@@ -100,6 +104,9 @@ public class SimpleDerFacilityExchangeTests {
 
     facilityRegistrationDao = mock(FacilityRegistrationEntityDao.class);
     service.setFacilityRegistrationDao(facilityRegistrationDao);
+
+    facilityRegistrationService = mock(FacilityRegistrationService.class);
+    service.setFacilityRegistrationService(facilityRegistrationService);
 
     String serverName = InProcessServerBuilder.generateName();
     grpcCleanup.register(InProcessServerBuilder.forName(serverName).directExecutor()
@@ -211,6 +218,12 @@ public class SimpleDerFacilityExchangeTests {
     given(facilityRegistrationDao.save(facilityRegCaptor.capture()))
         .willAnswer(invocationArg(0, FacilityRegistrationEntity.class));
 
+    ArgumentCaptor<FacilityRegistrationEntity> facilityRegServiceCaptor = ArgumentCaptor
+        .forClass(FacilityRegistrationEntity.class);
+    given(
+        facilityRegistrationService.processFacilityRegistration(facilityRegServiceCaptor.capture()))
+            .willReturn(new CompletableFuture<>());
+
     // when
     DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
     DerFacilityRegistrationFormDataReceipt receipt = client
@@ -230,6 +243,9 @@ public class SimpleDerFacilityExchangeTests {
         equalTo(formData.getRoute().getFacilityUid()));
     assertThat("Registration facility nonce", ByteString.copyFrom(reg.getFacilityNonce()),
         equalTo(formData.getFacilityNonce()));
+
+    FacilityRegistrationEntity regService = facilityRegServiceCaptor.getValue();
+    assertThat("Service reg same instance", regService, sameInstance(reg));
   }
 
   @Test

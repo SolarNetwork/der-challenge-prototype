@@ -93,7 +93,7 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     obj.setCustomerId(TEST_CUSTOMER_ID);
     obj.setUici(TEST_UICI);
     obj.setFacilityUid(TEST_UID);
-    obj.setFacilityEndpoint(TEST_ENDPOINT_URI);
+    obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
     FacilityEntity entity = dao.save(obj);
     this.last = entity;
     em.flush();
@@ -103,7 +103,7 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     assertThat("Customer ID", entity.getCustomerId(), equalTo(TEST_CUSTOMER_ID));
     assertThat("UICI", entity.getUici(), equalTo(TEST_UICI));
     assertThat("Facility UID", entity.getFacilityUid(), equalTo(TEST_UID));
-    assertThat("Facility endpoint", entity.getFacilityEndpoint(), equalTo(TEST_ENDPOINT_URI));
+    assertThat("Facility endpoint", entity.getFacilityEndpointUri(), equalTo(TEST_ENDPOINT_URI));
     assertFacilityRowCountEqualTo(1);
     em.clear();
   }
@@ -119,7 +119,7 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     assertThat("Customer ID", entity.getCustomerId(), equalTo(last.getCustomerId()));
     assertThat("UICI", entity.getUici(), equalTo(last.getUici()));
     assertThat("Facility UID", entity.getFacilityUid(), equalTo(last.getFacilityUid()));
-    assertThat("Facility endpoint URI", entity.getFacilityEndpoint(),
-        equalTo(last.getFacilityEndpoint()));
+    assertThat("Facility endpoint URI", entity.getFacilityEndpointUri(),
+        equalTo(last.getFacilityEndpointUri()));
   }
 }

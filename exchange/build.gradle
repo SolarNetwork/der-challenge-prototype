@@ -43,6 +43,9 @@ dependencies {
 	implementation "org.hibernate:hibernate-entitymanager"
 	runtime 'org.apache.derby:derby:10.14.2.0'
 	
+	// Utils
+	implementation 'commons-codec:commons-codec:1.12'
+	
 	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 	
 	// Testing

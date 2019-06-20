@@ -56,6 +56,7 @@ import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeI
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
+import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
 
 /**
  * Really, really, really simple gRPC implementation of a DER operator service.
@@ -83,6 +84,9 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
   @Autowired
   private FacilityRegistrationEntityDao facilityRegistrationDao;
+
+  @Autowired
+  private FacilityRegistrationService facilityRegistrationService;
 
   /**
    * Constructor.
@@ -217,6 +221,9 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       entity.setOperatorNonce(opNonce);
       entity = facilityRegistrationDao.save(entity);
 
+      // kick off async registration confirmation process
+      facilityRegistrationService.processFacilityRegistration(entity);
+
       responseObserver.onNext(DerFacilityRegistrationFormDataReceipt.newBuilder()
           .setOperatorNonce(ByteString.copyFrom(opNonce)).build());
       responseObserver.onCompleted();
@@ -281,6 +288,17 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
    */
   public void setFacilityRegistrationDao(FacilityRegistrationEntityDao facilityRegistrationDao) {
     this.facilityRegistrationDao = facilityRegistrationDao;
+  }
+
+  /**
+   * Set the registration service.
+   * 
+   * @param facilityRegistrationService
+   *        the registration service to use
+   */
+  public void setFacilityRegistrationService(
+      FacilityRegistrationService facilityRegistrationService) {
+    this.facilityRegistrationService = facilityRegistrationService;
   }
 
 }

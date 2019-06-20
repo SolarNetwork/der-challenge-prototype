@@ -53,7 +53,7 @@ public class FacilityEntity extends BaseUuidEntity {
 
   @Basic
   @Column(name = "FAC_URI", nullable = false, insertable = true, updatable = true, length = 255)
-  private String facilityEndpoint;
+  private String facilityEndpointUri;
 
   /**
    * Default constructor.
@@ -146,18 +146,18 @@ public class FacilityEntity extends BaseUuidEntity {
    * 
    * @return the facility endpoint URI
    */
-  public String getFacilityEndpoint() {
-    return facilityEndpoint;
+  public String getFacilityEndpointUri() {
+    return facilityEndpointUri;
   }
 
   /**
    * Get the facility gRPC endpoint URI.
    * 
-   * @param facilityEndpoint
+   * @param facilityEndpointUri
    *        the endpoint URL to use
    */
-  public void setFacilityEndpoint(String facilityEndpoint) {
-    this.facilityEndpoint = facilityEndpoint;
+  public void setFacilityEndpointUri(String facilityEndpointUri) {
+    this.facilityEndpointUri = facilityEndpointUri;
   }
 
 }
