@@ -17,11 +17,16 @@
 
 package net.solarnetwork.esi.util.test;
 
+import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.SecureRandom;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 import javax.crypto.SecretKey;
@@ -32,39 +37,43 @@ import org.slf4j.LoggerFactory;
 
 import net.solarnetwork.esi.util.CryptoHelper;
 import net.solarnetwork.esi.util.CryptoUtils;
+import net.solarnetwork.esi.util.EcCryptoHelper;
 
 /**
- * Test cases for the {@link CryptoUtils} class.
+ * Test cases for the {@link EcCryptoHelper} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class CryptoUtilsTests {
+public class EcCryptoHelperTests {
 
-  private static final Logger log = LoggerFactory.getLogger(CryptoUtilsTests.class);
+  private final Logger log = LoggerFactory.getLogger(getClass());
 
-  // Code to print out the available crypto algorithms
-  // 
-  //    for (Provider provider : Security.getProviders()) {
-  //      System.out.println(provider.getName());
-  //      for (String key : provider.stringPropertyNames())
-  //        System.out.println("\t" + key + "\t" + provider.getProperty(key));
-  //    }
-  //    for (Provider provider : Security.getProviders()) {
-  //      System.out.println("Provider: " + provider.getName());
-  //      for (Provider.Service service : provider.getServices()) {
-  //        System.out.println("  Algorithm: " + service.getAlgorithm());
-  //      }
-  //    }
-  //    String[] curves = Security.getProvider("SunEC")
-  //        .getProperty("AlgorithmParameters.EC SupportedCurves").split("\\|");
-  //    for (String curve : curves) {
-  //      System.out.println(curve.substring(1, curve.indexOf(",")));
-  //    }
+  @Test
+  public void encodeDecodeKeys() throws Exception {
+    KeyPair senderKeyPair = new EcCryptoHelper().generateKeyPair();
+
+    log.debug("Public format: {}", senderKeyPair.getPublic().getFormat()); // X.509
+    log.debug("Private format: {}", senderKeyPair.getPrivate().getFormat()); // PKCS#8
+
+    byte[] pubKeyBytes = senderKeyPair.getPublic().getEncoded();
+    byte[] privKeyBytes = senderKeyPair.getPrivate().getEncoded();
+
+    EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(pubKeyBytes);
+    EncodedKeySpec privKeySpec = new PKCS8EncodedKeySpec(privKeyBytes);
+
+    KeyFactory kf = KeyFactory.getInstance(EcCryptoHelper.DEFAULT_KEY_PAIR_ALG);
+    KeyPair newKp = new KeyPair(kf.generatePublic(pubKeySpec), kf.generatePrivate(privKeySpec));
+
+    assertThat("Loaded public key same as original", newKp.getPublic(),
+        equalTo(senderKeyPair.getPublic()));
+    assertThat("Loaded private key same as original", newKp.getPrivate(),
+        equalTo(senderKeyPair.getPrivate()));
+  }
 
   @Test
   public void roundTripEncryption() throws Exception {
-    CryptoHelper helper = CryptoUtils.STANDARD_HELPER;
+    final CryptoHelper helper = new EcCryptoHelper();
     final byte[] iv = new SecureRandom().generateSeed(helper.getInitializationVectorMinimumSize());
 
     KeyPair senderKeyPair = helper.generateKeyPair();
@@ -80,7 +89,7 @@ public class CryptoUtilsTests {
 
     final String msg = "Hello, world.";
     final byte[] msgBytes = msg.getBytes(CryptoUtils.STANDARD_CHARSET);
-    final byte[] msgDigest = helper.computeDigest(msgBytes);
+    final byte[] msgDigest = STANDARD_HELPER.computeDigest(msgBytes);
     log.debug("Original message digest: {}", Base64.getEncoder().encodeToString(msgDigest));
 
     // SENDER: encrypt/sign message for recipient using recipient public key
