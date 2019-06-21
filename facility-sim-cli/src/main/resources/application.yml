@@ -1,10 +1,20 @@
+esi:
+  registry:
+    conn:
+      usePlaintext: true
+      uri: dns:///localhost:9090
+
+grpc:
+  server:
+    port: 9092
+    address: "0.0.0.0"
+
 logging:
   level:
     ROOT: INFO
   pattern:
     console: "${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39}: %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
     file:  "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
-
 
 ssh:
   shell:
