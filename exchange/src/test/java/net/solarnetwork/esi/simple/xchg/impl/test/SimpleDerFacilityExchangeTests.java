@@ -18,6 +18,7 @@
 package net.solarnetwork.esi.simple.xchg.impl.test;
 
 import static net.solarnetwork.esi.simple.xchg.test.TestUtils.invocationArg;
+import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -30,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -44,6 +46,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Empty;
 import com.google.protobuf.util.JsonFormat;
 
 import io.grpc.ManagedChannel;
@@ -52,6 +55,7 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.testing.GrpcCleanupRule;
+import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
@@ -88,6 +92,7 @@ public class SimpleDerFacilityExchangeTests {
 
   private List<Form> registrationForms;
   private String operatorUid;
+  private KeyPair operatorKeyPair;
   private SimpleDerFacilityExchange service;
   private ManagedChannel channel;
   private FacilityRegistrationEntityDao facilityRegistrationDao;
@@ -100,7 +105,9 @@ public class SimpleDerFacilityExchangeTests {
     registrationForms.add(loadForm("registration-form-02.json"));
 
     operatorUid = UUID.randomUUID().toString();
-    service = new SimpleDerFacilityExchange(operatorUid, registrationForms);
+    operatorKeyPair = STANDARD_HELPER.generateKeyPair();
+    service = new SimpleDerFacilityExchange(operatorUid, operatorKeyPair, registrationForms,
+        STANDARD_HELPER);
 
     facilityRegistrationDao = mock(FacilityRegistrationEntityDao.class);
     service.setFacilityRegistrationDao(facilityRegistrationDao);
@@ -133,6 +140,23 @@ public class SimpleDerFacilityExchangeTests {
       JsonFormat.parser().merge(r, builder);
       return builder.build();
     }
+  }
+
+  @Test
+  public void getPublicKey() {
+    // given
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
+
+    //when
+    CryptoKey res = client.getPublicCryptoKey(Empty.getDefaultInstance());
+
+    //then
+    assertThat("Result available", res, notNullValue());
+
+    assertThat("Key algorithm", res.getAlgorithm(), equalTo("EC"));
+    assertThat("Key encoding", res.getEncoding(), equalTo("X.509"));
+    assertThat("Key data", res.getKey(),
+        equalTo(ByteString.copyFrom(operatorKeyPair.getPublic().getEncoded())));
   }
 
   @Test

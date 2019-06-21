@@ -19,6 +19,7 @@ package net.solarnetwork.esi.simple.xchg.impl;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
@@ -38,6 +39,7 @@ import com.google.protobuf.Empty;
 import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
+import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.domain.DatumRequest;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
@@ -57,6 +59,7 @@ import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
+import net.solarnetwork.esi.util.CryptoHelper;
 
 /**
  * Really, really, really simple gRPC implementation of a DER operator service.
@@ -78,6 +81,8 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
   private final String operatorUid;
   private final List<Form> registrationForms;
+  private final KeyPair operatorKeyPair;
+  private final CryptoHelper cryptoHelper;
 
   @Autowired
   private FacilityEntityDao facilityDao;
@@ -93,15 +98,20 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
    * 
    * @param operatorUid
    *        the UID to use for this service
+   * @param operatorKeyPair
+   *        the key pair to use for asymmetric encryption with facilities
    * @param registrationForms
    *        the registration form, as a list to support multiple languages
+   * @param cryptoHelper
+   *        the {@link CryptoHelper} to use
    * @throws IllegalArgumentException
    *         if either {@code operatorUid} or {@code registreationForms} are {@literal null} or
    *         empty
    */
   @Autowired
   public SimpleDerFacilityExchange(@Qualifier("operator-uid") String operatorUid,
-      @Qualifier("regform-list") List<Form> registrationForms) {
+      @Qualifier("operator-key-pair") KeyPair operatorKeyPair,
+      @Qualifier("regform-list") List<Form> registrationForms, CryptoHelper cryptoHelper) {
     super();
     if (operatorUid == null || operatorUid.isEmpty()) {
       throw new IllegalArgumentException("The operator UID must not be empty.");
@@ -111,6 +121,21 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       throw new IllegalArgumentException("The registration forms list must not be empty.");
     }
     this.registrationForms = Collections.unmodifiableList(new ArrayList<>(registrationForms));
+    this.operatorKeyPair = operatorKeyPair;
+    this.cryptoHelper = cryptoHelper;
+  }
+
+  @Override
+  public void getPublicCryptoKey(Empty request, StreamObserver<CryptoKey> responseObserver) {
+    // @formatter:off
+    CryptoKey key = CryptoKey.newBuilder()
+        .setAlgorithm(operatorKeyPair.getPublic().getAlgorithm())
+        .setEncoding(operatorKeyPair.getPublic().getFormat())
+        .setKey(ByteString.copyFrom(operatorKeyPair.getPublic().getEncoded()))
+        .build();
+    // @formatter:on
+    responseObserver.onNext(key);
+    responseObserver.onCompleted();
   }
 
   @Override
