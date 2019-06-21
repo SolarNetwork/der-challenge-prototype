@@ -17,9 +17,10 @@
 
 package net.solarnetwork.esi.simple.xchg.impl.cli;
 
-import org.springframework.stereotype.Component;
+import org.springframework.shell.standard.ShellCommandGroup;
+import org.springframework.shell.standard.ShellMethod;
 
-import sshd.shell.springboot.autoconfiguration.SshdShellCommand;
+import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
 /**
  * A simple "hello?" command.
@@ -27,15 +28,16 @@ import sshd.shell.springboot.autoconfiguration.SshdShellCommand;
  * @author matt
  * @version 1.0
  */
-@Component
-@SshdShellCommand(value = "ping", description = "Reach out.")
+@SshShellComponent
+@ShellCommandGroup("Ping")
 public class PingCommand {
 
   public PingCommand() {
     super();
   }
 
-  public String ping(String arg) {
+  @ShellMethod("Reach out.")
+  public String ping() {
     return "pong";
   }
 

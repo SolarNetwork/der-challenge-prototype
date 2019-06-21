@@ -39,7 +39,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	
 	// CLI support
-	implementation 'io.github.anand1st:sshd-shell-spring-boot-starter:3.7'
+	implementation 'com.github.fonimus:ssh-shell-spring-boot-starter:1.1.5'
 
 	// DB
 	implementation 'org.flywaydb:flyway-core'

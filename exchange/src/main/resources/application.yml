@@ -39,6 +39,11 @@ spring:
         dialect: org.hibernate.dialect.DerbyTenSevenDialect
         jdbc.time_zone: UTC
 
+ssh:
+  shell:
+    prompt:
+      color: green
+      text: 'Xchg> '
 ---
 debugMode: true
 
