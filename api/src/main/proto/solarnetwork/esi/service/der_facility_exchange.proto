@@ -24,6 +24,7 @@ option java_package = "net.solarnetwork.esi.service";
 option objc_class_prefix = "ESI";
 
 import "google/protobuf/empty.proto";
+import "solarnetwork/esi/domain/crypto_key.proto";
 import "solarnetwork/esi/domain/datum_request.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_data.proto";
@@ -51,6 +52,10 @@ service DerFacilityExchange {
   // ===========================================================================
   // DerFacility registration
   // ===========================================================================
+  
+  // Get the exchange's public key.
+  rpc GetPublicCryptoKey(google.protobuf.Empty) 
+  returns (solarnetwork.esi.domain.CryptoKey);
 	
   // Request the registration form for a DerFacility to use.
   rpc GetDerFacilityRegistrationForm(

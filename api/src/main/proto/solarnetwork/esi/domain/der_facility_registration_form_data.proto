@@ -23,6 +23,7 @@ option java_outer_classname = "DerFacilityRegistrationFormDataProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
+import "solarnetwork/esi/domain/crypto_key.proto";
 import "solarnetwork/esi/domain/form_data.proto";
 import "solarnetwork/esi/domain/der_route.proto";
 
@@ -48,6 +49,11 @@ message DerFacilityRegistrationFormData {
   // EV charger first boots it might come pre-configured to register itself with
   // a proxy service, or prompt for registration with a proxy service; either
   // way it obtains its facility ID which is then passed to the operator here.
+  //
+  // Note that the MessageSignature of the route must include the 
+  // `facilityEndpointUri` UTF-8 bytes and `facilityNonce` values. The 
+  // recipient's public key should already have been obtained by the facility,
+  // and the facilitie's public key is included in this message.
   DerRoute route = 1;
   
   // The gRPC compliant URI the exchange can access the facility on.
@@ -64,8 +70,11 @@ message DerFacilityRegistrationFormData {
   // facility submitting the registration form can verify the operator is the
   // same during both interactions.
   bytes facilityNonce = 3;
+  
+  // The facility's public key.
+  CryptoKey facilityPublicKey = 4;
 
   // The completed registration form.
-  FormData data = 4;
+  FormData data = 5;
   
 }
