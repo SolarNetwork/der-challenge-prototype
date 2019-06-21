@@ -20,6 +20,11 @@ dependencies {
 	implementation 'org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.2.Final'
 	implementation 'org.springframework.data:spring-data-commons:2.1.8.RELEASE'
 
+	// JSON
+	implementation "com.fasterxml.jackson.core:jackson-annotations:${jacksonVersion}"
+	implementation "com.fasterxml.jackson.core:jackson-core:${jacksonVersion}"
+	implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+
 	// Utilities
 	implementation 'net.sf.supercsv:super-csv:2.4.0'
 	implementation 'org.slf4j:slf4j-api:1.7.26'

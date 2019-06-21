@@ -18,8 +18,12 @@
 package net.solarnetwork.esi.util.test;
 
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -107,6 +111,26 @@ public class CryptoUtilsTests {
     assertThat("Expected and validated digests match",
         Base64.getEncoder().encodeToString(validatedDigest),
         equalTo(Base64.getEncoder().encodeToString(msgDigest)));
+  }
+
+  @Test
+  public void roundTripKeyPairSave() throws Exception {
+    CryptoHelper helper = CryptoUtils.STANDARD_HELPER;
+    KeyPair keyPair = helper.generateKeyPair();
+    byte[] salt = new SecureRandom().generateSeed(8);
+    byte[] iv = new SecureRandom().generateSeed(12);
+
+    ByteArrayOutputStream byos = new ByteArrayOutputStream();
+    CryptoUtils.saveKeyPair(byos, keyPair, "foobar", salt, iv);
+    byte[] encryptedKeyStore = byos.toByteArray();
+    assertThat("Key pair saved", encryptedKeyStore.length, greaterThan(0));
+
+    KeyPair loadedKeyPair = CryptoUtils.loadKeyPair(new ByteArrayInputStream(encryptedKeyStore),
+        "foobar", salt, iv);
+    assertThat("Key pair loaded", loadedKeyPair, notNullValue());
+
+    assertThat("Public key same", keyPair.getPublic(), equalTo(loadedKeyPair.getPublic()));
+    assertThat("Private key same", keyPair.getPrivate(), equalTo(loadedKeyPair.getPrivate()));
   }
 
 }

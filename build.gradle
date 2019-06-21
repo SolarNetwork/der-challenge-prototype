@@ -69,6 +69,7 @@ subprojects {
         protocVersion = protobufVersion
         protobufNanoVersion = '3.0.0-alpha-5'
         opencensusVersion = '0.21.0'
+        jacksonVersion = '2.9.8'
 
         configureProtoCompilation = {
             String generatedSourcePath = "${projectDir}/src/generated"
