@@ -1,4 +1,6 @@
 logging:
+  level:
+    ROOT: INFO
   pattern:
     console: "${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39}: %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
     file:  "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
@@ -42,9 +44,7 @@ debugMode: true
 
 logging:
   level:
-    co.nz.evident: DEBUG
-    net.solarnetwork: DEBUG
-    org.springframework.boot.autoconfigure: DEBUG
+    org.springframework.boot.autoconfigure: INFO
 
 spring:
   profiles: development

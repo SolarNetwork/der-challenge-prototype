@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -42,7 +43,11 @@ import org.springframework.core.io.Resource;
 import com.google.protobuf.util.JsonFormat;
 
 import net.solarnetwork.esi.domain.Form;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
+import net.solarnetwork.esi.simple.xchg.impl.SimpleFacilityRegistrationService;
+import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
 import net.solarnetwork.esi.util.CryptoHelper;
 import net.solarnetwork.esi.util.CryptoUtils;
 
@@ -78,6 +83,12 @@ public class DerFacilityExchangeConfig {
   private Resource registrationFormResource = new ClassPathResource(
       "default-registration-form.json", SimpleDerFacilityExchange.class);
 
+  @Autowired
+  public FacilityRegistrationEntityDao facilityRegistrationDao;
+
+  @Autowired
+  public FacilityEntityDao facilityDao;
+
   @Qualifier("operator-uid")
   @Bean
   public String operatorUid() {
@@ -98,7 +109,7 @@ public class DerFacilityExchangeConfig {
     }
   }
 
-  private byte[] decodeBytes(String s, int len) {
+  private static byte[] decodeConfigBytes(String s, int len) {
     byte[] data = null;
     try {
       data = Base64.getDecoder().decode(s);
@@ -131,8 +142,8 @@ public class DerFacilityExchangeConfig {
   @Bean
   public KeyPair operatorKeyPair() throws IOException {
     KeyPair result = null;
-    byte[] salt = decodeBytes(keyStoreSalt, 8);
-    byte[] iv = decodeBytes(keyStoreIv, 12);
+    byte[] salt = decodeConfigBytes(keyStoreSalt, 8);
+    byte[] iv = decodeConfigBytes(keyStoreIv, 12);
     if (keyStoreResource.exists()) {
       result = CryptoUtils.loadKeyPair(keyStoreResource.getInputStream(), keyStorePassword, salt,
           iv);
@@ -148,9 +159,27 @@ public class DerFacilityExchangeConfig {
     return result;
   }
 
+  /**
+   * Create the {@link CryptoHelper}.
+   * 
+   * @return the helper
+   */
   @Bean
   public CryptoHelper cryptoHelper() {
     return CryptoUtils.STANDARD_HELPER;
+  }
+
+  /**
+   * Create the {@link FacilityRegistrationService}.
+   * 
+   * @return the service
+   */
+  @Bean
+  public SimpleFacilityRegistrationService facilityRegistrationService() {
+    SimpleFacilityRegistrationService s = new SimpleFacilityRegistrationService(operatorUid());
+    s.setFacilityDao(facilityDao);
+    s.setFacilityRegistrationDao(facilityRegistrationDao);
+    return s;
   }
 
 }
