@@ -4,6 +4,7 @@
 	<comment>Project esi-operator-service created by Buildship.</comment>
 	<projects>
 		<project>esi-api</project>
+		<project>esi-common</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
