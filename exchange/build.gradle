@@ -37,6 +37,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	
+	// CLI support
+	implementation 'io.github.anand1st:sshd-shell-spring-boot-starter:3.7'
 
 	// DB
 	implementation 'org.flywaydb:flyway-core'
