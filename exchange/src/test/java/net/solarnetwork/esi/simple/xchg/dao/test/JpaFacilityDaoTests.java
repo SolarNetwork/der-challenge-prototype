@@ -43,6 +43,8 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
+import com.google.protobuf.ByteString;
+
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
 import net.solarnetwork.esi.simple.xchg.test.SpringTestSupport;
@@ -63,6 +65,7 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
   private static final String TEST_UICI = "123-1234-12345";
   private static final String TEST_UID = UUID.randomUUID().toString();
   private static final String TEST_ENDPOINT_URI = "dns:///localhost:9090";
+  private static final byte[] TEST_KEY = new byte[] { 1, 3, 5, 7 };
 
   @Autowired
   private EntityManager em;
@@ -94,6 +97,7 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     obj.setUici(TEST_UICI);
     obj.setFacilityUid(TEST_UID);
     obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
+    obj.setFacilityPublicKey(TEST_KEY);
     FacilityEntity entity = dao.save(obj);
     this.last = entity;
     em.flush();
@@ -105,6 +109,8 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     assertThat("Facility UID", entity.getFacilityUid(), equalTo(TEST_UID));
     assertThat("Facility endpoint", entity.getFacilityEndpointUri(), equalTo(TEST_ENDPOINT_URI));
     assertFacilityRowCountEqualTo(1);
+    assertThat("Facility key", ByteString.copyFrom(entity.getFacilityPublicKey()),
+        equalTo(ByteString.copyFrom(TEST_KEY)));
     em.clear();
   }
 
@@ -121,5 +127,8 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
     assertThat("Facility UID", entity.getFacilityUid(), equalTo(last.getFacilityUid()));
     assertThat("Facility endpoint URI", entity.getFacilityEndpointUri(),
         equalTo(last.getFacilityEndpointUri()));
+    assertThat("Facility key", ByteString.copyFrom(entity.getFacilityPublicKey()),
+        equalTo(ByteString.copyFrom(last.getFacilityPublicKey())));
+
   }
 }

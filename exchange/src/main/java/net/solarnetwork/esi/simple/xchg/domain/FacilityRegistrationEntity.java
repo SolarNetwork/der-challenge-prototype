@@ -59,6 +59,10 @@ public class FacilityRegistrationEntity extends BaseLongEntity {
   private String facilityEndpointUri;
 
   @Basic
+  @Column(name = "FAC_KEY", nullable = false, insertable = true, updatable = false, length = 255)
+  private byte[] facilityPublicKey;
+
+  @Basic
   @Column(name = "FAC_NONCE", nullable = false, insertable = true, updatable = false, length = 24)
   private byte[] facilityNonce;
 
@@ -169,6 +173,25 @@ public class FacilityRegistrationEntity extends BaseLongEntity {
    */
   public void setFacilityEndpointUri(String facilityEndpointUri) {
     this.facilityEndpointUri = facilityEndpointUri;
+  }
+
+  /**
+   * Get the facility public key.
+   * 
+   * @return the facility public key
+   */
+  public byte[] getFacilityPublicKey() {
+    return facilityPublicKey;
+  }
+
+  /**
+   * Set the facility public key.
+   * 
+   * @param facilityPublicKey
+   *        the facility public key
+   */
+  public void setFacilityPublicKey(byte[] facilityPublicKey) {
+    this.facilityPublicKey = facilityPublicKey;
   }
 
   /**

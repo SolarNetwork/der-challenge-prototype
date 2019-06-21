@@ -64,6 +64,7 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
   private static final String TEST_UICI = "123-1234-12345";
   private static final String TEST_UID = UUID.randomUUID().toString();
   private static final String TEST_ENDPOINT_URI = "dns:///localhost:9090";
+  private static final byte[] TEST_FAC_KEY = new byte[] { 1, 3, 5, 7 };
   private static final byte[] TEST_FAC_NONCE = new byte[] { 1, 2, 3, 4 };
   private static final byte[] TEST_OP_NONCE = new byte[] { 5, 6, 7, 8 };
 
@@ -97,6 +98,7 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
     obj.setUici(TEST_UICI);
     obj.setFacilityUid(TEST_UID);
     obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
+    obj.setFacilityPublicKey(TEST_FAC_KEY);
     obj.setFacilityNonce(TEST_FAC_NONCE);
     obj.setOperatorNonce(TEST_OP_NONCE);
     FacilityRegistrationEntity entity = dao.save(obj);
@@ -109,6 +111,9 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
     assertThat("UICI", entity.getUici(), equalTo(TEST_UICI));
     assertThat("Facility UID", entity.getFacilityUid(), equalTo(TEST_UID));
     assertThat("Facility endpoint", entity.getFacilityEndpointUri(), equalTo(TEST_ENDPOINT_URI));
+    assertThat("Facility key", entity.getFacilityPublicKey(), notNullValue());
+    assertThat("Facility key value matches",
+        Arrays.equals(entity.getFacilityPublicKey(), TEST_FAC_KEY), equalTo(true));
     assertThat("Facility nonce", entity.getFacilityNonce(), notNullValue());
     assertThat("Facility nonce value matches",
         Arrays.equals(entity.getFacilityNonce(), TEST_FAC_NONCE), equalTo(true));
@@ -132,6 +137,8 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
     assertThat("Facility UID", entity.getFacilityUid(), equalTo(last.getFacilityUid()));
     assertThat("Facility endpoint URI", entity.getFacilityEndpointUri(),
         equalTo(last.getFacilityEndpointUri()));
+    assertThat("Facility key",
+        Arrays.equals(entity.getFacilityPublicKey(), last.getFacilityPublicKey()), equalTo(true));
     assertThat("Facility nonce", Arrays.equals(entity.getFacilityNonce(), last.getFacilityNonce()),
         equalTo(true));
     assertThat("Operator nonce", Arrays.equals(entity.getOperatorNonce(), last.getOperatorNonce()),
