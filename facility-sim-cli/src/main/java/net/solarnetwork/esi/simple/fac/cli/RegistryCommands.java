@@ -17,7 +17,9 @@
 
 package net.solarnetwork.esi.simple.fac.cli;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.annotation.Resource;
 
@@ -54,12 +56,15 @@ public class RegistryCommands {
 
   /**
    * List the available facilities in the registry.
-   * 
-   * @return
    */
-  @ShellMethod("List available facilities.")
-  public String list() {
+  @ShellMethod("List available facility exchanges.")
+  public void exchangeRegistryList() {
+    listExchanges();
+  }
+
+  private List<DerFacilityExchangeInfo> listExchanges() {
     ManagedChannel channel = channelFactory.getObject();
+    List<DerFacilityExchangeInfo> result = new ArrayList<>(8);
     try {
       DerFacilityExchangeRegistryBlockingStub client = DerFacilityExchangeRegistryGrpc
           .newBlockingStub(channel);
@@ -70,15 +75,44 @@ public class RegistryCommands {
       while (itr.hasNext()) {
         i += 1;
         DerFacilityExchangeInfo info = itr.next();
-        shell.print("Result " + i, PromptColor.MAGENTA);
+        result.add(info);
+        shell.print("Facility Exchange " + i, PromptColor.MAGENTA);
         shell.print(String.format(fmt, "Name", info.getName()));
         shell.print(String.format(fmt, "ID", info.getUid()));
         shell.print(String.format(fmt, "URI", info.getEndpointUri()));
       }
       shell.print("");
-      return shell.getColored("OK", PromptColor.GREEN);
     } finally {
       channel.shutdown();
+    }
+    return result;
+  }
+
+  /**
+   * Choose a facility exchange.
+   */
+  @ShellMethod("Choose a facility exchange to connect to.")
+  public void exchangeRegistryChoose() {
+    List<DerFacilityExchangeInfo> exchanges = listExchanges();
+    while (true) {
+      String choice = shell.read("Which exchange would you like to use?");
+      try {
+        int idx = Integer.parseInt(choice);
+        if (idx > 0 && idx <= exchanges.size()) {
+          DerFacilityExchangeInfo exchange = exchanges.get(idx - 1);
+          if (shell.confirm(String.format("You chose %s @ %s, is that correct?", exchange.getName(),
+              exchange.getEndpointUri()))) {
+            shell.printInfo(String.format("Sweet as, you'll need to register with %s now.",
+                exchange.getName()));
+            // TODO: save choice
+            break;
+          }
+        } else {
+          shell.printError("That number is out of range, please try again.");
+        }
+      } catch (NumberFormatException e) {
+        shell.printError("Please enter a number.");
+      }
     }
   }
 
