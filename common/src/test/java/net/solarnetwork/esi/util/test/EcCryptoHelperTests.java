@@ -18,11 +18,15 @@
 package net.solarnetwork.esi.util.test;
 
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 
 import java.security.KeyFactory;
 import java.security.KeyPair;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -35,6 +39,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.protobuf.ByteString;
+
+import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.util.CryptoHelper;
 import net.solarnetwork.esi.util.CryptoUtils;
 import net.solarnetwork.esi.util.EcCryptoHelper;
@@ -69,6 +76,71 @@ public class EcCryptoHelperTests {
         equalTo(senderKeyPair.getPublic()));
     assertThat("Loaded private key same as original", newKp.getPrivate(),
         equalTo(senderKeyPair.getPrivate()));
+  }
+
+  @Test
+  public void decodePublicKey() throws Exception {
+    // given
+    EcCryptoHelper helper = new EcCryptoHelper();
+    KeyPair keyPair = helper.generateKeyPair();
+    ByteString pubKeyData = ByteString.copyFrom(keyPair.getPublic().getEncoded());
+
+    // when
+    PublicKey decodedPubKey = helper
+        .decodePublicKey(CryptoKey.newBuilder().setAlgorithm(keyPair.getPublic().getAlgorithm())
+            .setEncoding(keyPair.getPublic().getFormat()).setKey(pubKeyData).build());
+
+    // then
+    assertThat("Decoded key available", decodedPubKey, notNullValue());
+    assertThat("Decoded key instance different", decodedPubKey,
+        not(sameInstance(keyPair.getPublic())));
+    assertThat("Decoded key matches", decodedPubKey, equalTo(keyPair.getPublic()));
+  }
+
+  @Test
+  public void decodePublicKeyUsingDefaultAlgorithmAndEncoding() throws Exception {
+    // given
+    EcCryptoHelper helper = new EcCryptoHelper();
+    KeyPair keyPair = helper.generateKeyPair();
+    ByteString pubKeyData = ByteString.copyFrom(keyPair.getPublic().getEncoded());
+
+    // when
+    PublicKey decodedPubKey = helper
+        .decodePublicKey(CryptoKey.newBuilder().setKey(pubKeyData).build());
+
+    // then
+    assertThat("Decoded key available", decodedPubKey, notNullValue());
+    assertThat("Decoded key instance different", decodedPubKey,
+        not(sameInstance(keyPair.getPublic())));
+    assertThat("Decoded key matches", decodedPubKey, equalTo(keyPair.getPublic()));
+  }
+
+  @Test(expected = RuntimeException.class)
+  public void decodePublicKeyFailsFromUnsupportedAlgorithm() throws Exception {
+    // given
+    EcCryptoHelper helper = new EcCryptoHelper();
+    KeyPair keyPair = helper.generateKeyPair();
+    ByteString pubKeyData = ByteString.copyFrom(keyPair.getPublic().getEncoded());
+
+    // when
+    helper.decodePublicKey(CryptoKey.newBuilder().setKey(pubKeyData).setAlgorithm("RSA").build());
+
+    // then
+    // exception should have been thrown
+  }
+
+  @Test(expected = RuntimeException.class)
+  public void decodePublicKeyFailsFromUnsupportedEncoding() throws Exception {
+    // given
+    EcCryptoHelper helper = new EcCryptoHelper();
+    KeyPair keyPair = helper.generateKeyPair();
+    ByteString pubKeyData = ByteString.copyFrom(keyPair.getPublic().getEncoded());
+
+    // when
+    helper.decodePublicKey(CryptoKey.newBuilder().setKey(pubKeyData).setEncoding("PEM").build());
+
+    // then
+    // exception should have been thrown
   }
 
   @Test

@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -29,6 +30,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.spec.EncodedKeySpec;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
@@ -44,6 +48,8 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import net.solarnetwork.esi.domain.CryptoKey;
 
 /**
  * Abstract base implementation of {@link CryptoHelper} using the standard Java encryption
@@ -121,6 +127,28 @@ public abstract class AbstractCryptoHelper implements CryptoHelper {
     }
   }
 
+  @Override
+  public PublicKey decodePublicKey(CryptoKey cryptoKey) {
+    if (cryptoKey.getAlgorithm() != null && !cryptoKey.getAlgorithm().isEmpty()
+        && !keyPairAlg.equals(cryptoKey.getAlgorithm())) {
+      throw new RuntimeException(
+          "Crypto key algorithm " + cryptoKey.getAlgorithm() + " not supported.");
+    } else if (cryptoKey.getEncoding() != null && !cryptoKey.getEncoding().isEmpty()
+        && !"X.509".equals(cryptoKey.getEncoding())) {
+      throw new RuntimeException(
+          "Crypto key encoding " + cryptoKey.getEncoding() + " not supported.");
+    }
+    byte[] pubKeyBytes = cryptoKey.getKey().toByteArray();
+    EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(pubKeyBytes);
+    try {
+      KeyFactory kf = KeyFactory.getInstance(keyPairAlg);
+      return kf.generatePublic(pubKeySpec);
+    } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+      throw new RuntimeException(
+          "Unable to decode " + keyPairAlg + " public key: " + e.getMessage(), e);
+    }
+  }
+
   /**
    * Create and initialize a new {@link Cipher} instance.
    * 
@@ -162,7 +190,7 @@ public abstract class AbstractCryptoHelper implements CryptoHelper {
       return cipher.doFinal(msgBytes);
     } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException
         | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException e) {
-      throw new RuntimeException("Unable to encrypt message using " + cipherAlg, e);
+      throw new RuntimeException("Unable to encrypt message using " + cipherAlg + ".", e);
     }
   }
 
@@ -193,7 +221,7 @@ public abstract class AbstractCryptoHelper implements CryptoHelper {
       return new SecretKeySpec(data, secretKeyAlg);
     } catch (InvalidKeyException | IllegalStateException | NoSuchAlgorithmException e) {
       throw new RuntimeException(
-          "Unable to derive " + keyAgreementAlg + " secret key for " + secretKeyAlg, e);
+          "Unable to derive " + keyAgreementAlg + " secret key for " + secretKeyAlg + ".", e);
     }
   }
 
@@ -208,7 +236,7 @@ public abstract class AbstractCryptoHelper implements CryptoHelper {
       MessageDigest digest = MessageDigest.getInstance(digestAlg);
       return digest.digest(message);
     } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("Unable to compute digest using " + digestAlg, e);
+      throw new RuntimeException("Unable to compute digest using " + digestAlg + ".", e);
     }
   }
 
@@ -220,7 +248,7 @@ public abstract class AbstractCryptoHelper implements CryptoHelper {
       sig.update(message);
       return sig.sign();
     } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
-      throw new RuntimeException("Unable to sign message using " + signatureAlg, e);
+      throw new RuntimeException("Unable to sign message using " + signatureAlg + ".", e);
     }
   }
 
@@ -247,7 +275,8 @@ public abstract class AbstractCryptoHelper implements CryptoHelper {
         | IllegalBlockSizeException | BadPaddingException | InvalidAlgorithmParameterException
         | SignatureException e) {
       throw new RuntimeException(
-          "Unable to decrypt message using " + cipherAlg + " or verify using " + signatureAlg, e);
+          "Unable to decrypt message using " + cipherAlg + " or verify using " + signatureAlg + ".",
+          e);
     }
   }
 

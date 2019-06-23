@@ -17,6 +17,7 @@
 
 package net.solarnetwork.esi.util;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -26,6 +27,8 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 
@@ -42,8 +45,11 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.util.FileCopyUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.protobuf.ByteString;
 
+import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.domain.KeyPairStore;
+import net.solarnetwork.esi.domain.MessageSignature;
 
 /**
  * Cryptographic utilities.
@@ -169,6 +175,128 @@ public final class CryptoUtils {
     } catch (NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeySpecException
         | InvalidKeyException | InvalidAlgorithmParameterException e) {
       throw new RuntimeException("Error creating password-based cipher: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Get a {@link PublicKey} from encoded key data.
+   * 
+   * @param helper
+   *        the helper to use
+   * @param encodedKey
+   *        the key data to decode
+   * @return the key
+   * @throws RuntimeException
+   *         if any error occurs
+   */
+  public static PublicKey decodePublicKey(CryptoHelper helper, byte[] encodedKey) {
+    return helper
+        .decodePublicKey(CryptoKey.newBuilder().setKey(ByteString.copyFrom(encodedKey)).build());
+  }
+
+  /**
+   * Generate a {@link MessageSignature} from a set of message data.
+   * 
+   * <p>
+   * This method will generate a new random encryption initialization vector. It will then generate
+   * the message to sign by iterating over {@code messageData}, converting each element to bytes,
+   * concatenating everything into one final message. For each element, if it is a {@code byte[]} or
+   * {@link ByteString} then it will be used as-is. For all other objects, {@link Object#toString()}
+   * will be used to turn it into a string, and then the UTF-8 bytes of that will be used. The final
+   * message signature is calculated via
+   * {@link CryptoHelper#encryptMessageDigest(SecretKey, byte[], java.security.PrivateKey, byte[])}.
+   * </p>
+   * 
+   * @param helper
+   *        the helper to use
+   * @param senderKeyPair
+   *        the sender's key pair to sign the message data with
+   * @param recipientKey
+   *        the recipient's public key to encrypt the message data signature with
+   * @param messageData
+   *        the message data to sign
+   * @return the new message signature instance
+   * @throws RuntimeException
+   *         if any error occurs
+   */
+  public static MessageSignature generateMessageSignature(CryptoHelper helper,
+      KeyPair senderKeyPair, PublicKey recipientKey, Iterable<?> messageData) {
+    try {
+      final byte[] iv = new byte[helper.getInitializationVectorMinimumSize()];
+      SecureRandom.getInstanceStrong().nextBytes(iv);
+      final SecretKey encryptKey = helper.deriveSecretKey(recipientKey, senderKeyPair);
+      final ByteArrayOutputStream byos = new ByteArrayOutputStream();
+      for (Object o : messageData) {
+        byte[] bytes;
+        if (o instanceof byte[]) {
+          bytes = (byte[]) o;
+        } else if (o instanceof ByteString) {
+          bytes = ((ByteString) o).toByteArray();
+        } else {
+          bytes = o.toString().getBytes(STANDARD_CHARSET);
+        }
+        byos.write(bytes);
+      }
+      final byte[] msgSigData = helper.encryptMessageDigest(encryptKey, byos.toByteArray(),
+          senderKeyPair.getPrivate(), iv);
+      return MessageSignature.newBuilder().setIv(ByteString.copyFrom(iv))
+          .setSignature(ByteString.copyFrom(msgSigData)).build();
+    } catch (NoSuchAlgorithmException | IOException e) {
+      throw new RuntimeException("Error generating message signature: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Validate a {@link MessageSignature} from a set of message data.
+   * 
+   * <p>
+   * This method calls the
+   * {@link CryptoHelper#validateMessageDigest(KeyPair, byte[], PublicKey, byte[], byte[])}, passing
+   * in a message computed by concatenating all values in {@code messageData} into a byte array.
+   * </p>
+   * 
+   * @param cryptoHelper
+   *        the helper to use
+   * @param msgSig
+   *        the signature to validate
+   * @param recipientKeyPair
+   *        the recipient's key pair to decrypt the signature data with
+   * @param senderPublicKey
+   *        the sender's public key to validate the signature with
+   * @param messageData
+   *        the message data to compute the expected message digest from to compare to the digest
+   *        decrypted from the signature; the same rules outlined in
+   *        {@link #generateMessageSignature(CryptoHelper, KeyPair, PublicKey, Iterable)} for
+   *        converting the objects to bytes are used
+   * @return the computed and validated message digest
+   */
+  public static byte[] validateMessageSignature(CryptoHelper cryptoHelper, MessageSignature msgSig,
+      KeyPair recipientKeyPair, PublicKey senderPublicKey, Iterable<?> messageData) {
+    if (msgSig == null) {
+      throw new IllegalArgumentException("Route message signature missing.");
+    } else if (msgSig.getIv() == null || msgSig.getIv().isEmpty()) {
+      throw new IllegalArgumentException("Route message signature initialization vector missing.");
+    } else if (msgSig.getSignature() == null || msgSig.getSignature().isEmpty()) {
+      throw new IllegalArgumentException("Route message signature value missing.");
+    }
+    try {
+      final ByteArrayOutputStream byos = new ByteArrayOutputStream();
+      for (Object o : messageData) {
+        byte[] bytes;
+        if (o instanceof byte[]) {
+          bytes = (byte[]) o;
+        } else if (o instanceof ByteString) {
+          bytes = ((ByteString) o).toByteArray();
+        } else {
+          bytes = o.toString().getBytes(STANDARD_CHARSET);
+        }
+        byos.write(bytes);
+      }
+      return cryptoHelper.validateMessageDigest(recipientKeyPair,
+          msgSig.getSignature().toByteArray(), senderPublicKey, byos.toByteArray(),
+          msgSig.getIv().toByteArray());
+    } catch (IOException e) {
+      throw new RuntimeException("Error validating message signature: " + e.getMessage(), e);
     }
   }
 

@@ -24,6 +24,8 @@ import java.util.Arrays;
 
 import javax.crypto.SecretKey;
 
+import net.solarnetwork.esi.domain.CryptoKey;
+
 /**
  * API for an object that can help perform common cryptographic computations.
  * 
@@ -54,6 +56,22 @@ public interface CryptoHelper {
    * @return the maximum size, in bytes
    */
   int getInitializationVectorMaximumSize();
+
+  /**
+   * Decode a {@link PublicKey} from a {@link CryptoKey}.
+   * 
+   * <p>
+   * The {@code algorithm} and {@code encoding} properties can be omitted, in which case the default
+   * values used by the helper implementation is assumed.
+   * </p>
+   * 
+   * @param cryptoKey
+   *        the key data to decode
+   * @return the decoded key
+   * @throws RuntimeException
+   *         if any security exception is thrown
+   */
+  PublicKey decodePublicKey(CryptoKey cryptoKey);
 
   /**
    * Decrypt and verify a message previously encrypted via
