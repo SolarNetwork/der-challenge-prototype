@@ -17,6 +17,9 @@
 
 package net.solarnetwork.esi.simple.xchg.impl;
 
+import static java.util.Arrays.asList;
+import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyPair;
@@ -172,36 +175,53 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       }
 
       if (!operatorUid.equals(route.getOperatorUid())) {
-        throw new IllegalArgumentException("Operator UID not valid");
+        throw new IllegalArgumentException("Operator UID not valid.");
       }
 
       String facilityUid = route.getFacilityUid();
       if (facilityUid == null || facilityUid.trim().isEmpty()) {
-        throw new IllegalArgumentException("Facility UID missing");
+        throw new IllegalArgumentException("Facility UID missing.");
       }
 
       String facilityEndpointUri = request.getFacilityEndpointUri();
       if (facilityEndpointUri == null || facilityEndpointUri.trim().isEmpty()) {
-        throw new IllegalArgumentException("Facility endpoint URI missing");
+        throw new IllegalArgumentException("Facility endpoint URI missing.");
       }
       try {
         new URI(facilityEndpointUri);
       } catch (URISyntaxException e) {
-        throw new IllegalArgumentException("Facility endpoint URI syntax not valid", e);
+        throw new IllegalArgumentException("Facility endpoint URI syntax not valid.", e);
+      }
+
+      CryptoKey facilityKey = request.getFacilityPublicKey();
+      if (facilityKey == null) {
+        throw new IllegalArgumentException("Facility public key missing");
+      } else if (facilityKey.getKey() == null || facilityKey.getKey().isEmpty()) {
+        throw new IllegalArgumentException("Facility public key value missing.");
+      } else if (!"EC".equals(facilityKey.getAlgorithm())) {
+        throw new IllegalArgumentException(
+            "Facility public key algorithm not supported (must be 'EC').");
+      } else if (!"X.509".equals(facilityKey.getEncoding())) {
+        throw new IllegalArgumentException(
+            "Facility public key encoding not supported (must be 'X.509').");
       }
 
       ByteString facilityNonce = request.getFacilityNonce();
       if (facilityNonce == null || facilityNonce.isEmpty()) {
         throw new IllegalArgumentException("Facility nonce missing");
       } else if (facilityNonce.size() < 8) {
-        throw new IllegalArgumentException("Facility nonce must be at least 8 bytes long");
+        throw new IllegalArgumentException("Facility nonce must be at least 8 bytes long.");
       } else if (facilityNonce.size() > 24) {
-        throw new IllegalArgumentException("Facility nonce must be at most 24 bytes long");
+        throw new IllegalArgumentException("Facility nonce must be at most 24 bytes long.");
       }
+
+      // verify signature
+      validateMessageSignature(cryptoHelper, route.getSignature(), operatorKeyPair,
+          cryptoHelper.decodePublicKey(facilityKey), asList(operatorUid, facilityUid));
 
       FormData formData = request.getData();
       if (formData == null) {
-        throw new IllegalArgumentException("Form data missing");
+        throw new IllegalArgumentException("Form data missing.");
       }
       String formKey = formData.getKey();
       if (formKey == null || formKey.trim().isEmpty()) {
@@ -242,6 +262,7 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       entity.setUici(uici);
       entity.setFacilityUid(facilityUid);
       entity.setFacilityEndpointUri(facilityEndpointUri);
+      entity.setFacilityPublicKey(facilityKey.toByteArray());
       entity.setFacilityNonce(facilityNonce.toByteArray());
       entity.setOperatorNonce(opNonce);
       entity = facilityRegistrationDao.save(entity);

@@ -140,23 +140,27 @@ public class DerFacilityExchangeConfig {
    */
   @Qualifier("operator-key-pair")
   @Bean
-  public KeyPair operatorKeyPair() throws IOException {
+  public KeyPair operatorKeyPair() {
     KeyPair result = null;
     byte[] salt = decodeConfigBytes(keyStoreSalt, 8);
     byte[] iv = decodeConfigBytes(keyStoreIv, 12);
-    if (keyStoreResource.exists()) {
-      result = CryptoUtils.loadKeyPair(keyStoreResource.getInputStream(), keyStorePassword, salt,
-          iv);
-    } else if (!generateKeyPair) {
-      throw new RuntimeException("The operator key store " + keyStoreResource
-          + " does not exist and generateKeyPair is false.");
-    } else {
-      result = cryptoHelper().generateKeyPair();
-      try (OutputStream out = new FileOutputStream(keyStoreResource.getFile())) {
-        CryptoUtils.saveKeyPair(out, result, keyStorePassword, salt, iv);
+    try {
+      if (keyStoreResource.exists()) {
+        result = CryptoUtils.loadKeyPair(keyStoreResource.getInputStream(), keyStorePassword, salt,
+            iv);
+      } else if (!generateKeyPair) {
+        throw new RuntimeException("The operator key store " + keyStoreResource
+            + " does not exist and generateKeyPair is false.");
+      } else {
+        result = cryptoHelper().generateKeyPair();
+        try (OutputStream out = new FileOutputStream(keyStoreResource.getFile())) {
+          CryptoUtils.saveKeyPair(out, result, keyStorePassword, salt, iv);
+        }
       }
+      return result;
+    } catch (IOException e) {
+      throw new RuntimeException("Error loading or generating operator key pair.", e);
     }
-    return result;
   }
 
   /**
@@ -176,7 +180,8 @@ public class DerFacilityExchangeConfig {
    */
   @Bean
   public SimpleFacilityRegistrationService facilityRegistrationService() {
-    SimpleFacilityRegistrationService s = new SimpleFacilityRegistrationService(operatorUid());
+    SimpleFacilityRegistrationService s = new SimpleFacilityRegistrationService(operatorUid(),
+        operatorKeyPair(), cryptoHelper());
     s.setFacilityDao(facilityDao);
     s.setFacilityRegistrationDao(facilityRegistrationDao);
     return s;

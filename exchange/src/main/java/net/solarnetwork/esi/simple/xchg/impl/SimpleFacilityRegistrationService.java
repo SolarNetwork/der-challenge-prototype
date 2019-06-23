@@ -17,7 +17,12 @@
 
 package net.solarnetwork.esi.simple.xchg.impl;
 
+import static java.util.Arrays.asList;
+import static net.solarnetwork.esi.util.CryptoUtils.decodePublicKey;
+import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
+
 import java.nio.charset.Charset;
+import java.security.KeyPair;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
@@ -40,6 +45,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import net.solarnetwork.esi.domain.DerFacilityRegistration;
 import net.solarnetwork.esi.domain.DerRoute;
+import net.solarnetwork.esi.domain.MessageSignature;
 import net.solarnetwork.esi.service.DerFacilityServiceGrpc;
 import net.solarnetwork.esi.service.DerFacilityServiceGrpc.DerFacilityServiceFutureStub;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
@@ -47,6 +53,7 @@ import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
+import net.solarnetwork.esi.util.CryptoHelper;
 
 /**
  * Simple implementation of {@link FacilityRegistrationService}.
@@ -68,6 +75,8 @@ public class SimpleFacilityRegistrationService implements FacilityRegistrationSe
   private Executor taskExecutor;
 
   private final String operatorUid;
+  private final KeyPair operatorKeyPair;
+  private final CryptoHelper cryptoHelper;
   private boolean usePlaintext;
 
   /**
@@ -77,9 +86,12 @@ public class SimpleFacilityRegistrationService implements FacilityRegistrationSe
    *        the operator UID
    */
   @Autowired
-  public SimpleFacilityRegistrationService(@Qualifier("operator-uid") String operatorUid) {
+  public SimpleFacilityRegistrationService(@Qualifier("operator-uid") String operatorUid,
+      @Qualifier("operator-key-pair") KeyPair operatorKeyPair, CryptoHelper cryptoHelper) {
     super();
     this.operatorUid = operatorUid;
+    this.operatorKeyPair = operatorKeyPair;
+    this.cryptoHelper = cryptoHelper;
     this.usePlaintext = false;
     this.taskExecutor = ForkJoinPool.commonPool();
   }
@@ -92,6 +104,7 @@ public class SimpleFacilityRegistrationService implements FacilityRegistrationSe
     FacilityEntity entity = new FacilityEntity(Instant.now());
     entity.setCustomerId(registration.getCustomerId());
     entity.setFacilityEndpointUri(registration.getFacilityEndpointUri());
+    entity.setFacilityPublicKey(registration.getFacilityPublicKey());
     entity.setFacilityUid(registration.getFacilityUid());
     entity.setUici(registration.getUici());
     entity = facilityDao.save(entity);
@@ -109,14 +122,26 @@ public class SimpleFacilityRegistrationService implements FacilityRegistrationSe
     ByteString token = ByteString.copyFrom(sha256.digest());
 
     // @formatter:off
+    
+    // sign message
+    MessageSignature msgSig = generateMessageSignature(cryptoHelper, operatorKeyPair,
+        decodePublicKey(cryptoHelper, entity.getFacilityPublicKey()),
+        asList(
+            operatorUid, 
+            entity.getFacilityUid(), 
+            entity.getFacilityEndpointUri(),
+            registration.getFacilityNonce()));
+
     DerFacilityRegistration reg = DerFacilityRegistration.newBuilder()
         .setRegistrationToken(token)
         .setSuccess(true)
         .setRoute(DerRoute.newBuilder()
             .setOperatorUid(operatorUid)
             .setFacilityUid(registration.getFacilityUid())
+            .setSignature(msgSig)
             .build())
         .build();
+    
     // @formatter:on
 
     ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder

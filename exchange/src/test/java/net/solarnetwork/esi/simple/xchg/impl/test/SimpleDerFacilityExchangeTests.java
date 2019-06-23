@@ -17,8 +17,10 @@
 
 package net.solarnetwork.esi.simple.xchg.impl.test;
 
+import static java.util.Arrays.asList;
 import static net.solarnetwork.esi.simple.xchg.test.TestUtils.invocationArg;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
+import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -63,6 +65,7 @@ import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.FormData;
+import net.solarnetwork.esi.domain.MessageSignature;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeBlockingStub;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
@@ -93,6 +96,7 @@ public class SimpleDerFacilityExchangeTests {
   private List<Form> registrationForms;
   private String operatorUid;
   private KeyPair operatorKeyPair;
+  private KeyPair facilityKeyPair;
   private SimpleDerFacilityExchange service;
   private ManagedChannel channel;
   private FacilityRegistrationEntityDao facilityRegistrationDao;
@@ -109,6 +113,7 @@ public class SimpleDerFacilityExchangeTests {
     service = new SimpleDerFacilityExchange(operatorUid, operatorKeyPair, registrationForms,
         STANDARD_HELPER);
 
+    facilityKeyPair = STANDARD_HELPER.generateKeyPair();
     facilityRegistrationDao = mock(FacilityRegistrationEntityDao.class);
     service.setFacilityRegistrationDao(facilityRegistrationDao);
 
@@ -215,13 +220,24 @@ public class SimpleDerFacilityExchangeTests {
   }
 
   private DerFacilityRegistrationFormData defaultFacilityRegFormData() {
+    String facilityUid = UUID.randomUUID().toString();
+
     // @formatter:off
+    MessageSignature msgSig = generateMessageSignature(STANDARD_HELPER, 
+        facilityKeyPair, operatorKeyPair.getPublic(), asList(operatorUid, facilityUid));
+    
     return DerFacilityRegistrationFormData.newBuilder()
         .setRoute(DerRoute.newBuilder()
           .setOperatorUid(operatorUid)
-          .setFacilityUid(UUID.randomUUID().toString())
+          .setFacilityUid(facilityUid)
+          .setSignature(msgSig)
           .build())
         .setFacilityEndpointUri(TEST_FACILITY_ENDPOINT_URI)
+        .setFacilityPublicKey(CryptoKey.newBuilder()
+            .setAlgorithm(facilityKeyPair.getPublic().getAlgorithm())
+            .setEncoding(facilityKeyPair.getPublic().getFormat())
+            .setKey(ByteString.copyFrom(facilityKeyPair.getPublic().getEncoded()))
+            .build())
         .setFacilityNonce(ByteString.copyFrom(TEST_NONCE))
         .setData(FormData.newBuilder()
             .setKey(TEST_FORM_KEY)
