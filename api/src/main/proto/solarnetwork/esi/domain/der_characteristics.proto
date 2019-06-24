@@ -19,7 +19,7 @@ package solarnetwork.esi.domain;
 
 option cc_enable_arenas = true;
 option java_multiple_files = true;
-option java_outer_classname = "DerResourceCharacteristicsProto";
+option java_outer_classname = "DerCharacteristicsProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
@@ -29,7 +29,7 @@ import "solarnetwork/esi/domain/duration_range.proto";
 /**
  * Characteristics of the resources provided by a DER facility.
  */
-message DerResourceCharacteristics {
+message DerCharacteristics {
 
   // The routing info.
   DerRoute route = 1;

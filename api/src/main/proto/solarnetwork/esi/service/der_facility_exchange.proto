@@ -31,7 +31,7 @@ import "solarnetwork/esi/domain/der_facility_registration_form_data.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_data_receipt.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_request.proto";
 import "solarnetwork/esi/domain/der_program.proto";
-import "solarnetwork/esi/domain/der_resource_characteristics.proto";
+import "solarnetwork/esi/domain/der_characteristics.proto";
 import "solarnetwork/esi/domain/price_datum.proto";
 import "solarnetwork/esi/domain/price_map.proto";
 import "solarnetwork/esi/domain/price_map_offer_status.proto";
@@ -78,7 +78,7 @@ service DerFacilityExchange {
   // ===========================================================================
   
   // Publish DER characteristics for facilities.
-  rpc ProvideDerResourceCharacteristics(stream solarnetwork.esi.domain.DerResourceCharacteristics) 
+  rpc ProvideDerCharacteristics(stream solarnetwork.esi.domain.DerCharacteristics) 
   returns (google.protobuf.Empty);
 
   // Publish price maps for facilities.

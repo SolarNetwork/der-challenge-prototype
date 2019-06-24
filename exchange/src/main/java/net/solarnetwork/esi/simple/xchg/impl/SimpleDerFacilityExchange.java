@@ -34,12 +34,12 @@ import io.grpc.stub.StreamObserver;
 import net.devh.boot.grpc.server.service.GrpcService;
 import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.domain.DatumRequest;
+import net.solarnetwork.esi.domain.DerCharacteristics;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
 import net.solarnetwork.esi.domain.DerProgram;
-import net.solarnetwork.esi.domain.DerResourceCharacteristics;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.PriceDatum;
 import net.solarnetwork.esi.domain.PriceMap;
@@ -169,10 +169,10 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   }
 
   @Override
-  public StreamObserver<DerResourceCharacteristics> provideDerResourceCharacteristics(
+  public StreamObserver<DerCharacteristics> provideDerCharacteristics(
       StreamObserver<Empty> responseObserver) {
     // TODO Auto-generated method stub
-    return super.provideDerResourceCharacteristics(responseObserver);
+    return super.provideDerCharacteristics(responseObserver);
   }
 
   @Override

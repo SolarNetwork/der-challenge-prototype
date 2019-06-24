@@ -26,7 +26,6 @@ option objc_class_prefix = "ESI";
 import "google/protobuf/empty.proto";
 import "solarnetwork/esi/domain/datum_request.proto";
 import "solarnetwork/esi/domain/der_facility_registration.proto";
-import "solarnetwork/esi/domain/der_resource_characteristics.proto";
 import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/power_parameters.proto";
 import "solarnetwork/esi/domain/power_profile_datum.proto";
