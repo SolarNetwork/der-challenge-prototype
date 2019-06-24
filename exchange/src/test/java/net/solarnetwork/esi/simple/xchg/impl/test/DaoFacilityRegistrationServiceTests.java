@@ -33,9 +33,7 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -56,6 +54,7 @@ import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityRegistrationService;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
+import net.solarnetwork.esi.util.CryptoUtils;
 
 /**
  * Test cases for the {@link DaoFacilityRegistrationService} class.
@@ -67,7 +66,7 @@ public class DaoFacilityRegistrationServiceTests {
 
   private static final String TEST_FACILITY_ENDPOINT_URI = "dns:///localhost:9090";
   private static final String TEST_FORM_KEY = "simple-oper-reg-form";
-  private static final byte[] TEST_NONCE = generateNonce(8);
+  private static final byte[] TEST_NONCE = CryptoUtils.generateRandomBytes(8);
   private static final String TEST_CUST_ID = "ABC123456789";
   private static final String TEST_CUST_SURNAME = "Doe-Smith";
   private static final String TEST_UICI = "123-1234-1234";
@@ -93,16 +92,6 @@ public class DaoFacilityRegistrationServiceTests {
     facilityKeyPair = STANDARD_HELPER.generateKeyPair();
     facilityRegistrationDao = mock(FacilityRegistrationEntityDao.class);
     service.setFacilityRegistrationDao(facilityRegistrationDao);
-  }
-
-  private static byte[] generateNonce(int size) {
-    byte[] nonce = new byte[size];
-    try {
-      SecureRandom.getInstanceStrong().nextBytes(nonce);
-    } catch (NoSuchAlgorithmException e) {
-      Arrays.fill(nonce, (byte) 8);
-    }
-    return nonce;
   }
 
   private Form loadForm(String resource) throws IOException {
@@ -236,7 +225,7 @@ public class DaoFacilityRegistrationServiceTests {
     // when
     // @formatter:off
     DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
-        .setFacilityNonce(ByteString.copyFrom(generateNonce(7)))
+        .setFacilityNonce(ByteString.copyFrom(CryptoUtils.generateRandomBytes(7)))
         .build();
     // @formatter:on
 
@@ -250,7 +239,7 @@ public class DaoFacilityRegistrationServiceTests {
     // when
     // @formatter:off
     DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
-        .setFacilityNonce(ByteString.copyFrom(generateNonce(25)))
+        .setFacilityNonce(ByteString.copyFrom(CryptoUtils.generateRandomBytes(25)))
         .build();
     // @formatter:on
 
