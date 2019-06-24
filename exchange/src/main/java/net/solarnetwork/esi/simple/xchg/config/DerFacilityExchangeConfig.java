@@ -95,6 +95,11 @@ public class DerFacilityExchangeConfig {
     return uid;
   }
 
+  /**
+   * The facility registration form list.
+   * 
+   * @return the list
+   */
   @Qualifier("regform-list")
   @Bean
   public List<Form> registrationForms() {
