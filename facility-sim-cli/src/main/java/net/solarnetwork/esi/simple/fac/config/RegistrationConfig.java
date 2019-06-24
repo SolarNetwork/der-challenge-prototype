@@ -17,15 +17,15 @@
 
 package net.solarnetwork.esi.simple.fac.config;
 
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.ObjectFactory;
+import java.net.URI;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
+import net.solarnetwork.esi.grpc.ChannelProvider;
+import net.solarnetwork.esi.grpc.StaticChannelProvider;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeRegistrationEntityDao;
 import net.solarnetwork.esi.simple.fac.impl.DaoExchangeRegistrationService;
@@ -56,18 +56,8 @@ public class RegistrationConfig {
   @Autowired
   private FacilityService facilityService;
 
-  private ObjectFactory<ManagedChannel> exchangeRegistryChannelFactory() {
-    return new ObjectFactory<ManagedChannel>() {
-
-      @Override
-      public ManagedChannel getObject() throws BeansException {
-        ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forTarget(uri);
-        if (usePlaintext) {
-          channelBuilder.usePlaintext();
-        }
-        return channelBuilder.build();
-      }
-    };
+  private ChannelProvider exchangeRegistryChannelProvider() {
+    return new StaticChannelProvider(URI.create(uri), usePlaintext);
   }
 
   /**
@@ -79,7 +69,7 @@ public class RegistrationConfig {
   public DaoExchangeRegistrationService exchangeRegistrationService() {
     DaoExchangeRegistrationService s = new DaoExchangeRegistrationService(facilityService,
         exchangeDao, exchangeRegistrationDao);
-    s.setExchangeRegistryChannelFactory(exchangeRegistryChannelFactory());
+    s.setExchangeRegistryChannelProvider(exchangeRegistryChannelProvider());
     return s;
   }
 

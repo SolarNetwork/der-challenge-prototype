@@ -21,6 +21,7 @@ import static java.util.Arrays.asList;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.MessageDigest;
@@ -29,7 +30,6 @@ import java.util.Iterator;
 import java.util.Locale;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +37,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
 import net.solarnetwork.esi.domain.DerFacilityExchangeRequest;
@@ -50,6 +49,7 @@ import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.DerRouteOrBuilder;
 import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.MessageSignature;
+import net.solarnetwork.esi.grpc.ChannelProvider;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeBlockingStub;
 import net.solarnetwork.esi.service.DerFacilityExchangeRegistryGrpc;
@@ -75,8 +75,8 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
   private final FacilityService facilityService;
   private final ExchangeEntityDao exchangeDao;
   private final ExchangeRegistrationEntityDao exchangeRegistrationDao;
-  private ObjectFactory<ManagedChannel> exchangeRegistryChannelFactory;
-  private boolean usePlaintext = false;
+  private ChannelProvider exchangeRegistryChannelProvider;
+  private ChannelProvider exchangeChannelProvider;
 
   /**
    * Constructor.
@@ -98,7 +98,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
 
   @Override
   public Iterator<DerFacilityExchangeInfo> listExchanges(DerFacilityExchangeRequest criteria) {
-    ManagedChannel channel = exchangeRegistryChannelFactory.getObject();
+    ManagedChannel channel = exchangeRegistryChannelProvider.channelForUri(null);
     try {
       DerFacilityExchangeRegistryBlockingStub client = DerFacilityExchangeRegistryGrpc
           .newBlockingStub(channel);
@@ -112,7 +112,8 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
   @Override
   public DerFacilityRegistrationForm getExchangeRegistrationForm(DerFacilityExchangeInfo exchange,
       Locale locale) {
-    ManagedChannel channel = channelForUri(exchange.getEndpointUri());
+    ManagedChannel channel = exchangeChannelProvider
+        .channelForUri(URI.create(exchange.getEndpointUri()));
     try {
       DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
       return client.getDerFacilityRegistrationForm(DerFacilityRegistrationFormRequest.newBuilder()
@@ -126,7 +127,8 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
   @Override
   public ExchangeRegistrationEntity registerWithExchange(DerFacilityExchangeInfo exchange,
       FormData formData) {
-    ManagedChannel channel = channelForUri(exchange.getEndpointUri());
+    ManagedChannel channel = exchangeChannelProvider
+        .channelForUri(URI.create(exchange.getEndpointUri()));
     try {
       DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
 
@@ -143,7 +145,9 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
           facilityService.getCryptoHelper().decodePublicKey(exchangePublicKey), 
           asList(
               exchange.getUid(), 
-              facilityService.getUid()));
+              facilityService.getUid(),
+              facilityService.getUri(),
+              nonce));
       
       DerFacilityRegistrationFormData regFormData = DerFacilityRegistrationFormData.newBuilder()
           .setData(formData)
@@ -225,39 +229,24 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
     return exchangeDao.save(entity);
   }
 
-  private ManagedChannel channelForUri(String uri) {
-    ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder.forTarget(uri);
-    if (usePlaintext) {
-      channelBuilder.usePlaintext();
-    }
-    return channelBuilder.build();
+  /**
+   * Set the channel provider to use for connecting to the exchange registry.
+   * 
+   * @param exchangeRegistryChannelProvider
+   *        the channel provider to use
+   */
+  public void setExchangeRegistryChannelProvider(ChannelProvider exchangeRegistryChannelProvider) {
+    this.exchangeRegistryChannelProvider = exchangeRegistryChannelProvider;
   }
 
   /**
-   * Set the channel factory to use for connecting to the exchange registry.
+   * Set the channel provider to use for connecting to exchanges.
    * 
-   * <p>
-   * This is configured as an {@link ObjectFactory} with the idea that the application does not need
-   * to maintain any long-term connection with the registry. Thus, the connection to the registry
-   * can be obtained and released more easily, only when needed.
-   * </p>
-   * 
-   * @param exchangeRegistryChannelFactory
-   *        the channel factory to use
+   * @param exchangeChannelProvider
+   *        the exchangeChannelProvider to set
    */
-  public void setExchangeRegistryChannelFactory(
-      ObjectFactory<ManagedChannel> exchangeRegistryChannelFactory) {
-    this.exchangeRegistryChannelFactory = exchangeRegistryChannelFactory;
-  }
-
-  /**
-   * Configure the use of SSL for facility exchange communication transports.
-   * 
-   * @param usePlaintext
-   *        {@literal true} to use plain text, {@code false} to use SSL
-   */
-  public void setUsePlaintext(boolean usePlaintext) {
-    this.usePlaintext = usePlaintext;
+  public void setExchangeChannelProvider(ChannelProvider exchangeChannelProvider) {
+    this.exchangeChannelProvider = exchangeChannelProvider;
   }
 
 }

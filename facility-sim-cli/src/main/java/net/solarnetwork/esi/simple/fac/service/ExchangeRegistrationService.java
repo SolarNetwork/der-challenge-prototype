@@ -69,6 +69,13 @@ public interface ExchangeRegistrationService {
   ExchangeRegistrationEntity registerWithExchange(DerFacilityExchangeInfo exchange,
       FormData formData);
 
+  /**
+   * Complete the exchange registration process.
+   * 
+   * @param request
+   *        the registration success indicator
+   * @return the registered exchange entity
+   */
   ExchangeEntity completeExchangeRegistration(DerFacilityRegistration request);
 
 }
