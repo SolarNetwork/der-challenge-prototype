@@ -21,6 +21,7 @@ import java.util.concurrent.CompletableFuture;
 
 import org.springframework.scheduling.annotation.Async;
 
+import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 
@@ -31,6 +32,27 @@ import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
  * @version 1.0
  */
 public interface FacilityRegistrationService {
+
+  /** The form field key for the Utility Interconnection Customer Identifier value. */
+  String FORM_KEY_UICI = "uici";
+
+  /** The form field key for the cutomer's ID value. */
+  String FORM_KEY_CUSTOMER_ID = "cust-id";
+
+  /** The form field key for the cutomer's surname value. */
+  String FORM_KEY_CUSTOMER_SURNAME = "cust-surname";
+
+  /**
+   * Submit a facility registration form.
+   * 
+   * @param request
+   *        the registration request
+   * @return the facility registration
+   * @throws IllegalArgumentException
+   *         if any validation errors occur
+   */
+  public FacilityRegistrationEntity submitDerFacilityRegistrationForm(
+      DerFacilityRegistrationFormData request);
 
   /**
    * Process a facility registration.

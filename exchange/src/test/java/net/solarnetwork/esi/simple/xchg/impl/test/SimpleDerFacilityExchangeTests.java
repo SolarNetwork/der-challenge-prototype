@@ -18,12 +18,10 @@
 package net.solarnetwork.esi.simple.xchg.impl.test;
 
 import static java.util.Arrays.asList;
-import static net.solarnetwork.esi.simple.xchg.test.TestUtils.invocationArg;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
@@ -36,16 +34,15 @@ import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
@@ -68,10 +65,10 @@ import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.MessageSignature;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeBlockingStub;
-import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
+import net.solarnetwork.esi.util.CryptoUtils;
 
 /**
  * Test cases for the {@link SimpleDerFacilityExchange} class.
@@ -99,7 +96,6 @@ public class SimpleDerFacilityExchangeTests {
   private KeyPair facilityKeyPair;
   private SimpleDerFacilityExchange service;
   private ManagedChannel channel;
-  private FacilityRegistrationEntityDao facilityRegistrationDao;
   private FacilityRegistrationService facilityRegistrationService;
 
   @Before
@@ -110,12 +106,9 @@ public class SimpleDerFacilityExchangeTests {
 
     operatorUid = UUID.randomUUID().toString();
     operatorKeyPair = STANDARD_HELPER.generateKeyPair();
-    service = new SimpleDerFacilityExchange(operatorUid, operatorKeyPair, registrationForms,
-        STANDARD_HELPER);
+    service = new SimpleDerFacilityExchange(operatorUid, operatorKeyPair, registrationForms);
 
     facilityKeyPair = STANDARD_HELPER.generateKeyPair();
-    facilityRegistrationDao = mock(FacilityRegistrationEntityDao.class);
-    service.setFacilityRegistrationDao(facilityRegistrationDao);
 
     facilityRegistrationService = mock(FacilityRegistrationService.class);
     service.setFacilityRegistrationService(facilityRegistrationService);
@@ -241,9 +234,9 @@ public class SimpleDerFacilityExchangeTests {
         .setFacilityNonce(ByteString.copyFrom(TEST_NONCE))
         .setData(FormData.newBuilder()
             .setKey(TEST_FORM_KEY)
-            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_ID, TEST_CUST_ID)
-            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_SURNAME, TEST_CUST_SURNAME)
-            .putData(SimpleDerFacilityExchange.FORM_KEY_UICI, TEST_UICI)
+            .putData(FacilityRegistrationService.FORM_KEY_CUSTOMER_ID, TEST_CUST_ID)
+            .putData(FacilityRegistrationService.FORM_KEY_CUSTOMER_SURNAME, TEST_CUST_SURNAME)
+            .putData(FacilityRegistrationService.FORM_KEY_UICI, TEST_UICI)
             .build())
         .build();
     // @formatter:on
@@ -252,50 +245,28 @@ public class SimpleDerFacilityExchangeTests {
   @Test
   public void submitRegistrationOk() throws NoSuchAlgorithmException {
     // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-    ArgumentCaptor<FacilityRegistrationEntity> facilityRegCaptor = ArgumentCaptor
-        .forClass(FacilityRegistrationEntity.class);
-    given(facilityRegistrationDao.save(facilityRegCaptor.capture()))
-        .willAnswer(invocationArg(0, FacilityRegistrationEntity.class));
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
+    FacilityRegistrationEntity reg = new FacilityRegistrationEntity(Instant.now());
+    reg.setOperatorNonce(CryptoUtils.generateRandomBytes(8));
+    given(facilityRegistrationService.submitDerFacilityRegistrationForm(formData)).willReturn(reg);
 
-    ArgumentCaptor<FacilityRegistrationEntity> facilityRegServiceCaptor = ArgumentCaptor
-        .forClass(FacilityRegistrationEntity.class);
-    given(
-        facilityRegistrationService.processFacilityRegistration(facilityRegServiceCaptor.capture()))
-            .willReturn(new CompletableFuture<>());
+    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
 
     // when
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
     DerFacilityRegistrationFormDataReceipt receipt = client
         .submitDerFacilityRegistrationForm(formData);
 
     // then
     assertThat("Receipt available", receipt, notNullValue());
-    assertThat("Operator nonce", receipt.getOperatorNonce(), notNullValue());
-    assertThat("Operator nonce size", receipt.getOperatorNonce().size(), equalTo(24));
-
-    FacilityRegistrationEntity reg = facilityRegCaptor.getValue();
-    assertThat("Registration saved", reg, notNullValue());
-    assertThat("Registration customer ID", reg.getCustomerId(), equalTo(TEST_CUST_ID));
-    assertThat("Registration facility URI", reg.getFacilityEndpointUri(),
-        equalTo(TEST_FACILITY_ENDPOINT_URI));
-    assertThat("Registration facility ID", reg.getFacilityUid(),
-        equalTo(formData.getRoute().getFacilityUid()));
-    assertThat("Registration facility nonce", ByteString.copyFrom(reg.getFacilityNonce()),
-        equalTo(formData.getFacilityNonce()));
-
-    FacilityRegistrationEntity regService = facilityRegServiceCaptor.getValue();
-    assertThat("Service reg same instance", regService, sameInstance(reg));
+    assertThat("Operator nonce", receipt.getOperatorNonce(),
+        equalTo(ByteString.copyFrom(reg.getOperatorNonce())));
   }
 
   @Test
-  public void submitRegistrationBadOperatorUid() {
+  public void submitRegistrationgIllegalArgument() {
     // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-
-    // when
-    // @formatter:off
     DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
+    // @formatter:off
     formData = formData.toBuilder()
         .setRoute(formData.getRoute().toBuilder()
             .setOperatorUid("not.the.right.operator.uid")
@@ -303,30 +274,12 @@ public class SimpleDerFacilityExchangeTests {
         .build();
     // @formatter:on
 
-    try {
-      client.submitDerFacilityRegistrationForm(formData);
-      fail("Validation exception expected");
-    } catch (StatusRuntimeException e) {
-      assertThat("Invalid argument", e.getStatus().getCode(),
-          equalTo(Status.INVALID_ARGUMENT.getCode()));
-    }
-  }
+    given(facilityRegistrationService.submitDerFacilityRegistrationForm(formData))
+        .willThrow(new IllegalArgumentException("Test"));
 
-  @Test
-  public void submitRegistrationMissingFacilityUid() {
-    // given
     DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
 
     // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
-    formData = formData.toBuilder()
-        .setRoute(formData.getRoute().toBuilder()
-            .clearFacilityUid()
-            .build())
-        .build();
-    // @formatter:on
-
     try {
       client.submitDerFacilityRegistrationForm(formData);
       fail("Validation exception expected");
@@ -336,183 +289,4 @@ public class SimpleDerFacilityExchangeTests {
     }
   }
 
-  @Test
-  public void submitRegistrationMissingFacilityEndpointUri() {
-    // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-
-    // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
-        .clearFacilityEndpointUri()
-        .build();
-    // @formatter:on
-
-    try {
-      client.submitDerFacilityRegistrationForm(formData);
-      fail("Validation exception expected");
-    } catch (StatusRuntimeException e) {
-      assertThat("Invalid argument", e.getStatus().getCode(),
-          equalTo(Status.INVALID_ARGUMENT.getCode()));
-    }
-  }
-
-  @Test
-  public void submitRegistrationMalformedFacilityEndpointUri() {
-    // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-
-    // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
-        .setFacilityEndpointUri("not a URI")
-        .build();
-    // @formatter:on
-
-    try {
-      client.submitDerFacilityRegistrationForm(formData);
-      fail("Validation exception expected");
-    } catch (StatusRuntimeException e) {
-      assertThat("Invalid argument", e.getStatus().getCode(),
-          equalTo(Status.INVALID_ARGUMENT.getCode()));
-    }
-  }
-
-  @Test
-  public void submitRegistrationSmallFacilityNonce() {
-    // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-
-    // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
-        .setFacilityNonce(ByteString.copyFrom(generateNonce(7)))
-        .build();
-    // @formatter:on
-
-    try {
-      client.submitDerFacilityRegistrationForm(formData);
-      fail("Validation exception expected");
-    } catch (StatusRuntimeException e) {
-      assertThat("Invalid argument", e.getStatus().getCode(),
-          equalTo(Status.INVALID_ARGUMENT.getCode()));
-    }
-  }
-
-  @Test
-  public void submitRegistrationLargeFacilityNonce() {
-    // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-
-    // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData().toBuilder()
-        .setFacilityNonce(ByteString.copyFrom(generateNonce(25)))
-        .build();
-    // @formatter:on
-
-    try {
-      client.submitDerFacilityRegistrationForm(formData);
-      fail("Validation exception expected");
-    } catch (StatusRuntimeException e) {
-      assertThat("Invalid argument", e.getStatus().getCode(),
-          equalTo(Status.INVALID_ARGUMENT.getCode()));
-    }
-  }
-
-  @Test
-  public void submitRegistrationBadFormKey() {
-    // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-
-    // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
-    formData = formData.toBuilder()
-        .setData(formData.getData().toBuilder()
-            .setKey("not.the.form.key")
-            .build())
-        .build();
-    // @formatter:on
-
-    try {
-      client.submitDerFacilityRegistrationForm(formData);
-      fail("Validation exception expected");
-    } catch (StatusRuntimeException e) {
-      assertThat("Invalid argument", e.getStatus().getCode(),
-          equalTo(Status.INVALID_ARGUMENT.getCode()));
-    }
-  }
-
-  @Test
-  public void submitRegistrationMalformedUici() {
-    // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-
-    // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
-    formData = formData.toBuilder()
-        .setData(formData.getData().toBuilder()
-            .putData(SimpleDerFacilityExchange.FORM_KEY_UICI, "not a uici")
-            .build())
-        .build();
-    // @formatter:on
-
-    try {
-      client.submitDerFacilityRegistrationForm(formData);
-      fail("Validation exception expected");
-    } catch (StatusRuntimeException e) {
-      assertThat("Invalid argument", e.getStatus().getCode(),
-          equalTo(Status.INVALID_ARGUMENT.getCode()));
-    }
-  }
-
-  @Test
-  public void submitRegistrationCustomerId() {
-    // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-
-    // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
-    formData = formData.toBuilder()
-        .setData(formData.getData().toBuilder()
-            .putData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_ID, "not a customer id")
-            .build())
-        .build();
-    // @formatter:on
-
-    try {
-      client.submitDerFacilityRegistrationForm(formData);
-      fail("Validation exception expected");
-    } catch (StatusRuntimeException e) {
-      assertThat("Invalid argument", e.getStatus().getCode(),
-          equalTo(Status.INVALID_ARGUMENT.getCode()));
-    }
-  }
-
-  @Test
-  public void submitRegistrationMissingCustomerSurname() {
-    // given
-    DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
-
-    // when
-    // @formatter:off
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
-    formData = formData.toBuilder()
-        .setData(formData.getData().toBuilder()
-            .removeData(SimpleDerFacilityExchange.FORM_KEY_CUSTOMER_SURNAME)
-            .build())
-        .build();
-    // @formatter:on
-
-    try {
-      client.submitDerFacilityRegistrationForm(formData);
-      fail("Validation exception expected");
-    } catch (StatusRuntimeException e) {
-      assertThat("Invalid argument", e.getStatus().getCode(),
-          equalTo(Status.INVALID_ARGUMENT.getCode()));
-    }
-  }
 }

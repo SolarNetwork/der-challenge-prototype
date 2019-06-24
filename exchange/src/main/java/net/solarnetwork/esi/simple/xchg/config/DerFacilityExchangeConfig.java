@@ -45,8 +45,8 @@ import com.google.protobuf.util.JsonFormat;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
+import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityRegistrationService;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
-import net.solarnetwork.esi.simple.xchg.impl.SimpleFacilityRegistrationService;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
 import net.solarnetwork.esi.util.CryptoHelper;
 import net.solarnetwork.esi.util.CryptoUtils;
@@ -97,8 +97,12 @@ public class DerFacilityExchangeConfig {
 
   @Qualifier("regform-list")
   @Bean
-  public List<Form> registrationForms() throws IOException {
-    return Collections.singletonList(loadForm(registrationFormResource));
+  public List<Form> registrationForms() {
+    try {
+      return Collections.singletonList(loadForm(registrationFormResource));
+    } catch (IOException e) {
+      throw new RuntimeException("Error loading registration forms.", e);
+    }
   }
 
   private Form loadForm(Resource resource) throws IOException {
@@ -179,9 +183,9 @@ public class DerFacilityExchangeConfig {
    * @return the service
    */
   @Bean
-  public SimpleFacilityRegistrationService facilityRegistrationService() {
-    SimpleFacilityRegistrationService s = new SimpleFacilityRegistrationService(operatorUid(),
-        operatorKeyPair(), cryptoHelper());
+  public DaoFacilityRegistrationService facilityRegistrationService() {
+    DaoFacilityRegistrationService s = new DaoFacilityRegistrationService(operatorUid(),
+        operatorKeyPair(), registrationForms(), cryptoHelper());
     s.setFacilityDao(facilityDao);
     s.setFacilityRegistrationDao(facilityRegistrationDao);
     return s;
