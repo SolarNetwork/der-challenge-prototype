@@ -72,6 +72,23 @@ public final class CryptoUtils {
   public static final String STANDARD_PBE_CIPHER_ALG = "AES/GCM/NoPadding";
 
   /**
+   * Generate an array of random bytes of a given length.
+   * 
+   * @param length
+   *        the desired length
+   * @return the random bytes
+   */
+  public static final byte[] generateRandomBytes(int length) {
+    byte[] b = new byte[length];
+    try {
+      SecureRandom.getInstanceStrong().nextBytes(b);
+    } catch (NoSuchAlgorithmException e) {
+      throw new RuntimeException("Error generating nonce: " + e.getMessage(), e);
+    }
+    return b;
+  }
+
+  /**
    * Save a key pair from to an output stream.
    * 
    * <p>
