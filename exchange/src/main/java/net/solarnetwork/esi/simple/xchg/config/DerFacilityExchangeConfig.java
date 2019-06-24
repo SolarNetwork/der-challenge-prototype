@@ -75,7 +75,7 @@ public class DerFacilityExchangeConfig {
   @Value("${xchg.keyStoreSalt:not.a.salt}")
   private String keyStoreSalt = "not.a.salt";
 
-  @Value("${xchg.keyStorePassword:not.an.initialization.vector}")
+  @Value("${xchg.keyStoreIv:not.an.initialization.vector}")
   private String keyStoreIv = "not.an.initialization.vector";
 
   // CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINE
