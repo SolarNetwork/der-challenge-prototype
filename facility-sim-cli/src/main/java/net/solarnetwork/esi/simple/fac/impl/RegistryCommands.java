@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.fac.cli;
+package net.solarnetwork.esi.simple.fac.impl;
 
 import java.util.ArrayList;
 import java.util.Iterator;

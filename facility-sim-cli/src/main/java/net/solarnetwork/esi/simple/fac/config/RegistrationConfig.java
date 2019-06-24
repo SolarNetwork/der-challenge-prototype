@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.fac.cli;
+package net.solarnetwork.esi.simple.fac.config;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectFactory;

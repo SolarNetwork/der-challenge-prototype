@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.fac.cli;
+package net.solarnetwork.esi.simple.fac;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -25,13 +25,16 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
+import net.solarnetwork.esi.simple.fac.config.AppConfiguration;
+import net.solarnetwork.esi.simple.fac.impl.AppServices;
+
 /**
  * Main entry point for ESI Simple Facility CLI application.
  * 
  * @author matt
  * @version 1.0
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackageClasses = { AppConfiguration.class, AppServices.class })
 public class FacilityTool {
 
   /**

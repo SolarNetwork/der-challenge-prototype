@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.fac.cli;
+package net.solarnetwork.esi.simple.fac.config;
 
 import java.io.FileOutputStream;
 import java.io.IOException;

@@ -28,8 +28,6 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.Locale;
 
-import javax.annotation.Resource;
-
 import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.transaction.annotation.Propagation;
@@ -74,13 +72,11 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
 
   private static final Charset UTF8 = Charset.forName("UTF-8");
 
-  @Resource(name = "exchange-registry-channel-factory")
-  private ObjectFactory<ManagedChannel> exchangeRegistryChannelFactory;
-  private boolean usePlaintext = false;
-
   private final FacilityService facilityService;
   private final ExchangeEntityDao exchangeDao;
   private final ExchangeRegistrationEntityDao exchangeRegistrationDao;
+  private ObjectFactory<ManagedChannel> exchangeRegistryChannelFactory;
+  private boolean usePlaintext = false;
 
   /**
    * Constructor.
