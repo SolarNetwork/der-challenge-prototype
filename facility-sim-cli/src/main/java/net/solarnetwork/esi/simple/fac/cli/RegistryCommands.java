@@ -21,9 +21,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import javax.annotation.Resource;
-
-import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
@@ -32,11 +29,9 @@ import com.github.fonimus.ssh.shell.PromptColor;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
-import io.grpc.ManagedChannel;
 import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
-import net.solarnetwork.esi.domain.DerFacilityExchangeRequest;
-import net.solarnetwork.esi.service.DerFacilityExchangeRegistryGrpc;
-import net.solarnetwork.esi.service.DerFacilityExchangeRegistryGrpc.DerFacilityExchangeRegistryBlockingStub;
+import net.solarnetwork.esi.domain.FormData;
+import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
 
 /**
  * Shell commands for the ESI Facility Registry client.
@@ -48,11 +43,24 @@ import net.solarnetwork.esi.service.DerFacilityExchangeRegistryGrpc.DerFacilityE
 @ShellCommandGroup("Registry")
 public class RegistryCommands {
 
-  @Resource(name = "facility-registration")
-  private ObjectFactory<ManagedChannel> channelFactory;
+  private final SshShellHelper shell;
+  private final ExchangeRegistrationService exchangeRegistrationService;
 
+  /**
+   * Constructor.
+   * 
+   * @param shell
+   *        the shell helper
+   * @param exchangeRegistrationService
+   *        the exchange registration service
+   */
   @Autowired
-  private SshShellHelper shell;
+  public RegistryCommands(SshShellHelper shell,
+      ExchangeRegistrationService exchangeRegistrationService) {
+    super();
+    this.shell = shell;
+    this.exchangeRegistrationService = exchangeRegistrationService;
+  }
 
   /**
    * List the available facilities in the registry.
@@ -63,28 +71,20 @@ public class RegistryCommands {
   }
 
   private List<DerFacilityExchangeInfo> listExchanges() {
-    ManagedChannel channel = channelFactory.getObject();
     List<DerFacilityExchangeInfo> result = new ArrayList<>(8);
-    try {
-      DerFacilityExchangeRegistryBlockingStub client = DerFacilityExchangeRegistryGrpc
-          .newBlockingStub(channel);
-      Iterator<DerFacilityExchangeInfo> itr = client
-          .listDerFacilityExchanges(DerFacilityExchangeRequest.newBuilder().build());
-      int i = 0;
-      String fmt = "  %-10s %s";
-      while (itr.hasNext()) {
-        i += 1;
-        DerFacilityExchangeInfo info = itr.next();
-        result.add(info);
-        shell.print("Facility Exchange " + i, PromptColor.MAGENTA);
-        shell.print(String.format(fmt, "Name", info.getName()));
-        shell.print(String.format(fmt, "ID", info.getUid()));
-        shell.print(String.format(fmt, "URI", info.getEndpointUri()));
-      }
-      shell.print("");
-    } finally {
-      channel.shutdown();
+    Iterator<DerFacilityExchangeInfo> itr = exchangeRegistrationService.listExchanges(null);
+    int i = 0;
+    String fmt = "  %-10s %s";
+    while (itr.hasNext()) {
+      i += 1;
+      DerFacilityExchangeInfo info = itr.next();
+      result.add(info);
+      shell.print("Facility Exchange " + i, PromptColor.MAGENTA);
+      shell.print(String.format(fmt, "Name", info.getName()));
+      shell.print(String.format(fmt, "ID", info.getUid()));
+      shell.print(String.format(fmt, "URI", info.getEndpointUri()));
     }
+    shell.print("");
     return result;
   }
 
@@ -104,7 +104,9 @@ public class RegistryCommands {
               exchange.getEndpointUri()))) {
             shell.printInfo(String.format("Sweet as, you'll need to register with %s now.",
                 exchange.getName()));
-            // TODO: save choice
+            FormData.Builder formData = FormData.newBuilder();
+
+            exchangeRegistrationService.registerWithExchange(exchange, formData.build());
             break;
           }
         } else {

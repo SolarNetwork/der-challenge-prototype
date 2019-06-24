@@ -1,8 +1,13 @@
 esi:
+  facility:
+    uid: test-facility
+    conn:
+       uri: dns:///localhost:9092
+       usePlaintext: true
   registry:
     conn:
-      usePlaintext: true
       uri: dns:///localhost:9090
+      usePlaintext: true
 
 grpc:
   server:

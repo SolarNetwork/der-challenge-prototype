@@ -19,12 +19,18 @@ package net.solarnetwork.esi.simple.fac.cli;
 
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
+import net.solarnetwork.esi.simple.fac.dao.ExchangeRegistrationEntityDao;
+import net.solarnetwork.esi.simple.fac.impl.DaoExchangeRegistrationService;
+import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
+import net.solarnetwork.esi.simple.fac.service.FacilityService;
 
 /**
  * Configuration for the ESI Facility Registration client.
@@ -33,7 +39,7 @@ import io.grpc.ManagedChannelBuilder;
  * @version 1.0
  */
 @Configuration
-public class RegistsryConfig {
+public class RegistrationConfig {
 
   @Value("${esi.registry.conn.usePlaintext:false}")
   private boolean usePlaintext = false;
@@ -41,13 +47,16 @@ public class RegistsryConfig {
   @Value("${esi.registry.conn.uri:dns:///localhost:9090}")
   private String uri = "dns:///localhost:9090";
 
-  /**
-   * An object factory for creating a gRPC channel to the ESI Facility Registry.
-   * 
-   * @return the factory
-   */
-  @Bean(name = "facility-registration")
-  public ObjectFactory<ManagedChannel> registryChannel() {
+  @Autowired
+  private ExchangeEntityDao exchangeDao;
+
+  @Autowired
+  private ExchangeRegistrationEntityDao exchangeRegistrationDao;
+
+  @Autowired
+  private FacilityService facilityService;
+
+  private ObjectFactory<ManagedChannel> exchangeRegistryChannelFactory() {
     return new ObjectFactory<ManagedChannel>() {
 
       @Override
@@ -59,6 +68,19 @@ public class RegistsryConfig {
         return channelBuilder.build();
       }
     };
+  }
+
+  /**
+   * Create the {@link ExchangeRegistrationService}.
+   * 
+   * @return the service
+   */
+  @Bean
+  public DaoExchangeRegistrationService exchangeRegistrationService() {
+    DaoExchangeRegistrationService s = new DaoExchangeRegistrationService(facilityService,
+        exchangeDao, exchangeRegistrationDao);
+    s.setExchangeRegistryChannelFactory(exchangeRegistryChannelFactory());
+    return s;
   }
 
 }
