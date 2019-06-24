@@ -16,6 +16,9 @@ checkstyle {
 dependencies {
 	api project(':esi-api')
 	
+	// gRPC
+	implementation "io.grpc:grpc-core:${grpcVersion}"
+	
 	// DB
 	implementation 'org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.2.Final'
 	implementation 'org.springframework.data:spring-data-commons:2.1.8.RELEASE'
