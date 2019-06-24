@@ -65,7 +65,7 @@ import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
 import net.solarnetwork.esi.util.CryptoHelper;
 
 /**
- * Really, really, really simple gRPC implementation of a DER operator service.
+ * Really, really, really simple gRPC implementation of a DER facility exchange.
  * 
  * @author matt
  * @version 1.0
