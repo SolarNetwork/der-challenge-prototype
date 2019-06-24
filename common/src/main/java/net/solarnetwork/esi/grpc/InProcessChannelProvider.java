@@ -58,6 +58,9 @@ public class InProcessChannelProvider extends SimpleChannelProvider {
    */
   @Override
   public ManagedChannel channelForUri(URI uri) {
+    if (uri == null) {
+      throw new IllegalArgumentException("URI must not be null.");
+    }
     String name = uri.getAuthority();
     if (name == null) {
       throw new IllegalArgumentException("Missing URI authority.");
