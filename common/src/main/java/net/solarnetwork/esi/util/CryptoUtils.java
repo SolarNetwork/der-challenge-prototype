@@ -26,6 +26,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -286,6 +287,8 @@ public final class CryptoUtils {
    *        {@link #generateMessageSignature(CryptoHelper, KeyPair, PublicKey, Iterable)} for
    *        converting the objects to bytes are used
    * @return the computed and validated message digest
+   * @throws RuntimeException
+   *         if any error occurs
    */
   public static byte[] validateMessageSignature(CryptoHelper cryptoHelper, MessageSignature msgSig,
       KeyPair recipientKeyPair, PublicKey senderPublicKey, Iterable<?> messageData) {
@@ -314,6 +317,38 @@ public final class CryptoUtils {
           msgSig.getIv().toByteArray());
     } catch (IOException e) {
       throw new RuntimeException("Error validating message signature: " + e.getMessage(), e);
+    }
+  }
+
+  /**
+   * Compute a SHA-256 digest of a set of data.
+   * 
+   * @param messageData
+   *        the message data to compute the expected message digest from to compare to the digest
+   *        decrypted from the signature; the same rules outlined in
+   *        {@link #generateMessageSignature(CryptoHelper, KeyPair, PublicKey, Iterable)} for
+   *        converting the objects to bytes are used
+   * @return the digest value
+   * @throws RuntimeException
+   *         if any error occurs
+   */
+  public static byte[] sha256(Iterable<?> messageData) {
+    try {
+      MessageDigest digest = MessageDigest.getInstance("SHA-256");
+      for (Object o : messageData) {
+        byte[] bytes;
+        if (o instanceof byte[]) {
+          bytes = (byte[]) o;
+        } else if (o instanceof ByteString) {
+          bytes = ((ByteString) o).toByteArray();
+        } else {
+          bytes = o.toString().getBytes(STANDARD_CHARSET);
+        }
+        digest.update(bytes);
+      }
+      return digest.digest();
+    } catch (final NoSuchAlgorithmException e) {
+      throw new RuntimeException("Error computing SHA-256 digest: " + e.getMessage(), e);
     }
   }
 

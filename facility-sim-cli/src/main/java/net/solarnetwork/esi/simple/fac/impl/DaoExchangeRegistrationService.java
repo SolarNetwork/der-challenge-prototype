@@ -22,14 +22,12 @@ import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.security.KeyPair;
-import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Locale;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -69,8 +67,6 @@ import net.solarnetwork.esi.util.CryptoUtils;
  * @version 1.0
  */
 public class DaoExchangeRegistrationService implements ExchangeRegistrationService {
-
-  private static final Charset UTF8 = Charset.forName("UTF-8");
 
   private final FacilityService facilityService;
   private final ExchangeEntityDao exchangeDao;
@@ -210,14 +206,14 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
             CryptoKey.newBuilder().setKey(ByteString.copyFrom(reg.getExchangePublicKey())).build()),
         asList(operatorUid, facilityService.getUid()));
 
-    // SHA256(operatorNonce + facilityNonce + operatorUid + facilityUid + facilityUri)
-    MessageDigest sha256 = DigestUtils.getSha256Digest();
-    sha256.update(reg.getOperatorNonce());
-    sha256.update(reg.getFacilityNonce());
-    sha256.update(operatorUid.getBytes(UTF8));
-    sha256.update(facilityService.getUid().getBytes(UTF8));
-    sha256.update(facilityService.getUri().toString().getBytes(UTF8));
-    ByteString expectedToken = ByteString.copyFrom(sha256.digest());
+    // @formatter:off
+    ByteString expectedToken = ByteString.copyFrom(CryptoUtils.sha256(Arrays.asList(
+        reg.getOperatorNonce(),
+        reg.getFacilityNonce(),
+        operatorUid,
+        facilityService.getUid(),
+        facilityService.getUri())));
+    // @formatter:on
     ByteString reqToken = request.getRegistrationToken();
     if (!expectedToken.equals(reqToken)) {
       throw new IllegalArgumentException("The registration token is not valid.");
