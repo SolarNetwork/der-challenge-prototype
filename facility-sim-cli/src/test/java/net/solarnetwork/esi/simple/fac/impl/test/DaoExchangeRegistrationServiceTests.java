@@ -20,6 +20,7 @@ package net.solarnetwork.esi.simple.fac.impl.test;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.esi.simple.fac.test.TestUtils.invocationArg;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
+import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
@@ -32,10 +33,13 @@ import static org.mockito.Mockito.mock;
 import java.io.IOException;
 import java.net.URI;
 import java.security.KeyPair;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -43,6 +47,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
@@ -53,6 +58,7 @@ import io.grpc.testing.GrpcCleanupRule;
 import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
 import net.solarnetwork.esi.domain.DerFacilityExchangeRequest;
+import net.solarnetwork.esi.domain.DerFacilityRegistration;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
@@ -65,6 +71,7 @@ import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeI
 import net.solarnetwork.esi.service.DerFacilityExchangeRegistryGrpc.DerFacilityExchangeRegistryImplBase;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeRegistrationEntityDao;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEntity;
 import net.solarnetwork.esi.simple.fac.impl.DaoExchangeRegistrationService;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
@@ -275,6 +282,61 @@ public class DaoExchangeRegistrationServiceTests {
         equalTo(submittedFormData.get().getFacilityNonce()));
     assertThat("Result operator nonce", ByteString.copyFrom(result.getOperatorNonce()),
         equalTo(receipt.getOperatorNonce()));
+  }
+
+  @Test
+  public void completeRegistrationOk() throws IOException {
+    // given
+    givenDefaultFacilityService();
+
+    URI exchangeUri = URI.create("//test-exchange");
+
+    ExchangeRegistrationEntity exchangeRegistration = new ExchangeRegistrationEntity(Instant.now());
+    exchangeRegistration.setExchangeEndpointUri(exchangeUri.toString());
+    exchangeRegistration.setExchangePublicKey(exchangeKeyPair.getPublic().getEncoded());
+    exchangeRegistration.setFacilityNonce(CryptoUtils.generateRandomBytes(8));
+    exchangeRegistration.setId(operatorUid);
+    exchangeRegistration.setOperatorNonce(CryptoUtils.generateRandomBytes(8));
+
+    // look up the registration to confirm
+    given(exchangeRegistrationDao.findById(operatorUid))
+        .willReturn(Optional.of(exchangeRegistration));
+
+    // save the new exchange
+    given(exchangeDao.save(Mockito.any(ExchangeEntity.class)))
+        .willAnswer(invocationArg(0, ExchangeEntity.class));
+
+    // when
+    // @formatter:off
+    DerFacilityRegistration derReg = DerFacilityRegistration.newBuilder()
+        .setSuccess(true)
+        .setRegistrationToken(ByteString.copyFrom(CryptoUtils.sha256(Arrays.asList(
+            exchangeRegistration.getOperatorNonce(),
+            exchangeRegistration.getFacilityNonce(),
+            operatorUid,
+            facilityService.getUid(),
+            facilityService.getUri()))))
+        .setRoute(DerRoute.newBuilder()
+            .setFacilityUid(facilityUid)
+            .setOperatorUid(operatorUid)
+            .setSignature(generateMessageSignature(
+                STANDARD_HELPER, 
+                exchangeKeyPair, 
+                facilityKeyPair.getPublic(), 
+                asList(
+                    operatorUid,
+                    facilityService.getUid())))
+            .build())
+        .build();
+    ExchangeEntity exchange = service.completeExchangeRegistration(derReg);
+    // @formatter:on
+
+    // then
+    assertThat("Exchange created", exchange, notNullValue());
+    assertThat("Exchange UID", exchange.getId(), equalTo(operatorUid));
+    assertThat("Exchange URI", exchange.getExchangeEndpointUri(), equalTo(exchangeUri.toString()));
+    assertThat("Exchange public key", ByteString.copyFrom(exchange.getExchangePublicKey()),
+        equalTo(ByteString.copyFrom(exchangeKeyPair.getPublic().getEncoded())));
   }
 
 }
