@@ -129,6 +129,6 @@ public class JpaFacilityDaoTests extends SpringTestSupport {
         equalTo(last.getFacilityEndpointUri()));
     assertThat("Facility key", ByteString.copyFrom(entity.getFacilityPublicKey()),
         equalTo(ByteString.copyFrom(last.getFacilityPublicKey())));
-
   }
+
 }
