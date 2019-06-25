@@ -20,6 +20,7 @@ package net.solarnetwork.esi.simple.fac.impl.test;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.esi.simple.fac.test.TestUtils.invocationArg;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
+import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
@@ -86,7 +87,10 @@ public class DaoExchangeRegistrationServiceTests {
 
   private FacilityService facilityService;
   private String facilityUid;
+  private URI facilityUri;
   private KeyPair facilityKeyPair;
+  private String operatorUid;
+  private KeyPair exchangeKeyPair;
   private ExchangeEntityDao exchangeDao;
   private ExchangeRegistrationEntityDao exchangeRegistrationDao;
   private DaoExchangeRegistrationService service;
@@ -94,8 +98,11 @@ public class DaoExchangeRegistrationServiceTests {
   @Before
   public void setup() {
     facilityUid = UUID.randomUUID().toString();
+    facilityUri = URI.create("//test-facility");
     facilityKeyPair = STANDARD_HELPER.generateKeyPair();
     facilityService = mock(FacilityService.class);
+    operatorUid = UUID.randomUUID().toString();
+    exchangeKeyPair = CryptoUtils.STANDARD_HELPER.generateKeyPair();
     exchangeDao = mock(ExchangeEntityDao.class);
     exchangeRegistrationDao = mock(ExchangeRegistrationEntityDao.class);
     service = new DaoExchangeRegistrationService(facilityService, exchangeDao,
@@ -179,44 +186,44 @@ public class DaoExchangeRegistrationServiceTests {
     // @formatter:on
   }
 
-  @Test
-  public void registerWithExchangeOk() throws IOException {
-    // given
+  private void givenDefaultFacilityService() {
     given(facilityService.getCryptoHelper()).willReturn(STANDARD_HELPER);
     given(facilityService.getKeyPair()).willReturn(facilityKeyPair);
     given(facilityService.getUid()).willReturn(facilityUid);
-
-    URI facilityUri = URI.create("//test-facility");
     given(facilityService.getUri()).willReturn(facilityUri);
+  }
 
-    ArgumentCaptor<ExchangeRegistrationEntity> exchRegCaptor = ArgumentCaptor
-        .forClass(ExchangeRegistrationEntity.class);
-    given(exchangeRegistrationDao.save(exchRegCaptor.capture()))
-        .willAnswer(invocationArg(0, ExchangeRegistrationEntity.class));
-
-    String operatorUid = UUID.randomUUID().toString();
-    FormData regFormData = defaultRegisterFormData();
-    DerFacilityRegistrationFormDataReceipt receipt = DerFacilityRegistrationFormDataReceipt
-        .newBuilder().setOperatorNonce(ByteString.copyFrom(CryptoUtils.generateRandomBytes(8)))
-        .build();
-    KeyPair exchKeyPair = CryptoUtils.STANDARD_HELPER.generateKeyPair();
+  @Test
+  public void registerWithExchangeOk() throws IOException {
+    // given
+    givenDefaultFacilityService();
 
     // @formatter:off
-    CryptoKey exchPublicKey = CryptoKey.newBuilder()
-        .setAlgorithm(exchKeyPair.getPublic().getAlgorithm())
-        .setEncoding(exchKeyPair.getPublic().getFormat())
-        .setKey(ByteString.copyFrom(exchKeyPair.getPublic().getEncoded()))
+    CryptoKey exchangePublicKey = CryptoKey.newBuilder()
+        .setAlgorithm(exchangeKeyPair.getPublic().getAlgorithm())
+        .setEncoding(exchangeKeyPair.getPublic().getFormat())
+        .setKey(ByteString.copyFrom(exchangeKeyPair.getPublic().getEncoded()))
         .build();
     // @formatter:on
 
+    FormData regFormData = defaultRegisterFormData();
     // CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINE
     AtomicReference<DerFacilityRegistrationFormData> submittedFormData = new AtomicReference<DerFacilityRegistrationFormData>();
+
+    ArgumentCaptor<ExchangeRegistrationEntity> exchangeRegCaptor = ArgumentCaptor
+        .forClass(ExchangeRegistrationEntity.class);
+    given(exchangeRegistrationDao.save(exchangeRegCaptor.capture()))
+        .willAnswer(invocationArg(0, ExchangeRegistrationEntity.class));
+
+    DerFacilityRegistrationFormDataReceipt receipt = DerFacilityRegistrationFormDataReceipt
+        .newBuilder().setOperatorNonce(ByteString.copyFrom(CryptoUtils.generateRandomBytes(8)))
+        .build();
 
     DerFacilityExchangeImplBase exchangeService = new DerFacilityExchangeImplBase() {
 
       @Override
       public void getPublicCryptoKey(Empty request, StreamObserver<CryptoKey> responseObserver) {
-        responseObserver.onNext(exchPublicKey);
+        responseObserver.onNext(exchangePublicKey);
         responseObserver.onCompleted();
       }
 
@@ -232,8 +239,8 @@ public class DaoExchangeRegistrationServiceTests {
         assertThat("Route included", route, notNullValue());
 
         // @formatter:off
-        CryptoUtils.validateMessageSignature(STANDARD_HELPER, route.getSignature(), 
-            exchKeyPair, facilityKeyPair.getPublic(),
+        validateMessageSignature(STANDARD_HELPER, route.getSignature(), 
+            exchangeKeyPair, facilityKeyPair.getPublic(),
             asList(
                 operatorUid, 
                 facilityUid,
@@ -246,9 +253,9 @@ public class DaoExchangeRegistrationServiceTests {
       }
 
     };
-    String serverName = InProcessServerBuilder.generateName();
-    URI exchangeUri = URI.create("//" + serverName);
-    grpcCleanup.register(InProcessServerBuilder.forName(serverName).directExecutor()
+    String exchangeName = InProcessServerBuilder.generateName();
+    URI exchangeUri = URI.create("//" + exchangeName);
+    grpcCleanup.register(InProcessServerBuilder.forName(exchangeName).directExecutor()
         .addService(exchangeService).build().start());
 
     // when
@@ -263,7 +270,7 @@ public class DaoExchangeRegistrationServiceTests {
     assertThat("Result exchange URI", result.getExchangeEndpointUri(),
         equalTo(exchangeUri.toString()));
     assertThat("Result exchange public key", ByteString.copyFrom(result.getExchangePublicKey()),
-        equalTo(exchPublicKey.getKey()));
+        equalTo(exchangePublicKey.getKey()));
     assertThat("Result facility nonce", ByteString.copyFrom(result.getFacilityNonce()),
         equalTo(submittedFormData.get().getFacilityNonce()));
     assertThat("Result operator nonce", ByteString.copyFrom(result.getOperatorNonce()),
