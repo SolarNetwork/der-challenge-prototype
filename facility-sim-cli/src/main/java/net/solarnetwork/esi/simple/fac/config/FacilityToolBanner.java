@@ -19,12 +19,20 @@ package net.solarnetwork.esi.simple.fac.config;
 
 import java.io.PrintStream;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ResourceBanner;
+import org.springframework.boot.ansi.AnsiColor;
+import org.springframework.boot.ansi.AnsiOutput;
+import org.springframework.boot.ansi.AnsiOutput.Enabled;
+import org.springframework.boot.ansi.AnsiStyle;
 import org.springframework.context.annotation.Primary;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+
+import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
+import net.solarnetwork.esi.simple.fac.service.FacilityService;
 
 /**
  * A specialized banner for printing out relevant startup information for the facility CLI.
@@ -37,6 +45,9 @@ import org.springframework.stereotype.Component;
 public class FacilityToolBanner extends ResourceBanner {
 
   // TODO: DAO for telling if a facility is configured
+
+  @Autowired
+  private FacilityService facilityService;
 
   /**
    * Default constructor.
@@ -59,7 +70,28 @@ public class FacilityToolBanner extends ResourceBanner {
   public void printBanner(Environment environment, Class<?> sourceClass, PrintStream out) {
     super.printBanner(environment, sourceClass, out);
 
-    out.println("Hi, ya!");
+    if (facilityService == null) {
+      return;
+    }
+
+    ExchangeEntity exchange = facilityService.getExchange();
+    if (exchange == null) {
+      AnsiOutput.setEnabled(Enabled.ALWAYS);
+      out.println(AnsiOutput.toString(AnsiColor.GREEN,
+          "Welcome! You need to register this facility with an exchange."));
+      out.println(AnsiOutput.toString("Use the ", AnsiStyle.BOLD, "exchange-registry-choose",
+          AnsiStyle.NORMAL, " command to start."));
+    }
+  }
+
+  /**
+   * Set the facility service.
+   * 
+   * @param facilityService
+   *        the service to set
+   */
+  public void setFacilityService(FacilityService facilityService) {
+    this.facilityService = facilityService;
   }
 
 }
