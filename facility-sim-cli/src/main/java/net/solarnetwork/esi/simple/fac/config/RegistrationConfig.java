@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import net.solarnetwork.esi.grpc.ChannelProvider;
+import net.solarnetwork.esi.grpc.SimpleChannelProvider;
 import net.solarnetwork.esi.grpc.StaticChannelProvider;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeRegistrationEntityDao;
@@ -60,6 +61,10 @@ public class RegistrationConfig {
     return new StaticChannelProvider(URI.create(uri), usePlaintext);
   }
 
+  private ChannelProvider exchangeChannelProvider() {
+    return new SimpleChannelProvider(usePlaintext);
+  }
+
   /**
    * Create the {@link ExchangeRegistrationService}.
    * 
@@ -70,6 +75,7 @@ public class RegistrationConfig {
     DaoExchangeRegistrationService s = new DaoExchangeRegistrationService(facilityService,
         exchangeDao, exchangeRegistrationDao);
     s.setExchangeRegistryChannelProvider(exchangeRegistryChannelProvider());
+    s.setExchangeChannelProvider(exchangeChannelProvider());
     return s;
   }
 

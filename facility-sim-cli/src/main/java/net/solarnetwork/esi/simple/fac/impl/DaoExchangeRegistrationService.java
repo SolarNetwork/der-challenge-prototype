@@ -35,6 +35,8 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 
 import io.grpc.ManagedChannel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
 import net.solarnetwork.esi.domain.DerFacilityExchangeRequest;
@@ -174,6 +176,12 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       reg = exchangeRegistrationDao.save(reg);
 
       return reg;
+    } catch (StatusRuntimeException e) {
+      if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
+        throw new IllegalArgumentException(e.getMessage());
+      } else {
+        throw e;
+      }
     } finally {
       channel.enterIdle();
     }

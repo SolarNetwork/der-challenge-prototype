@@ -46,6 +46,7 @@ dependencies {
 	
 	// Utils
 	implementation 'commons-codec:commons-codec:1.12'
+	implementation 'com.github.davidmoten:word-wrap:0.1.6'
 	
 	// Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

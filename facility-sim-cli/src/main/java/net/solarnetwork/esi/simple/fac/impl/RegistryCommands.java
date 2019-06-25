@@ -17,10 +17,16 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import static java.lang.String.format;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
+import org.davidmoten.text.utils.WordWrap;
+import org.jline.utils.AttributedStringBuilder;
+import org.jline.utils.AttributedStyle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
@@ -30,7 +36,10 @@ import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
 import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
+import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
+import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.FormData;
+import net.solarnetwork.esi.domain.FormSetting;
 import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
 
 /**
@@ -102,11 +111,14 @@ public class RegistryCommands {
           DerFacilityExchangeInfo exchange = exchanges.get(idx - 1);
           if (shell.confirm(String.format("You chose %s @ %s, is that correct?", exchange.getName(),
               exchange.getEndpointUri()))) {
-            shell.printInfo(String.format("Sweet as, you'll need to register with %s now.",
+            shell.printInfo(
+                format("Sweet as, you'll need to register with %s now.", exchange.getName()));
+            shell.print(format("\nPlease fill in the following form to register with %s.",
                 exchange.getName()));
-            FormData.Builder formData = FormData.newBuilder();
 
-            exchangeRegistrationService.registerWithExchange(exchange, formData.build());
+            DerFacilityRegistrationForm regForm = exchangeRegistrationService
+                .getExchangeRegistrationForm(exchange, Locale.getDefault());
+            handleRegisterForm(exchange, regForm);
             break;
           }
         } else {
@@ -118,4 +130,96 @@ public class RegistryCommands {
     }
   }
 
+  private void handleRegisterForm(DerFacilityExchangeInfo exchange,
+      DerFacilityRegistrationForm regForm) {
+    Form form = regForm.getForm();
+    FormData.Builder answers = FormData.newBuilder();
+    answers.setKey(form.getKey());
+    while (true) {
+      fillInForm(form, answers);
+      try {
+        exchangeRegistrationService.registerWithExchange(exchange, answers.build());
+      } catch (IllegalArgumentException e) {
+        shell.printError(e.getMessage());
+        // CHECKSTYLE IGNORE LineLength FOR NEXT 2 LINES
+        shell.printError(WordWrap.from(
+            "Please try again. Your previous answers will be shown within [] at each prompt. You can re-used a previous answer by typing Enter at the prompt.\n")
+            .maxWidth(80).wrap());
+      }
+    }
+
+  }
+
+  private void fillInForm(Form form, FormData.Builder answers) {
+    int i = 1;
+    for (FormSetting field : form.getSettingsList()) {
+      switch (field.getType()) {
+        case INFO:
+          showFieldInfo(field);
+          break;
+
+        case TEXT:
+        case SECURE_TEXT:
+          fillInFormSetting(field, answers, i++);
+          break;
+
+        default:
+          // ignore
+      }
+    }
+  }
+
+  private void showFieldInfo(FormSetting field) {
+    shell.printInfo(WordWrap.from(field.getCaption()).maxWidth(80).wrap());
+    shell.print("");
+  }
+
+  private void fillInFormSetting(FormSetting field, FormData.Builder answers, int index) {
+    final String key = field.getKey();
+    final String curr = answers.getDataOrDefault(key, null);
+    shell.print(getBoldColored(format("%d) %s", index, field.getLabel()), PromptColor.BLACK));
+    if (field.getCaption() != null && !field.getCaption().isEmpty()) {
+      shell.printInfo(field.getCaption());
+    }
+    if (field.getPlaceholder() != null && !field.getPlaceholder().isEmpty()) {
+      shell.print(getFaint(format("e.g. %s", field.getPlaceholder())));
+    }
+    String ans = null;
+    while (ans == null || ans.trim().isEmpty()) {
+      if (curr != null && !curr.isEmpty()) {
+        ans = shell.read(String.format("? [%s] ", curr));
+      } else {
+        ans = shell.read("? ");
+      }
+      if (ans == null || ans.trim().isEmpty()) {
+        ans = curr;
+      }
+    }
+    answers.putData(key, ans);
+  }
+
+  /**
+   * Color a bold message with given color.
+   *
+   * @param message
+   *        message to return
+   * @param color
+   *        color to print
+   * @return colored message
+   */
+  public String getBoldColored(String message, PromptColor color) {
+    return new AttributedStringBuilder()
+        .append(message, AttributedStyle.BOLD.foreground(color.toJlineAttributedStyle())).toAnsi();
+  }
+
+  /**
+   * Color a faint message.
+   *
+   * @param message
+   *        message to return
+   * @return colored message
+   */
+  public String getFaint(String message) {
+    return new AttributedStringBuilder().append(message, AttributedStyle.DEFAULT.faint()).toAnsi();
+  }
 }
