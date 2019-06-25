@@ -101,7 +101,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       return client.listDerFacilityExchanges(
           criteria != null ? criteria : DerFacilityExchangeRequest.getDefaultInstance());
     } finally {
-      channel.shutdown();
+      channel.enterIdle();
     }
   }
 
@@ -115,7 +115,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       return client.getDerFacilityRegistrationForm(DerFacilityRegistrationFormRequest.newBuilder()
           .setLanguageCode(locale.getLanguage()).setExchangeUid(exchange.getUid()).build());
     } finally {
-      channel.shutdown();
+      channel.enterIdle();
     }
   }
 
@@ -175,7 +175,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
 
       return reg;
     } finally {
-      channel.shutdown();
+      channel.enterIdle();
     }
   }
 
