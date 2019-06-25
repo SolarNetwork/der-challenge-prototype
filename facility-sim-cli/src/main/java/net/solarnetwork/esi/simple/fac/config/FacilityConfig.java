@@ -27,12 +27,14 @@ import java.util.Base64;
 
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
+import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.impl.DaoFacilityService;
 import net.solarnetwork.esi.util.CryptoHelper;
 import net.solarnetwork.esi.util.CryptoUtils;
@@ -70,10 +72,13 @@ public class FacilityConfig {
   @Value("${esi.facility.keyStoreIv:not.an.initialization.vector}")
   private String keyStoreIv = "not.an.initialization.vector";
 
+  @Autowired
+  private ExchangeEntityDao exchangeDao;
+
   @Bean
   public DaoFacilityService facilityService() {
     return new DaoFacilityService(facilityUid, URI.create(facilityUri), usePlaintext,
-        facilityKeyPair(), cryptoHelper());
+        facilityKeyPair(), cryptoHelper(), exchangeDao);
   }
 
   /**

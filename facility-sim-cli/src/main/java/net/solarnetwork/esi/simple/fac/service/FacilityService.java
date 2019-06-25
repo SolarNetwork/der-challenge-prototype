@@ -20,6 +20,7 @@ package net.solarnetwork.esi.simple.fac.service;
 import java.net.URI;
 import java.security.KeyPair;
 
+import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.util.CryptoHelper;
 
 /**
@@ -64,5 +65,12 @@ public interface FacilityService {
    * @return the helper
    */
   CryptoHelper getCryptoHelper();
+
+  /**
+   * Get the registered exchange.
+   * 
+   * @return the exchange, or {@literal null} if not available
+   */
+  ExchangeEntity getExchange();
 
 }

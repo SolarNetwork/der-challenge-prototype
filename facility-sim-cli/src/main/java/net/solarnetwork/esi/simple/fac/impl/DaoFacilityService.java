@@ -19,7 +19,13 @@ package net.solarnetwork.esi.simple.fac.impl;
 
 import java.net.URI;
 import java.security.KeyPair;
+import java.util.Iterator;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort.Direction;
+
+import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
 import net.solarnetwork.esi.util.CryptoHelper;
 
@@ -36,6 +42,7 @@ public class DaoFacilityService implements FacilityService {
   private final boolean usePlaintext;
   private final KeyPair keyPair;
   private final CryptoHelper cryptoHelper;
+  private final ExchangeEntityDao exchangeDao;
 
   /**
    * Constructor.
@@ -48,15 +55,18 @@ public class DaoFacilityService implements FacilityService {
    *        the plain text flag
    * @param keyPair
    *        the key pair
+   * @param exchangeDao
+   *        the exchange DAO
    */
   public DaoFacilityService(String uid, URI uri, boolean usePlaintext, KeyPair keyPair,
-      CryptoHelper cryptoHelper) {
+      CryptoHelper cryptoHelper, ExchangeEntityDao exchangeDao) {
     super();
     this.uid = uid;
     this.uri = uri;
     this.usePlaintext = usePlaintext;
     this.keyPair = keyPair;
     this.cryptoHelper = cryptoHelper;
+    this.exchangeDao = exchangeDao;
   }
 
   @Override
@@ -82,6 +92,14 @@ public class DaoFacilityService implements FacilityService {
   @Override
   public CryptoHelper getCryptoHelper() {
     return cryptoHelper;
+  }
+
+  @Override
+  public ExchangeEntity getExchange() {
+    // get the first available exchange, sorted by creation date asending, so newest
+    Iterator<ExchangeEntity> itr = exchangeDao
+        .findAll(PageRequest.of(0, 1, Direction.DESC, "created")).iterator();
+    return (itr.hasNext() ? itr.next() : null);
   }
 
 }
