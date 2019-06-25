@@ -46,8 +46,7 @@ public class InProcessChannelProvider extends SimpleChannelProvider {
    *        {@literal true} to use plain text connections, {@literal false} for SSL
    */
   public InProcessChannelProvider(boolean usePlaintext) {
-    super();
-    setUsePlaintext(usePlaintext);
+    super(usePlaintext);
   }
 
   /**

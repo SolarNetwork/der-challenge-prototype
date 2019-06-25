@@ -30,7 +30,25 @@ import io.grpc.ManagedChannelBuilder;
  */
 public class SimpleChannelProvider implements ChannelProvider {
 
-  private boolean usePlaintext = false;
+  private boolean usePlaintext;
+
+  /**
+   * Default constructor.
+   */
+  public SimpleChannelProvider() {
+    this(true);
+  }
+
+  /**
+   * Construct with plain text setting.
+   * 
+   * @param usePlaintext
+   *        {@true} if plain text should be used, {@literal false} if SSL should be used
+   */
+  public SimpleChannelProvider(boolean usePlaintext) {
+    super();
+    setUsePlaintext(usePlaintext);
+  }
 
   @Override
   public ManagedChannel channelForUri(URI uri) {

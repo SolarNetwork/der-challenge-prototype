@@ -38,8 +38,7 @@ public class StaticChannelProvider extends SimpleChannelProvider {
    *        the URI
    */
   public StaticChannelProvider(URI uri) {
-    super();
-    this.uri = uri;
+    this(uri, true);
   }
 
   /**
@@ -51,8 +50,8 @@ public class StaticChannelProvider extends SimpleChannelProvider {
    *        {@literal true} to use plain text connections, {@literal false} for SSL
    */
   public StaticChannelProvider(URI uri, boolean usePlaintext) {
-    this(uri);
-    setUsePlaintext(usePlaintext);
+    super(usePlaintext);
+    this.uri = uri;
   }
 
   /**
