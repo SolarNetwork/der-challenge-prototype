@@ -39,7 +39,7 @@ message DerFacilityRegistrationFormData {
   // `DerFacilityRegistrationForm` message.
   // 
   // The facility ID must be unique at least within the domain represented by
-  // `facilityEndpointUri`. That is, the ID must be unique within the facility.
+  // `facility_endpoint_uri`. That is, the ID must be unique within the facility.
   // This ID is defined externally to this API. If a facility is directly
   // connected to an operator, the facility might generate its own unique ID,
   // for example as a UUID. If a facility sits behind a proxy or aggregator
@@ -51,7 +51,7 @@ message DerFacilityRegistrationFormData {
   // way it obtains its facility ID which is then passed to the operator here.
   //
   // Note that the MessageSignature of the route must include the 
-  // `facilityEndpointUri` UTF-8 bytes and `facilityNonce` values. The 
+  // `facility_endpoint_uri` UTF-8 bytes and `facility_nonce` values. The 
   // recipient's public key should already have been obtained by the facility,
   // and the facilitie's public key is included in this message.
   DerRoute route = 1;
@@ -61,7 +61,7 @@ message DerFacilityRegistrationFormData {
   // This endpoint might be a direct connection to the facility submitting the
   // registration form, or it might be a proxy facility that manages the ESI
   // service on behalf of the facility submitting the registration form.
-  string facilityEndpointUri = 2;
+  string facility_endpoint_uri = 2;
   
   // A cryptographic set of random bytes to use with registration.
   // 
@@ -69,10 +69,10 @@ message DerFacilityRegistrationFormData {
   // `CompleteDerFacilityRegistration` method is called on the proxy, the
   // facility submitting the registration form can verify the operator is the
   // same during both interactions.
-  bytes facilityNonce = 3;
+  bytes facility_nonce = 3;
   
   // The facility's public key.
-  CryptoKey facilityPublicKey = 4;
+  CryptoKey facility_public_key = 4;
 
   // The completed registration form.
   FormData data = 5;

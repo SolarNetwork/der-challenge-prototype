@@ -34,12 +34,12 @@ message DerRoute {
   string operatorUid = 1;
 
   // The facility identifier the request is associated with.
-  string facilityUid = 2;
+  string facility_uid = 2;
   
   // A message signature.
   //
   // The message data must include the the concatenation of `operatorUid` and
-  // `facilityUid`, both as UTF-8 bytes. If this route is embedded in another
+  // `facility_uid`, both as UTF-8 bytes. If this route is embedded in another
   // message, that message may define additional requirements to include.
   MessageSignature signature = 3;
   
