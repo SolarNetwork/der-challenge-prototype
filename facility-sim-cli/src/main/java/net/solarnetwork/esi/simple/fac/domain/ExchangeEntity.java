@@ -39,11 +39,11 @@ public class ExchangeEntity extends BaseStringEntity {
   private static final long serialVersionUID = 5971284405373027212L;
 
   @Basic
-  @Column(name = "EXCH_URI", nullable = false, insertable = true, updatable = false, length = 255)
+  @Column(name = "EXCH_URI", nullable = false, insertable = true, updatable = true, length = 255)
   private String exchangeEndpointUri;
 
   @Basic
-  @Column(name = "EXCH_KEY", nullable = false, insertable = true, updatable = false, length = 255)
+  @Column(name = "EXCH_KEY", nullable = false, insertable = true, updatable = true, length = 255)
   private byte[] exchangePublicKey;
 
   /**
