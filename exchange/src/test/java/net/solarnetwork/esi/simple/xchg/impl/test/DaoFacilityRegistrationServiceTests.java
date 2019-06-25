@@ -72,8 +72,8 @@ public class DaoFacilityRegistrationServiceTests {
   private static final String TEST_UICI = "123-1234-1234";
 
   private List<Form> registrationForms;
-  private String operatorUid;
-  private KeyPair operatorKeyPair;
+  private String exchangeUid;
+  private KeyPair exchangeKeyPair;
   private KeyPair facilityKeyPair;
   private DaoFacilityRegistrationService service;
   private FacilityRegistrationEntityDao facilityRegistrationDao;
@@ -84,9 +84,9 @@ public class DaoFacilityRegistrationServiceTests {
     registrationForms.add(loadForm("registration-form-01.json"));
     registrationForms.add(loadForm("registration-form-02.json"));
 
-    operatorUid = UUID.randomUUID().toString();
-    operatorKeyPair = STANDARD_HELPER.generateKeyPair();
-    service = new DaoFacilityRegistrationService(operatorUid, operatorKeyPair, registrationForms,
+    exchangeUid = UUID.randomUUID().toString();
+    exchangeKeyPair = STANDARD_HELPER.generateKeyPair();
+    service = new DaoFacilityRegistrationService(exchangeUid, exchangeKeyPair, registrationForms,
         STANDARD_HELPER);
 
     facilityKeyPair = STANDARD_HELPER.generateKeyPair();
@@ -108,11 +108,11 @@ public class DaoFacilityRegistrationServiceTests {
 
     // @formatter:off
     MessageSignature msgSig = generateMessageSignature(STANDARD_HELPER, 
-        facilityKeyPair, operatorKeyPair.getPublic(), asList(operatorUid, facilityUid));
+        facilityKeyPair, exchangeKeyPair.getPublic(), asList(exchangeUid, facilityUid));
     
     return DerFacilityRegistrationFormData.newBuilder()
         .setRoute(DerRoute.newBuilder()
-          .setOperatorUid(operatorUid)
+          .setExchangeUid(exchangeUid)
           .setFacilityUid(facilityUid)
           .setSignature(msgSig)
           .build())
@@ -165,7 +165,7 @@ public class DaoFacilityRegistrationServiceTests {
     DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
     formData = formData.toBuilder()
         .setRoute(formData.getRoute().toBuilder()
-            .setOperatorUid("not.the.right.operator.uid")
+            .setExchangeUid("not.the.right.exchange.uid")
             .build())
         .build();
     // @formatter:on

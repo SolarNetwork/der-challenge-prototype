@@ -58,9 +58,9 @@ import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
 @GrpcService
 public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
-  private final String operatorUid;
+  private final String exchangeUid;
   private final List<Form> registrationForms;
-  private final KeyPair operatorKeyPair;
+  private final KeyPair exchangeKeyPair;
 
   @Autowired
   private FacilityRegistrationService facilityRegistrationService;
@@ -68,9 +68,9 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   /**
    * Constructor.
    * 
-   * @param operatorUid
+   * @param exchangeUid
    *        the UID to use for this service
-   * @param operatorKeyPair
+   * @param exchangeKeyPair
    *        the key pair to use for asymmetric encryption with facilities
    * @param registrationForms
    *        the registration form, as a list to support multiple languages
@@ -78,18 +78,18 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
    *         if any parameter is {@literal null} or empty
    */
   @Autowired
-  public SimpleDerFacilityExchange(@Qualifier("operator-uid") String operatorUid,
-      @Qualifier("operator-key-pair") KeyPair operatorKeyPair,
+  public SimpleDerFacilityExchange(@Qualifier("exchange-uid") String exchangeUid,
+      @Qualifier("exchange-key-pair") KeyPair exchangeKeyPair,
       @Qualifier("regform-list") List<Form> registrationForms) {
     super();
-    if (operatorUid == null || operatorUid.isEmpty()) {
-      throw new IllegalArgumentException("The operator UID must not be empty.");
+    if (exchangeUid == null || exchangeUid.isEmpty()) {
+      throw new IllegalArgumentException("The exchange UID must not be empty.");
     }
-    this.operatorUid = operatorUid;
-    if (operatorKeyPair == null) {
-      throw new IllegalArgumentException("The operator key pair must be provided.");
+    this.exchangeUid = exchangeUid;
+    if (exchangeKeyPair == null) {
+      throw new IllegalArgumentException("The exchange key pair must be provided.");
     }
-    this.operatorKeyPair = operatorKeyPair;
+    this.exchangeKeyPair = exchangeKeyPair;
     if (registrationForms == null || registrationForms.isEmpty()) {
       throw new IllegalArgumentException("The registration forms list must not be empty.");
     }
@@ -100,9 +100,9 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   public void getPublicCryptoKey(Empty request, StreamObserver<CryptoKey> responseObserver) {
     // @formatter:off
     CryptoKey key = CryptoKey.newBuilder()
-        .setAlgorithm(operatorKeyPair.getPublic().getAlgorithm())
-        .setEncoding(operatorKeyPair.getPublic().getFormat())
-        .setKey(ByteString.copyFrom(operatorKeyPair.getPublic().getEncoded()))
+        .setAlgorithm(exchangeKeyPair.getPublic().getAlgorithm())
+        .setEncoding(exchangeKeyPair.getPublic().getFormat())
+        .setKey(ByteString.copyFrom(exchangeKeyPair.getPublic().getEncoded()))
         .build();
     // @formatter:on
     responseObserver.onNext(key);
@@ -126,7 +126,7 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       }).findFirst().orElse(registrationForms.get(0));
     }
     DerFacilityRegistrationForm regForm = DerFacilityRegistrationForm.newBuilder()
-        .setOperatorUid(operatorUid).setForm(form).build();
+        .setExchangeUid(exchangeUid).setForm(form).build();
     responseObserver.onNext(regForm);
     responseObserver.onCompleted();
   }
@@ -143,7 +143,7 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       facilityRegistrationService.processFacilityRegistration(entity);
 
       responseObserver.onNext(DerFacilityRegistrationFormDataReceipt.newBuilder()
-          .setOperatorNonce(ByteString.copyFrom(entity.getOperatorNonce())).build());
+          .setExchangeNonce(ByteString.copyFrom(entity.getExchangeNonce())).build());
       responseObserver.onCompleted();
 
     } catch (IllegalArgumentException e) {

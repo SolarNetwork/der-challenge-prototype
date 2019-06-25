@@ -60,7 +60,7 @@ service DerFacilityService {
   //
   // This method is called at some point after a call was made to
   // `DerOperatorService.SubmitDerFacilityRegistrationForm()`, after the
-  // operator has completed its validation of the submitted registration form
+  // exchange has completed its validation of the submitted registration form
   // data. A fully automated system might invoke this method within seconds of
   // that submission, or a manual verification process might require multiple
   // days to complete before this method can  be invoked.

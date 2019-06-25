@@ -35,7 +35,7 @@ message Form {
   //
   // The BCP-47 language code the form setting text is in. Examples: "en", "ja",
   // "zh-Hant".
-  string languageCode = 2;
+  string language_code = 2;
 
   // The form settings (fields).
   repeated FormSetting settings = 3;

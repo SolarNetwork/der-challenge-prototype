@@ -119,7 +119,7 @@ public class FacilityConfig {
         result = CryptoUtils.loadKeyPair(keyStoreResource.getInputStream(), keyStorePassword, salt,
             iv);
       } else if (!generateKeyPair) {
-        throw new RuntimeException("The operator key store " + keyStoreResource
+        throw new RuntimeException("The facility key store " + keyStoreResource
             + " does not exist and generateKeyPair is false.");
       } else {
         result = cryptoHelper().generateKeyPair();
@@ -129,7 +129,7 @@ public class FacilityConfig {
       }
       return result;
     } catch (IOException e) {
-      throw new RuntimeException("Error loading or generating operator key pair.", e);
+      throw new RuntimeException("Error loading or generating facility key pair.", e);
     }
   }
 }

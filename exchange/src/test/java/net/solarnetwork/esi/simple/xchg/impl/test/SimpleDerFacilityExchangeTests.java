@@ -91,8 +91,8 @@ public class SimpleDerFacilityExchangeTests {
   public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
 
   private List<Form> registrationForms;
-  private String operatorUid;
-  private KeyPair operatorKeyPair;
+  private String exchangeUid;
+  private KeyPair exchangeKeyPair;
   private KeyPair facilityKeyPair;
   private SimpleDerFacilityExchange service;
   private ManagedChannel channel;
@@ -104,9 +104,9 @@ public class SimpleDerFacilityExchangeTests {
     registrationForms.add(loadForm("registration-form-01.json"));
     registrationForms.add(loadForm("registration-form-02.json"));
 
-    operatorUid = UUID.randomUUID().toString();
-    operatorKeyPair = STANDARD_HELPER.generateKeyPair();
-    service = new SimpleDerFacilityExchange(operatorUid, operatorKeyPair, registrationForms);
+    exchangeUid = UUID.randomUUID().toString();
+    exchangeKeyPair = STANDARD_HELPER.generateKeyPair();
+    service = new SimpleDerFacilityExchange(exchangeUid, exchangeKeyPair, registrationForms);
 
     facilityKeyPair = STANDARD_HELPER.generateKeyPair();
 
@@ -154,7 +154,7 @@ public class SimpleDerFacilityExchangeTests {
     assertThat("Key algorithm", res.getAlgorithm(), equalTo("EC"));
     assertThat("Key encoding", res.getEncoding(), equalTo("X.509"));
     assertThat("Key data", res.getKey(),
-        equalTo(ByteString.copyFrom(operatorKeyPair.getPublic().getEncoded())));
+        equalTo(ByteString.copyFrom(exchangeKeyPair.getPublic().getEncoded())));
   }
 
   @Test
@@ -164,13 +164,13 @@ public class SimpleDerFacilityExchangeTests {
 
     //when
     DerFacilityRegistrationFormRequest req = DerFacilityRegistrationFormRequest.newBuilder()
-        .setOperatorUid(operatorUid).setLanguageCode(TEST_LANG).build();
+        .setExchangeUid(exchangeUid).setLanguageCode(TEST_LANG).build();
     DerFacilityRegistrationForm res = client.getDerFacilityRegistrationForm(req);
 
     //then
     assertThat("Result available", res, notNullValue());
 
-    assertThat("Operator UID", res.getOperatorUid(), equalTo(operatorUid));
+    assertThat("Operator UID", res.getExchangeUid(), equalTo(exchangeUid));
     Form form = res.getForm();
     assertThat("Form for matching language", form, equalTo(registrationForms.get(0)));
   }
@@ -182,13 +182,13 @@ public class SimpleDerFacilityExchangeTests {
 
     //when
     DerFacilityRegistrationFormRequest req = DerFacilityRegistrationFormRequest.newBuilder()
-        .setOperatorUid(operatorUid).setLanguageCode(TEST_LANG_ALT).build();
+        .setExchangeUid(exchangeUid).setLanguageCode(TEST_LANG_ALT).build();
     DerFacilityRegistrationForm res = client.getDerFacilityRegistrationForm(req);
 
     //then
     assertThat("Result available", res, notNullValue());
 
-    assertThat("Operator UID", res.getOperatorUid(), equalTo(operatorUid));
+    assertThat("Operator UID", res.getExchangeUid(), equalTo(exchangeUid));
     Form form = res.getForm();
     assertThat("Form for matching alt language", form, equalTo(registrationForms.get(1)));
   }
@@ -200,13 +200,13 @@ public class SimpleDerFacilityExchangeTests {
 
     //when
     DerFacilityRegistrationFormRequest req = DerFacilityRegistrationFormRequest.newBuilder()
-        .setOperatorUid(operatorUid).setLanguageCode("es").build();
+        .setExchangeUid(exchangeUid).setLanguageCode("es").build();
     DerFacilityRegistrationForm res = client.getDerFacilityRegistrationForm(req);
 
     //then
     assertThat("Result available", res, notNullValue());
 
-    assertThat("Operator UID", res.getOperatorUid(), equalTo(operatorUid));
+    assertThat("Operator UID", res.getExchangeUid(), equalTo(exchangeUid));
     Form form = res.getForm();
     assertThat("First form returned for unsupported language", form,
         equalTo(registrationForms.get(0)));
@@ -217,11 +217,11 @@ public class SimpleDerFacilityExchangeTests {
 
     // @formatter:off
     MessageSignature msgSig = generateMessageSignature(STANDARD_HELPER, 
-        facilityKeyPair, operatorKeyPair.getPublic(), asList(operatorUid, facilityUid));
+        facilityKeyPair, exchangeKeyPair.getPublic(), asList(exchangeUid, facilityUid));
     
     return DerFacilityRegistrationFormData.newBuilder()
         .setRoute(DerRoute.newBuilder()
-          .setOperatorUid(operatorUid)
+          .setExchangeUid(exchangeUid)
           .setFacilityUid(facilityUid)
           .setSignature(msgSig)
           .build())
@@ -247,7 +247,7 @@ public class SimpleDerFacilityExchangeTests {
     // given
     DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
     FacilityRegistrationEntity reg = new FacilityRegistrationEntity(Instant.now());
-    reg.setOperatorNonce(CryptoUtils.generateRandomBytes(8));
+    reg.setExchangeNonce(CryptoUtils.generateRandomBytes(8));
     given(facilityRegistrationService.submitDerFacilityRegistrationForm(formData)).willReturn(reg);
 
     DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
@@ -258,8 +258,8 @@ public class SimpleDerFacilityExchangeTests {
 
     // then
     assertThat("Receipt available", receipt, notNullValue());
-    assertThat("Operator nonce", receipt.getOperatorNonce(),
-        equalTo(ByteString.copyFrom(reg.getOperatorNonce())));
+    assertThat("Operator nonce", receipt.getExchangeNonce(),
+        equalTo(ByteString.copyFrom(reg.getExchangeNonce())));
   }
 
   @Test
@@ -269,7 +269,7 @@ public class SimpleDerFacilityExchangeTests {
     // @formatter:off
     formData = formData.toBuilder()
         .setRoute(formData.getRoute().toBuilder()
-            .setOperatorUid("not.the.right.operator.uid")
+            .setExchangeUid("not.the.right.exchange.uid")
             .build())
         .build();
     // @formatter:on

@@ -67,8 +67,8 @@ public class FacilityRegistrationEntity extends BaseLongEntity {
   private byte[] facilityNonce;
 
   @Basic
-  @Column(name = "OP_NONCE", nullable = false, insertable = true, updatable = false, length = 24)
-  private byte[] operatorNonce;
+  @Column(name = "EXCH_NONCE", nullable = false, insertable = true, updatable = false, length = 24)
+  private byte[] exchangeNonce;
 
   /**
    * Default constructor.
@@ -214,22 +214,22 @@ public class FacilityRegistrationEntity extends BaseLongEntity {
   }
 
   /**
-   * Set the operator nonce value.
+   * Set the exchange nonce value.
    * 
    * @return the nonce
    */
-  public byte[] getOperatorNonce() {
-    return operatorNonce;
+  public byte[] getExchangeNonce() {
+    return exchangeNonce;
   }
 
   /**
-   * Get the operator nonce value.
+   * Get the exchange nonce value.
    * 
-   * @param operatorNonce
+   * @param exchangeNonce
    *        the nonce
    */
-  public void setOperatorNonce(byte[] operatorNonce) {
-    this.operatorNonce = operatorNonce;
+  public void setExchangeNonce(byte[] exchangeNonce) {
+    this.exchangeNonce = exchangeNonce;
   }
 
 }

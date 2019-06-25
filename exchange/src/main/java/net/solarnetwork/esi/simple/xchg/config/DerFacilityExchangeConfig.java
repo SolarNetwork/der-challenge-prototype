@@ -66,8 +66,8 @@ public class DerFacilityExchangeConfig {
   @Value("${xchg.generateKeyPair:true}")
   private boolean generateKeyPair = true;
 
-  @Value("${xchg.keyStorePath:file:xchg-operator-key-pair.dat}")
-  private Resource keyStoreResource = new FileSystemResource("xchg-operator-key-pair.dat");
+  @Value("${xchg.keyStorePath:file:xchg-key-pair.dat}")
+  private Resource keyStoreResource = new FileSystemResource("xchg-key-pair.dat");
 
   @Value("${xchg.keyStorePassword:not.a.password}")
   private String keyStorePassword = "not.a.password";
@@ -89,9 +89,9 @@ public class DerFacilityExchangeConfig {
   @Autowired
   public FacilityEntityDao facilityDao;
 
-  @Qualifier("operator-uid")
+  @Qualifier("exchange-uid")
   @Bean
-  public String operatorUid() {
+  public String exchangeUid() {
     return uid;
   }
 
@@ -143,13 +143,13 @@ public class DerFacilityExchangeConfig {
   }
 
   /**
-   * Get the operator key pair.
+   * Get the exchange key pair.
    * 
    * @return the key pair
    */
-  @Qualifier("operator-key-pair")
+  @Qualifier("exchange-key-pair")
   @Bean
-  public KeyPair operatorKeyPair() {
+  public KeyPair exchangeKeyPair() {
     KeyPair result = null;
     byte[] salt = decodeConfigBytes(keyStoreSalt, 8);
     byte[] iv = decodeConfigBytes(keyStoreIv, 12);
@@ -158,7 +158,7 @@ public class DerFacilityExchangeConfig {
         result = CryptoUtils.loadKeyPair(keyStoreResource.getInputStream(), keyStorePassword, salt,
             iv);
       } else if (!generateKeyPair) {
-        throw new RuntimeException("The operator key store " + keyStoreResource
+        throw new RuntimeException("The exchange key store " + keyStoreResource
             + " does not exist and generateKeyPair is false.");
       } else {
         result = cryptoHelper().generateKeyPair();
@@ -168,7 +168,7 @@ public class DerFacilityExchangeConfig {
       }
       return result;
     } catch (IOException e) {
-      throw new RuntimeException("Error loading or generating operator key pair.", e);
+      throw new RuntimeException("Error loading or generating exchange key pair.", e);
     }
   }
 
@@ -189,8 +189,8 @@ public class DerFacilityExchangeConfig {
    */
   @Bean
   public DaoFacilityRegistrationService facilityRegistrationService() {
-    DaoFacilityRegistrationService s = new DaoFacilityRegistrationService(operatorUid(),
-        operatorKeyPair(), registrationForms(), cryptoHelper());
+    DaoFacilityRegistrationService s = new DaoFacilityRegistrationService(exchangeUid(),
+        exchangeKeyPair(), registrationForms(), cryptoHelper());
     s.setFacilityDao(facilityDao);
     s.setFacilityRegistrationDao(facilityRegistrationDao);
     return s;

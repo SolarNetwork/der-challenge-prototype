@@ -31,7 +31,7 @@ import "solarnetwork/esi/domain/form.proto";
 message DerFacilityRegistrationForm {
 
   // The UID of the DerFacilityExchange to get the registration form for.
-  string operatorUid = 1;
+  string exchange_uid = 1;
   
   // The registration form.
   Form form = 2;

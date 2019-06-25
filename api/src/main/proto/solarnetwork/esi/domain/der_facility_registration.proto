@@ -36,10 +36,10 @@ message DerFacilityRegistration {
   // Success flag.
   bool success = 2;
   
-  // A token formed as SHA256(operatorNonce + facility_nonce + UTF8(operatorUid) 
+  // A token formed as SHA256(exchange_nonce + facility_nonce + UTF8(exchange_uid) 
   //                          + UTF8(facility_uid) + UTF8(facility_uri))
   //
-  // The `operatorNonce` was previously provided via the
+  // The `exchange_nonce` was previously provided via the
   // `DerFacilityRegistrationFormDataReceipt` returned from a call to
   // `DerOperatorService.SubmitDerFacilityRegistrationForm()`. All other values
   // were previously provided on the `DerFacilityRegistrationFormData` passed to

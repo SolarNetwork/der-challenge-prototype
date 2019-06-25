@@ -36,10 +36,10 @@ message DerFacilityExchangeInfo {
   // A globally-unique identifier for use by machines.
   string uid = 2;
   
-  // The gRPC compliant URI to access the operator service at.
-  string endpointUri = 3;
+  // The gRPC compliant URI to access the exchange service at.
+  string endpoint_uri = 3;
 
-  // A primary location related to this operator.
+  // A primary location related to this exchange.
   Location location = 4;
 
 }

@@ -113,7 +113,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
     try {
       DerFacilityExchangeBlockingStub client = DerFacilityExchangeGrpc.newBlockingStub(channel);
       return client.getDerFacilityRegistrationForm(DerFacilityRegistrationFormRequest.newBuilder()
-          .setLanguageCode(locale.getLanguage()).setOperatorUid(exchange.getUid()).build());
+          .setLanguageCode(locale.getLanguage()).setExchangeUid(exchange.getUid()).build());
     } finally {
       channel.shutdown();
     }
@@ -155,7 +155,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
               .build())
           .setFacilityNonce(nonce)
           .setRoute(DerRoute.newBuilder()
-              .setOperatorUid(exchange.getUid())
+              .setExchangeUid(exchange.getUid())
               .setFacilityUid(facilityService.getUid())
               .setSignature(msgSig)
               .build())
@@ -170,7 +170,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       reg.setExchangeEndpointUri(exchange.getEndpointUri());
       reg.setExchangePublicKey(exchangePublicKey.getKey().toByteArray());
       reg.setFacilityNonce(nonce.toByteArray());
-      reg.setOperatorNonce(receipt.getOperatorNonce().toByteArray());
+      reg.setExchangeNonce(receipt.getExchangeNonce().toByteArray());
       reg = exchangeRegistrationDao.save(reg);
 
       return reg;
@@ -191,12 +191,12 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       throw new IllegalArgumentException("Facility UID not valid.");
     }
 
-    String operatorUid = route.getOperatorUid();
-    if (operatorUid == null || operatorUid.trim().isEmpty()) {
-      throw new IllegalArgumentException("Operator UID missing.");
+    String exchangeUid = route.getExchangeUid();
+    if (exchangeUid == null || exchangeUid.trim().isEmpty()) {
+      throw new IllegalArgumentException("Exchange UID missing.");
     }
 
-    ExchangeRegistrationEntity reg = exchangeRegistrationDao.findById(operatorUid)
+    ExchangeRegistrationEntity reg = exchangeRegistrationDao.findById(exchangeUid)
         .orElseThrow(() -> new IllegalArgumentException("Exchange registration not found."));
 
     // verify signature
@@ -204,13 +204,13 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
         facilityService.getKeyPair(),
         facilityService.getCryptoHelper().decodePublicKey(
             CryptoKey.newBuilder().setKey(ByteString.copyFrom(reg.getExchangePublicKey())).build()),
-        asList(operatorUid, facilityService.getUid()));
+        asList(exchangeUid, facilityService.getUid()));
 
     // @formatter:off
     ByteString expectedToken = ByteString.copyFrom(CryptoUtils.sha256(Arrays.asList(
-        reg.getOperatorNonce(),
+        reg.getExchangeNonce(),
         reg.getFacilityNonce(),
-        operatorUid,
+        exchangeUid,
         facilityService.getUid(),
         facilityService.getUri())));
     // @formatter:on

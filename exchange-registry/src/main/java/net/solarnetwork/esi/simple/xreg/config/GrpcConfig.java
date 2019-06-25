@@ -52,18 +52,18 @@ public class GrpcConfig {
   private static final Logger log = LoggerFactory.getLogger(GrpcConfig.class);
 
   /**
-   * The list of operator services to provide in the registry.
+   * The list of exchange services to provide in the registry.
    * 
    * <p>
    * The registry is populated from the data loaded from the CSV resource configured by the
    * {@literal opreg.registry.csv} setting.
    * </p>
    * 
-   * @return the parsed operator infos
+   * @return the parsed exchange infos
    */
   @Bean
-  @Qualifier("operator-list")
-  public List<DerFacilityExchangeInfo> operatorInfos() {
+  @Qualifier("exchange-list")
+  public List<DerFacilityExchangeInfo> exchangeInfos() {
     List<DerFacilityExchangeInfo> infos = new ArrayList<>(8);
     try (CsvDerFacilityExchangeInfoParser parser = new CsvDerFacilityExchangeInfoParser(
         new InputStreamReader(registryCsvResource.getInputStream(), "UTF-8"))) {

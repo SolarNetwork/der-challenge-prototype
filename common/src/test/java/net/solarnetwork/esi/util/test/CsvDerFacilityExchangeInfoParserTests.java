@@ -60,9 +60,9 @@ public class CsvDerFacilityExchangeInfoParserTests {
 
     // then
     assertThat(results, hasSize(2));
-    assertDerFacilityExchangeInfoMatches("Operator 1", results.get(0), "Monopoly Utility",
+    assertDerFacilityExchangeInfoMatches("Exchange 1", results.get(0), "Monopoly Utility",
         "monopoly-utility", "dns:///localhost:7443");
-    assertDerFacilityExchangeInfoMatches("Operator 2", results.get(1), "Foo Utility", "foo-utility",
+    assertDerFacilityExchangeInfoMatches("Exchange 2", results.get(1), "Foo Utility", "foo-utility",
         "dns://1.1.1.1/foo.example.com:443");
   }
 

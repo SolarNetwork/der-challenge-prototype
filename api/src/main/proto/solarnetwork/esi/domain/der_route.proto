@@ -30,15 +30,15 @@ import "solarnetwork/esi/domain/message_signature.proto";
  */
 message DerRoute {
 
-  // The identifier of the operator the request is associated with.
-  string operatorUid = 1;
+  // The identifier of the exchange the request is associated with.
+  string exchange_uid = 1;
 
   // The facility identifier the request is associated with.
   string facility_uid = 2;
   
   // A message signature.
   //
-  // The message data must include the the concatenation of `operatorUid` and
+  // The message data must include the the concatenation of `exchange_uid` and
   // `facility_uid`, both as UTF-8 bytes. If this route is embedded in another
   // message, that message may define additional requirements to include.
   MessageSignature signature = 3;

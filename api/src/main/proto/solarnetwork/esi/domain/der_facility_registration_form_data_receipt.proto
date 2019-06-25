@@ -29,6 +29,6 @@ option objc_class_prefix = "ESI";
 message DerFacilityRegistrationFormDataReceipt {
 
   // A cryptographic set of random bytes to use with registration confirmation.
-  bytes operatorNonce = 1;
+  bytes exchange_nonce = 1;
   
 }

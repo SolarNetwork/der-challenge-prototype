@@ -37,7 +37,7 @@ import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
  * <dt>uid</dt>
  * <dd>The unique ID.</dd>
  * <dt>uri</dt>
- * <dd>The gRPC-compliant URI of the DER operator service to use.</dd>
+ * <dd>The gRPC-compliant URI of the DER exchange to use.</dd>
  * </dl>
  * 
  * @author matt

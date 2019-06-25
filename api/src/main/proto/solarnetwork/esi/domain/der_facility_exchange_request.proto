@@ -33,6 +33,6 @@ message DerFacilityExchangeRequest {
   Location location = 1;
   
   // The type(s) of DerProgram interested in, for example those supported by the requestor.
-  repeated DerProgramType programTypes = 2;
+  repeated DerProgramType program_types = 2;
 
 }

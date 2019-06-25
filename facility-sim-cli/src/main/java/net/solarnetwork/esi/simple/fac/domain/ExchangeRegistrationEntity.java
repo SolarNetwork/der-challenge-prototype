@@ -48,7 +48,7 @@ public class ExchangeRegistrationEntity extends BaseStringEntity {
 
   @Basic
   @Column(name = "EXCH_NONCE", nullable = false, insertable = true, updatable = false, length = 24)
-  private byte[] operatorNonce;
+  private byte[] exchangeNonce;
 
   @Basic
   @Column(name = "FAC_NONCE", nullable = false, insertable = true, updatable = false, length = 24)
@@ -141,21 +141,21 @@ public class ExchangeRegistrationEntity extends BaseStringEntity {
   }
 
   /**
-   * Set the operator nonce value.
+   * Set the exchange nonce value.
    * 
    * @return the nonce
    */
-  public byte[] getOperatorNonce() {
-    return operatorNonce;
+  public byte[] getExchangeNonce() {
+    return exchangeNonce;
   }
 
   /**
-   * Get the operator nonce value.
+   * Get the exchange nonce value.
    * 
-   * @param operatorNonce
+   * @param exchangeNonce
    *        the nonce
    */
-  public void setOperatorNonce(byte[] operatorNonce) {
-    this.operatorNonce = operatorNonce;
+  public void setExchangeNonce(byte[] exchangeNonce) {
+    this.exchangeNonce = exchangeNonce;
   }
 }

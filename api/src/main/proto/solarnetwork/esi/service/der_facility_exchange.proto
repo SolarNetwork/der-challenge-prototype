@@ -64,7 +64,7 @@ service DerFacilityExchange {
 
   // Submit a registration form for a DerFacility.
   // 
-  // When called, the form data will be validated by the operator, and any
+  // When called, the form data will be validated by the exchange, and any
   // problems will be expressed via standard error details. If the form data is
   // submitted successfully, the DerFacilityExchange must call the
   // `CompleteDerFacilityRegistration()` method on `DerFacilityService` to

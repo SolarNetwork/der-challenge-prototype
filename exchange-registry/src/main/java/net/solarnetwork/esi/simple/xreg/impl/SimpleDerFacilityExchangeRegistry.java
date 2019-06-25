@@ -31,7 +31,7 @@ import net.solarnetwork.esi.domain.DerFacilityExchangeRequest;
 import net.solarnetwork.esi.service.DerFacilityExchangeRegistryGrpc.DerFacilityExchangeRegistryImplBase;
 
 /**
- * Really, really, really simple gRPC implementation of a DER operator registry service.
+ * Really, really, really simple gRPC implementation of a DER exchange registry service.
  * 
  * <p>
  * This service does not even use any information passed to
@@ -51,11 +51,11 @@ public class SimpleDerFacilityExchangeRegistry extends DerFacilityExchangeRegist
    * Constructor.
    * 
    * @param infos
-   *        the operator information to serve
+   *        the exchange information to serve
    */
   @Autowired
   public SimpleDerFacilityExchangeRegistry(
-      @Qualifier("operator-list") List<DerFacilityExchangeInfo> infos) {
+      @Qualifier("exchange-list") List<DerFacilityExchangeInfo> infos) {
     super();
     this.infos = (infos != null && !infos.isEmpty()
         ? Collections.unmodifiableList(new ArrayList<>(infos))

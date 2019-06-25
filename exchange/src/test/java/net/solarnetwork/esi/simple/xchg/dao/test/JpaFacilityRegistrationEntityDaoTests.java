@@ -100,7 +100,7 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
     obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
     obj.setFacilityPublicKey(TEST_FAC_KEY);
     obj.setFacilityNonce(TEST_FAC_NONCE);
-    obj.setOperatorNonce(TEST_OP_NONCE);
+    obj.setExchangeNonce(TEST_OP_NONCE);
     FacilityRegistrationEntity entity = dao.save(obj);
     this.last = entity;
     em.flush();
@@ -117,9 +117,9 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
     assertThat("Facility nonce", entity.getFacilityNonce(), notNullValue());
     assertThat("Facility nonce value matches",
         Arrays.equals(entity.getFacilityNonce(), TEST_FAC_NONCE), equalTo(true));
-    assertThat("Operator nonce", entity.getOperatorNonce(), notNullValue());
+    assertThat("Operator nonce", entity.getExchangeNonce(), notNullValue());
     assertThat("Operator nonce value matches",
-        Arrays.equals(entity.getOperatorNonce(), TEST_OP_NONCE), equalTo(true));
+        Arrays.equals(entity.getExchangeNonce(), TEST_OP_NONCE), equalTo(true));
     assertFacilityRegistrationRowCountEqualTo(1);
     em.clear();
   }
@@ -141,7 +141,7 @@ public class JpaFacilityRegistrationEntityDaoTests extends SpringTestSupport {
         Arrays.equals(entity.getFacilityPublicKey(), last.getFacilityPublicKey()), equalTo(true));
     assertThat("Facility nonce", Arrays.equals(entity.getFacilityNonce(), last.getFacilityNonce()),
         equalTo(true));
-    assertThat("Operator nonce", Arrays.equals(entity.getOperatorNonce(), last.getOperatorNonce()),
+    assertThat("Operator nonce", Arrays.equals(entity.getExchangeNonce(), last.getExchangeNonce()),
         equalTo(true));
   }
 }

@@ -86,8 +86,8 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
   @Autowired
   private Executor taskExecutor;
 
-  private final String operatorUid;
-  private final KeyPair operatorKeyPair;
+  private final String exchangeUid;
+  private final KeyPair exchangeKeyPair;
   private final List<Form> registrationForms;
   private final CryptoHelper cryptoHelper;
   private boolean usePlaintext;
@@ -95,9 +95,9 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
   /**
    * Constructor.
    * 
-   * @param operatorUid
-   *        the operator UID
-   * @param operatorKeyPair
+   * @param exchangeUid
+   *        the exchange UID
+   * @param exchangeKeyPair
    *        the key pair to use for asymmetric encryption with facilities
    * @param registrationForms
    *        the registration form, as a list to support multiple languages
@@ -107,18 +107,18 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
    *         if any parameter is {@literal null} or empty
    */
   @Autowired
-  public DaoFacilityRegistrationService(@Qualifier("operator-uid") String operatorUid,
-      @Qualifier("operator-key-pair") KeyPair operatorKeyPair,
+  public DaoFacilityRegistrationService(@Qualifier("exchange-uid") String exchangeUid,
+      @Qualifier("exchange-key-pair") KeyPair exchangeKeyPair,
       @Qualifier("regform-list") List<Form> registrationForms, CryptoHelper cryptoHelper) {
     super();
-    if (operatorUid == null || operatorUid.isEmpty()) {
-      throw new IllegalArgumentException("The operator UID must not be empty.");
+    if (exchangeUid == null || exchangeUid.isEmpty()) {
+      throw new IllegalArgumentException("The exchange UID must not be empty.");
     }
-    this.operatorUid = operatorUid;
-    if (operatorKeyPair == null) {
-      throw new IllegalArgumentException("The operator key pair must be provided.");
+    this.exchangeUid = exchangeUid;
+    if (exchangeKeyPair == null) {
+      throw new IllegalArgumentException("The exchange key pair must be provided.");
     }
-    this.operatorKeyPair = operatorKeyPair;
+    this.exchangeKeyPair = exchangeKeyPair;
     if (registrationForms == null || registrationForms.isEmpty()) {
       throw new IllegalArgumentException("The registration forms list must not be empty.");
     }
@@ -140,7 +140,7 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
       throw new IllegalArgumentException("Route missing");
     }
 
-    if (!operatorUid.equals(route.getOperatorUid())) {
+    if (!exchangeUid.equals(route.getExchangeUid())) {
       throw new IllegalArgumentException("Operator UID not valid.");
     }
 
@@ -182,8 +182,8 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
     }
 
     // verify signature
-    validateMessageSignature(cryptoHelper, route.getSignature(), operatorKeyPair,
-        cryptoHelper.decodePublicKey(facilityKey), asList(operatorUid, facilityUid));
+    validateMessageSignature(cryptoHelper, route.getSignature(), exchangeKeyPair,
+        cryptoHelper.decodePublicKey(facilityKey), asList(exchangeUid, facilityUid));
 
     FormData formData = request.getData();
     if (formData == null) {
@@ -229,7 +229,7 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
     entity.setFacilityEndpointUri(facilityEndpointUri);
     entity.setFacilityPublicKey(facilityKey.toByteArray());
     entity.setFacilityNonce(facilityNonce.toByteArray());
-    entity.setOperatorNonce(opNonce);
+    entity.setExchangeNonce(opNonce);
     return facilityRegistrationDao.save(entity);
   }
 
@@ -249,11 +249,11 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
     // delete the registration entity
     facilityRegistrationDao.deleteById(registration.getId());
 
-    // SHA256(operatorNonce + facilityNonce + operatorUid + facilityUid + facilityUri)
+    // SHA256(exchangeNonce + facilityNonce + exchangeUid + facilityUid + facilityUri)
     MessageDigest sha256 = DigestUtils.getSha256Digest();
-    sha256.update(registration.getOperatorNonce());
+    sha256.update(registration.getExchangeNonce());
     sha256.update(registration.getFacilityNonce());
-    sha256.update(operatorUid.getBytes(UTF8));
+    sha256.update(exchangeUid.getBytes(UTF8));
     sha256.update(entity.getFacilityUid().getBytes(UTF8));
     sha256.update(entity.getFacilityEndpointUri().getBytes(UTF8));
     ByteString token = ByteString.copyFrom(sha256.digest());
@@ -261,10 +261,10 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
     // @formatter:off
     
     // sign message
-    MessageSignature msgSig = generateMessageSignature(cryptoHelper, operatorKeyPair,
+    MessageSignature msgSig = generateMessageSignature(cryptoHelper, exchangeKeyPair,
         decodePublicKey(cryptoHelper, entity.getFacilityPublicKey()),
         asList(
-            operatorUid, 
+            exchangeUid, 
             entity.getFacilityUid(), 
             entity.getFacilityEndpointUri(),
             registration.getFacilityNonce()));
@@ -273,7 +273,7 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
         .setRegistrationToken(token)
         .setSuccess(true)
         .setRoute(DerRoute.newBuilder()
-            .setOperatorUid(operatorUid)
+            .setExchangeUid(exchangeUid)
             .setFacilityUid(registration.getFacilityUid())
             .setSignature(msgSig)
             .build())

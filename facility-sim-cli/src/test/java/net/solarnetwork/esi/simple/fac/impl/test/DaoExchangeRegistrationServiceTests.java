@@ -96,7 +96,7 @@ public class DaoExchangeRegistrationServiceTests {
   private String facilityUid;
   private URI facilityUri;
   private KeyPair facilityKeyPair;
-  private String operatorUid;
+  private String exchangeUid;
   private KeyPair exchangeKeyPair;
   private ExchangeEntityDao exchangeDao;
   private ExchangeRegistrationEntityDao exchangeRegistrationDao;
@@ -108,7 +108,7 @@ public class DaoExchangeRegistrationServiceTests {
     facilityUri = URI.create("//test-facility");
     facilityKeyPair = STANDARD_HELPER.generateKeyPair();
     facilityService = mock(FacilityService.class);
-    operatorUid = UUID.randomUUID().toString();
+    exchangeUid = UUID.randomUUID().toString();
     exchangeKeyPair = CryptoUtils.STANDARD_HELPER.generateKeyPair();
     exchangeDao = mock(ExchangeEntityDao.class);
     exchangeRegistrationDao = mock(ExchangeRegistrationEntityDao.class);
@@ -158,7 +158,7 @@ public class DaoExchangeRegistrationServiceTests {
   public void getExchangeRegistrationForm() throws IOException {
     // given
     DerFacilityRegistrationForm regForm = DerFacilityRegistrationForm.newBuilder()
-        .setOperatorUid(UUID.randomUUID().toString()).build();
+        .setExchangeUid(UUID.randomUUID().toString()).build();
     DerFacilityExchangeImplBase exchangeService = new DerFacilityExchangeImplBase() {
 
       @Override
@@ -176,7 +176,7 @@ public class DaoExchangeRegistrationServiceTests {
 
     // when
     DerFacilityExchangeInfo exchInfo = DerFacilityExchangeInfo.newBuilder()
-        .setUid(regForm.getOperatorUid()).setEndpointUri(exchangeUri.toString()).build();
+        .setUid(regForm.getExchangeUid()).setEndpointUri(exchangeUri.toString()).build();
     DerFacilityRegistrationForm result = service.getExchangeRegistrationForm(exchInfo,
         Locale.getDefault());
 
@@ -223,7 +223,7 @@ public class DaoExchangeRegistrationServiceTests {
         .willAnswer(invocationArg(0, ExchangeRegistrationEntity.class));
 
     DerFacilityRegistrationFormDataReceipt receipt = DerFacilityRegistrationFormDataReceipt
-        .newBuilder().setOperatorNonce(ByteString.copyFrom(CryptoUtils.generateRandomBytes(8)))
+        .newBuilder().setExchangeNonce(ByteString.copyFrom(CryptoUtils.generateRandomBytes(8)))
         .build();
 
     DerFacilityExchangeImplBase exchangeService = new DerFacilityExchangeImplBase() {
@@ -249,7 +249,7 @@ public class DaoExchangeRegistrationServiceTests {
         validateMessageSignature(STANDARD_HELPER, route.getSignature(), 
             exchangeKeyPair, facilityKeyPair.getPublic(),
             asList(
-                operatorUid, 
+                exchangeUid, 
                 facilityUid,
                 facilityUri,
                 request.getFacilityNonce()));
@@ -266,7 +266,7 @@ public class DaoExchangeRegistrationServiceTests {
         .addService(exchangeService).build().start());
 
     // when
-    DerFacilityExchangeInfo exchange = DerFacilityExchangeInfo.newBuilder().setUid(operatorUid)
+    DerFacilityExchangeInfo exchange = DerFacilityExchangeInfo.newBuilder().setUid(exchangeUid)
         .setEndpointUri(exchangeUri.toString()).build();
     ExchangeRegistrationEntity result = service.registerWithExchange(exchange, regFormData);
 
@@ -280,8 +280,8 @@ public class DaoExchangeRegistrationServiceTests {
         equalTo(exchangePublicKey.getKey()));
     assertThat("Result facility nonce", ByteString.copyFrom(result.getFacilityNonce()),
         equalTo(submittedFormData.get().getFacilityNonce()));
-    assertThat("Result operator nonce", ByteString.copyFrom(result.getOperatorNonce()),
-        equalTo(receipt.getOperatorNonce()));
+    assertThat("Result exchange nonce", ByteString.copyFrom(result.getExchangeNonce()),
+        equalTo(receipt.getExchangeNonce()));
   }
 
   @Test
@@ -295,11 +295,11 @@ public class DaoExchangeRegistrationServiceTests {
     exchangeRegistration.setExchangeEndpointUri(exchangeUri.toString());
     exchangeRegistration.setExchangePublicKey(exchangeKeyPair.getPublic().getEncoded());
     exchangeRegistration.setFacilityNonce(CryptoUtils.generateRandomBytes(8));
-    exchangeRegistration.setId(operatorUid);
-    exchangeRegistration.setOperatorNonce(CryptoUtils.generateRandomBytes(8));
+    exchangeRegistration.setId(exchangeUid);
+    exchangeRegistration.setExchangeNonce(CryptoUtils.generateRandomBytes(8));
 
     // look up the registration to confirm
-    given(exchangeRegistrationDao.findById(operatorUid))
+    given(exchangeRegistrationDao.findById(exchangeUid))
         .willReturn(Optional.of(exchangeRegistration));
 
     // save the new exchange
@@ -311,20 +311,20 @@ public class DaoExchangeRegistrationServiceTests {
     DerFacilityRegistration derReg = DerFacilityRegistration.newBuilder()
         .setSuccess(true)
         .setRegistrationToken(ByteString.copyFrom(CryptoUtils.sha256(Arrays.asList(
-            exchangeRegistration.getOperatorNonce(),
+            exchangeRegistration.getExchangeNonce(),
             exchangeRegistration.getFacilityNonce(),
-            operatorUid,
+            exchangeUid,
             facilityService.getUid(),
             facilityService.getUri()))))
         .setRoute(DerRoute.newBuilder()
             .setFacilityUid(facilityUid)
-            .setOperatorUid(operatorUid)
+            .setExchangeUid(exchangeUid)
             .setSignature(generateMessageSignature(
                 STANDARD_HELPER, 
                 exchangeKeyPair, 
                 facilityKeyPair.getPublic(), 
                 asList(
-                    operatorUid,
+                    exchangeUid,
                     facilityService.getUid())))
             .build())
         .build();
@@ -333,7 +333,7 @@ public class DaoExchangeRegistrationServiceTests {
 
     // then
     assertThat("Exchange created", exchange, notNullValue());
-    assertThat("Exchange UID", exchange.getId(), equalTo(operatorUid));
+    assertThat("Exchange UID", exchange.getId(), equalTo(exchangeUid));
     assertThat("Exchange URI", exchange.getExchangeEndpointUri(), equalTo(exchangeUri.toString()));
     assertThat("Exchange public key", ByteString.copyFrom(exchange.getExchangePublicKey()),
         equalTo(ByteString.copyFrom(exchangeKeyPair.getPublic().getEncoded())));
