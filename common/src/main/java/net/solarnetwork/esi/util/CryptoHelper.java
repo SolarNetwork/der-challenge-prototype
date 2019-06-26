@@ -97,6 +97,8 @@ public interface CryptoHelper {
    *        the initialization vector to use; the same vector must be used to decrypt the resulting
    *        message
    * @return the validated message digest
+   * @throws IllegalArgumentException
+   *         if the computed digest does not match the signed digest
    * @throws RuntimeException
    *         if any security exception is thrown
    */
@@ -107,7 +109,7 @@ public interface CryptoHelper {
       byte[] signedDigest = decryptMessageDigest(key, encryptedMessage, verifyKey, iv);
       byte[] computedDigest = computeDigest(message);
       if (!Arrays.equals(signedDigest, computedDigest)) {
-        throw new SecurityException("Computed message digest does not match signed digest.");
+        throw new IllegalArgumentException("Computed message digest does not match signed digest.");
       }
       return computedDigest;
     } catch (SecurityException e) {
