@@ -29,6 +29,8 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.net.URI;
@@ -338,6 +340,8 @@ public class DaoExchangeRegistrationServiceTests {
     assertThat("Exchange URI", exchange.getExchangeEndpointUri(), equalTo(exchangeUri.toString()));
     assertThat("Exchange public key", ByteString.copyFrom(exchange.getExchangePublicKey()),
         equalTo(ByteString.copyFrom(exchangeKeyPair.getPublic().getEncoded())));
+
+    verify(exchangeRegistrationDao, times(1)).deleteById(exchangeUid);
   }
 
 }

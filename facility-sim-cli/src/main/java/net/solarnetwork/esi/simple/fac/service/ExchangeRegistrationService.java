@@ -45,6 +45,20 @@ public interface ExchangeRegistrationService {
   Iterable<DerFacilityExchangeInfo> listExchanges(DerFacilityExchangeRequest criteria);
 
   /**
+   * Get a listing of all available exchange registration entities.
+   * 
+   * <p>
+   * These represent non-completed registrations, which have been submitted to an exchange via
+   * {@link #registerWithExchange(DerFacilityExchangeInfo, FormData)} but who have not called the
+   * {@link #completeExchangeRegistration(DerFacilityRegistration)} method yet. Commonly this is
+   * expected to return at most one result.
+   * </p>
+   * 
+   * @return the exchange registration entities
+   */
+  Iterable<ExchangeRegistrationEntity> listExchangeRegistrations();
+
+  /**
    * Get the registration form for a given exchange.
    * 
    * @param exchange

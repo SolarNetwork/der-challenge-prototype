@@ -31,6 +31,8 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.jline.utils.Log;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -250,10 +252,18 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       throw new IllegalArgumentException("The registration token is not valid.");
     }
 
+    exchangeRegistrationDao.deleteById(reg.getId());
+
     ExchangeEntity entity = new ExchangeEntity(Instant.now(), reg.getId());
     entity.setExchangeEndpointUri(reg.getExchangeEndpointUri());
     entity.setExchangePublicKey(reg.getExchangePublicKey());
     return exchangeDao.save(entity);
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public Iterable<ExchangeRegistrationEntity> listExchangeRegistrations() {
+    return exchangeRegistrationDao.findAll(Sort.by(Direction.ASC, "created"));
   }
 
   /**

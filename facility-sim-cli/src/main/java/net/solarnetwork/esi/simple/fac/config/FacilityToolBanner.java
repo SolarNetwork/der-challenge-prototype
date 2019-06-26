@@ -18,6 +18,7 @@
 package net.solarnetwork.esi.simple.fac.config;
 
 import java.io.PrintStream;
+import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.ResourceBanner;
@@ -25,7 +26,9 @@ import org.springframework.boot.ansi.AnsiColor;
 import org.springframework.boot.ansi.AnsiOutput;
 import org.springframework.boot.ansi.AnsiOutput.Enabled;
 import org.springframework.boot.ansi.AnsiStyle;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Primary;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -49,6 +52,8 @@ public class FacilityToolBanner extends ResourceBanner {
   @Autowired
   private FacilityService facilityService;
 
+  private final MessageSource messageSource;
+
   /**
    * Default constructor.
    */
@@ -64,6 +69,9 @@ public class FacilityToolBanner extends ResourceBanner {
    */
   public FacilityToolBanner(Resource resource) {
     super(resource);
+    ResourceBundleMessageSource ms = new ResourceBundleMessageSource();
+    ms.setBasename(getClass().getName());
+    this.messageSource = ms;
   }
 
   @Override
@@ -77,10 +85,11 @@ public class FacilityToolBanner extends ResourceBanner {
     ExchangeEntity exchange = facilityService.getExchange();
     if (exchange == null) {
       AnsiOutput.setEnabled(Enabled.ALWAYS);
-      out.println(AnsiOutput.toString(AnsiColor.GREEN,
-          "Welcome! You need to register this facility with an exchange."));
-      out.println(AnsiOutput.toString("Use the ", AnsiStyle.BOLD, "exchange-registry-choose",
-          AnsiStyle.NORMAL, " command to start."));
+      out.println(AnsiOutput.toString(AnsiColor.CYAN,
+          messageSource.getMessage("exchange.missing.intro", null, Locale.getDefault())));
+      out.println(AnsiOutput.toString(messageSource.getMessage("exchange.register.howto",
+          new Object[] { AnsiOutput.toString(AnsiStyle.BOLD, "exchange-choose", AnsiStyle.NORMAL) },
+          Locale.getDefault())));
     }
   }
 

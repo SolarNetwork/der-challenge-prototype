@@ -85,39 +85,15 @@ public class RegistryCommands {
    * List the available facilities in the registry.
    */
   @ShellMethod("List available facility exchanges.")
-  public void exchangeRegistryList() {
+  public void exchangeList() {
     listExchanges();
-  }
-
-  private List<DerFacilityExchangeInfo> listExchanges() {
-    List<DerFacilityExchangeInfo> result = new ArrayList<>(8);
-    Iterable<DerFacilityExchangeInfo> infos = exchangeRegistrationService.listExchanges(null);
-    int i = 0;
-    String fmt = "  %-10s %s";
-    for (DerFacilityExchangeInfo info : infos) {
-      i += 1;
-      result.add(info);
-      shell.print(messageSource.getMessage("reg.registry.entry.title", new Object[] { i },
-          Locale.getDefault()), PromptColor.MAGENTA);
-      shell.print(String.format(fmt,
-          messageSource.getMessage("reg.registry.entry.name", null, Locale.getDefault()),
-          info.getName()));
-      shell.print(String.format(fmt,
-          messageSource.getMessage("reg.registry.entry.id", null, Locale.getDefault()),
-          info.getUid()));
-      shell.print(String.format(fmt,
-          messageSource.getMessage("reg.registry.entry.uri", null, Locale.getDefault()),
-          info.getEndpointUri()));
-    }
-    shell.print("");
-    return result;
   }
 
   /**
    * Choose a facility exchange.
    */
   @ShellMethod("Choose a facility exchange to connect to.")
-  public void exchangeRegistryChoose() {
+  public void exchangeChoose() {
     List<DerFacilityExchangeInfo> exchanges = listExchanges();
     while (true) {
       String choice = shell
@@ -150,6 +126,50 @@ public class RegistryCommands {
             messageSource.getMessage("reg.error.enterNumber", null, Locale.getDefault()));
       }
     }
+  }
+
+  /**
+   * List registrations.
+   */
+  @ShellMethod("List pending registrations.")
+  public void exchangeRegistrationList() {
+    Iterable<ExchangeRegistrationEntity> list = exchangeRegistrationService
+        .listExchangeRegistrations();
+    int count = 0;
+    for (ExchangeRegistrationEntity reg : list) {
+      count++;
+      shell.print(messageSource.getMessage("reg.list.item.title",
+          new Object[] { count, reg.getId(), reg.getExchangeEndpointUri() }, Locale.getDefault()),
+          PromptColor.MAGENTA);
+      shell.print(getFaint(messageSource.getMessage("reg.list.item.caption",
+          new Object[] { reg.getCreated() }, Locale.getDefault())));
+    }
+    shell.print(
+        messageSource.getMessage("reg.list.count", new Object[] { count }, Locale.getDefault()));
+  }
+
+  private List<DerFacilityExchangeInfo> listExchanges() {
+    List<DerFacilityExchangeInfo> result = new ArrayList<>(8);
+    Iterable<DerFacilityExchangeInfo> infos = exchangeRegistrationService.listExchanges(null);
+    int i = 0;
+    String fmt = "  %-10s %s";
+    for (DerFacilityExchangeInfo info : infos) {
+      i += 1;
+      result.add(info);
+      shell.print(messageSource.getMessage("reg.registry.entry.title", new Object[] { i },
+          Locale.getDefault()), PromptColor.MAGENTA);
+      shell.print(String.format(fmt,
+          messageSource.getMessage("reg.registry.entry.name", null, Locale.getDefault()),
+          info.getName()));
+      shell.print(String.format(fmt,
+          messageSource.getMessage("reg.registry.entry.id", null, Locale.getDefault()),
+          info.getUid()));
+      shell.print(String.format(fmt,
+          messageSource.getMessage("reg.registry.entry.uri", null, Locale.getDefault()),
+          info.getEndpointUri()));
+    }
+    shell.print("");
+    return result;
   }
 
   private void handleRegisterForm(DerFacilityExchangeInfo exchange,
