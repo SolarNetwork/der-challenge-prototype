@@ -33,6 +33,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 
+import javax.annotation.Nonnull;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
@@ -217,11 +218,9 @@ public final class CryptoUtils {
    * 
    * <p>
    * This method will generate a new random encryption initialization vector. It will then generate
-   * the message to sign by iterating over {@code messageData}, converting each element to bytes,
-   * concatenating everything into one final message. For each element, if it is a {@code byte[]} or
-   * {@link ByteString} then it will be used as-is. For all other objects, {@link Object#toString()}
-   * will be used to turn it into a string, and then the UTF-8 bytes of that will be used. The final
-   * message signature is calculated via
+   * the message to sign by iterating over {@code messageData}, converting each element to bytes via
+   * {@link #bytesForObject(Object)} and concatenating everything into one final byte array message.
+   * The final message signature is calculated via
    * {@link CryptoHelper#encryptMessageDigest(SecretKey, byte[], java.security.PrivateKey, byte[])}.
    * </p>
    * 
@@ -232,10 +231,12 @@ public final class CryptoUtils {
    * @param recipientKey
    *        the recipient's public key to encrypt the message data signature with
    * @param messageData
-   *        the message data to sign
+   *        the message data to convert to a byte array message to sign; all elements are converted
+   *        to bytes via {@link #bytesForObject(Object)}
    * @return the new message signature instance
    * @throws RuntimeException
    *         if any error occurs
+   * @see #bytesForObject(Object)
    */
   public static MessageSignature generateMessageSignature(CryptoHelper helper,
       KeyPair senderKeyPair, PublicKey recipientKey, Iterable<?> messageData) {
@@ -245,14 +246,7 @@ public final class CryptoUtils {
       final SecretKey encryptKey = helper.deriveSecretKey(recipientKey, senderKeyPair);
       final ByteArrayOutputStream byos = new ByteArrayOutputStream();
       for (Object o : messageData) {
-        byte[] bytes;
-        if (o instanceof byte[]) {
-          bytes = (byte[]) o;
-        } else if (o instanceof ByteString) {
-          bytes = ((ByteString) o).toByteArray();
-        } else {
-          bytes = o.toString().getBytes(STANDARD_CHARSET);
-        }
+        byte[] bytes = bytesForObject(o);
         byos.write(bytes);
       }
       final byte[] msgSigData = helper.encryptMessageDigest(encryptKey, byos.toByteArray(),
@@ -289,6 +283,7 @@ public final class CryptoUtils {
    * @return the computed and validated message digest
    * @throws RuntimeException
    *         if any error occurs
+   * @see #bytesForObject(Object)
    */
   public static byte[] validateMessageSignature(CryptoHelper cryptoHelper, MessageSignature msgSig,
       KeyPair recipientKeyPair, PublicKey senderPublicKey, Iterable<?> messageData) {
@@ -302,14 +297,7 @@ public final class CryptoUtils {
     try {
       final ByteArrayOutputStream byos = new ByteArrayOutputStream();
       for (Object o : messageData) {
-        byte[] bytes;
-        if (o instanceof byte[]) {
-          bytes = (byte[]) o;
-        } else if (o instanceof ByteString) {
-          bytes = ((ByteString) o).toByteArray();
-        } else {
-          bytes = o.toString().getBytes(STANDARD_CHARSET);
-        }
+        byte[] bytes = bytesForObject(o);
         byos.write(bytes);
       }
       return cryptoHelper.validateMessageDigest(recipientKeyPair,
@@ -321,13 +309,41 @@ public final class CryptoUtils {
   }
 
   /**
+   * Convert an object to bytes.
+   * 
+   * <p>
+   * If {@code o} is a {@code byte[]} it will be returned directly. If it is a {@link ByteString}
+   * then it's bytes will be returned. If it is {@literal null} an array of length {@literal 0} will
+   * be returned. For all other objects, {@link Object#toString()} will be used to turn it into a
+   * string, and then the UTF-8 bytes of that will be returned.
+   * </p>
+   * 
+   * @param o
+   *        the object to convert to bytes
+   * @return the bytes, never {@literal null}
+   */
+  @Nonnull
+  public static byte[] bytesForObject(Object o) {
+    byte[] bytes;
+    if (o instanceof byte[]) {
+      bytes = (byte[]) o;
+    } else if (o instanceof ByteString) {
+      bytes = ((ByteString) o).toByteArray();
+    } else if (o != null) {
+      bytes = o.toString().getBytes(STANDARD_CHARSET);
+    } else {
+      bytes = new byte[0];
+    }
+    return bytes;
+  }
+
+  /**
    * Compute a SHA-256 digest of a set of data.
    * 
    * @param messageData
    *        the message data to compute the expected message digest from to compare to the digest
-   *        decrypted from the signature; the same rules outlined in
-   *        {@link #generateMessageSignature(CryptoHelper, KeyPair, PublicKey, Iterable)} for
-   *        converting the objects to bytes are used
+   *        decrypted from the signature; all elements are converted to bytes via
+   *        {@link #bytesForObject(Object)} and concatenated as the message to digest
    * @return the digest value
    * @throws RuntimeException
    *         if any error occurs
@@ -335,16 +351,11 @@ public final class CryptoUtils {
   public static byte[] sha256(Iterable<?> messageData) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
-      for (Object o : messageData) {
-        byte[] bytes;
-        if (o instanceof byte[]) {
-          bytes = (byte[]) o;
-        } else if (o instanceof ByteString) {
-          bytes = ((ByteString) o).toByteArray();
-        } else {
-          bytes = o.toString().getBytes(STANDARD_CHARSET);
+      if (messageData != null) {
+        for (Object o : messageData) {
+          byte[] bytes = bytesForObject(o);
+          digest.update(bytes);
         }
-        digest.update(bytes);
       }
       return digest.digest();
     } catch (final NoSuchAlgorithmException e) {
