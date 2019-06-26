@@ -35,6 +35,7 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -50,6 +51,7 @@ import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.MessageSignature;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityRegistrationService;
@@ -76,6 +78,7 @@ public class DaoFacilityRegistrationServiceTests {
   private KeyPair exchangeKeyPair;
   private KeyPair facilityKeyPair;
   private DaoFacilityRegistrationService service;
+  private FacilityEntityDao facilityDao;
   private FacilityRegistrationEntityDao facilityRegistrationDao;
 
   @Before
@@ -90,7 +93,9 @@ public class DaoFacilityRegistrationServiceTests {
         STANDARD_HELPER);
 
     facilityKeyPair = STANDARD_HELPER.generateKeyPair();
+    facilityDao = mock(FacilityEntityDao.class);
     facilityRegistrationDao = mock(FacilityRegistrationEntityDao.class);
+    service.setFacilityDao(facilityDao);
     service.setFacilityRegistrationDao(facilityRegistrationDao);
   }
 
@@ -108,7 +113,8 @@ public class DaoFacilityRegistrationServiceTests {
 
     // @formatter:off
     MessageSignature msgSig = generateMessageSignature(STANDARD_HELPER, 
-        facilityKeyPair, exchangeKeyPair.getPublic(), asList(exchangeUid, facilityUid));
+        facilityKeyPair, exchangeKeyPair.getPublic(), 
+        asList(exchangeUid, facilityUid, TEST_FACILITY_ENDPOINT_URI, TEST_NONCE));
     
     return DerFacilityRegistrationFormData.newBuilder()
         .setRoute(DerRoute.newBuilder()
@@ -136,13 +142,17 @@ public class DaoFacilityRegistrationServiceTests {
   @Test
   public void submitRegistrationOk() throws NoSuchAlgorithmException {
     // given
+    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
+    given(facilityDao.findByFacilityUid(formData.getRoute().getFacilityUid()))
+        .willReturn(Optional.ofNullable(null));
+    given(facilityRegistrationDao.findByFacilityUid(formData.getRoute().getFacilityUid()))
+        .willReturn(Optional.ofNullable(null));
     ArgumentCaptor<FacilityRegistrationEntity> facilityRegCaptor = ArgumentCaptor
         .forClass(FacilityRegistrationEntity.class);
     given(facilityRegistrationDao.save(facilityRegCaptor.capture()))
         .willAnswer(invocationArg(0, FacilityRegistrationEntity.class));
 
     // when
-    DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
     FacilityRegistrationEntity reg = service.submitDerFacilityRegistrationForm(formData);
 
     // then
@@ -154,6 +164,8 @@ public class DaoFacilityRegistrationServiceTests {
         equalTo(formData.getRoute().getFacilityUid()));
     assertThat("Registration facility nonce", ByteString.copyFrom(reg.getFacilityNonce()),
         equalTo(formData.getFacilityNonce()));
+    assertThat("Registration facility public key", ByteString.copyFrom(reg.getFacilityPublicKey()),
+        equalTo(ByteString.copyFrom(facilityKeyPair.getPublic().getEncoded())));
   }
 
   @Test(expected = IllegalArgumentException.class)

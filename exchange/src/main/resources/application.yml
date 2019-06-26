@@ -44,6 +44,13 @@ ssh:
     prompt:
       color: green
       text: 'Xchg> '
+      
+xchg:
+  uid: monopoly-utility
+  facility:
+    conn:
+      usePlaintext: true
+
 ---
 debugMode: true
 

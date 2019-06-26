@@ -24,18 +24,18 @@ import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
 import java.security.KeyPair;
-import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 
-import org.apache.commons.codec.digest.DigestUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.transaction.annotation.Propagation;
@@ -48,7 +48,6 @@ import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
 
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.domain.DerFacilityRegistration;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
@@ -57,6 +56,7 @@ import net.solarnetwork.esi.domain.DerRouteOrBuilder;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.MessageSignature;
+import net.solarnetwork.esi.grpc.ChannelProvider;
 import net.solarnetwork.esi.service.DerFacilityServiceGrpc;
 import net.solarnetwork.esi.service.DerFacilityServiceGrpc.DerFacilityServiceFutureStub;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
@@ -75,8 +75,6 @@ import net.solarnetwork.esi.util.CryptoUtils;
  */
 public class DaoFacilityRegistrationService implements FacilityRegistrationService {
 
-  private static final Charset UTF8 = Charset.forName("UTF-8");
-
   @Autowired
   private FacilityEntityDao facilityDao;
 
@@ -86,11 +84,13 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
   @Autowired
   private Executor taskExecutor;
 
+  private static final Logger log = LoggerFactory.getLogger(DaoFacilityRegistrationService.class);
+
   private final String exchangeUid;
   private final KeyPair exchangeKeyPair;
   private final List<Form> registrationForms;
   private final CryptoHelper cryptoHelper;
-  private boolean usePlaintext;
+  private ChannelProvider facilityChannelProvider;
 
   /**
    * Constructor.
@@ -127,7 +127,6 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
       throw new IllegalArgumentException("The crypto helper must be provided.");
     }
     this.cryptoHelper = cryptoHelper;
-    this.usePlaintext = false;
     this.taskExecutor = ForkJoinPool.commonPool();
   }
 
@@ -141,12 +140,20 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
     }
 
     if (!exchangeUid.equals(route.getExchangeUid())) {
-      throw new IllegalArgumentException("Operator UID not valid.");
+      throw new IllegalArgumentException("Exchange UID not valid.");
     }
 
     String facilityUid = route.getFacilityUid();
     if (facilityUid == null || facilityUid.trim().isEmpty()) {
       throw new IllegalArgumentException("Facility UID missing.");
+    }
+
+    // check if facility already exists, or registration for it exists
+    if (facilityDao.findByFacilityUid(facilityUid).isPresent()) {
+      throw new IllegalArgumentException("Facility already registered for UID.");
+    }
+    if (facilityRegistrationDao.findByFacilityUid(facilityUid).isPresent()) {
+      throw new IllegalArgumentException("Facility registration already submitted for UID.");
     }
 
     String facilityEndpointUri = request.getFacilityEndpointUri();
@@ -183,7 +190,8 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
 
     // verify signature
     validateMessageSignature(cryptoHelper, route.getSignature(), exchangeKeyPair,
-        cryptoHelper.decodePublicKey(facilityKey), asList(exchangeUid, facilityUid));
+        cryptoHelper.decodePublicKey(facilityKey),
+        asList(exchangeUid, facilityUid, facilityEndpointUri, facilityNonce));
 
     FormData formData = request.getData();
     if (formData == null) {
@@ -227,7 +235,7 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
     entity.setUici(uici);
     entity.setFacilityUid(facilityUid);
     entity.setFacilityEndpointUri(facilityEndpointUri);
-    entity.setFacilityPublicKey(facilityKey.toByteArray());
+    entity.setFacilityPublicKey(facilityKey.getKey().toByteArray());
     entity.setFacilityNonce(facilityNonce.toByteArray());
     entity.setExchangeNonce(opNonce);
     return facilityRegistrationDao.save(entity);
@@ -250,13 +258,9 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
     facilityRegistrationDao.deleteById(registration.getId());
 
     // SHA256(exchangeNonce + facilityNonce + exchangeUid + facilityUid + facilityUri)
-    MessageDigest sha256 = DigestUtils.getSha256Digest();
-    sha256.update(registration.getExchangeNonce());
-    sha256.update(registration.getFacilityNonce());
-    sha256.update(exchangeUid.getBytes(UTF8));
-    sha256.update(entity.getFacilityUid().getBytes(UTF8));
-    sha256.update(entity.getFacilityEndpointUri().getBytes(UTF8));
-    ByteString token = ByteString.copyFrom(sha256.digest());
+    ByteString token = ByteString.copyFrom(CryptoUtils
+        .sha256(Arrays.asList(registration.getExchangeNonce(), registration.getFacilityNonce(),
+            exchangeUid, entity.getFacilityUid(), entity.getFacilityEndpointUri())));
 
     // @formatter:off
     
@@ -281,12 +285,8 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
     
     // @formatter:on
 
-    ManagedChannelBuilder<?> channelBuilder = ManagedChannelBuilder
-        .forTarget(registration.getFacilityEndpointUri());
-    if (usePlaintext) {
-      channelBuilder.usePlaintext();
-    }
-    ManagedChannel channel = channelBuilder.build();
+    ManagedChannel channel = facilityChannelProvider
+        .channelForUri(URI.create(registration.getFacilityEndpointUri()));
     DerFacilityServiceFutureStub client = DerFacilityServiceGrpc.newFutureStub(channel);
 
     final FacilityEntity finalEntity = entity;
@@ -296,13 +296,18 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
 
       @Override
       public void onSuccess(Empty r) {
+        log.info("Successfully completed registration for facility [" + finalEntity.getFacilityUid()
+            + "]");
         result.complete(finalEntity);
+        channel.shutdown();
       }
 
       @Override
       public void onFailure(Throwable t) {
+        log.error("Error completing registration for facility [" + finalEntity.getFacilityUid()
+            + "]: " + t.getMessage());
         result.completeExceptionally(t);
-
+        channel.shutdown();
       }
     }, taskExecutor);
 
@@ -330,16 +335,6 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
   }
 
   /**
-   * Toggle the use of plain text vs SSL.
-   * 
-   * @param usePlaintext
-   *        {@literal true} to use plain text, {@literal false} to use SSL
-   */
-  public void setUsePlaintext(boolean usePlaintext) {
-    this.usePlaintext = usePlaintext;
-  }
-
-  /**
    * Set the executor to use for tasks.
    * 
    * @param taskExecutor
@@ -347,6 +342,16 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
    */
   public void setTaskExecutor(Executor taskExecutor) {
     this.taskExecutor = taskExecutor;
+  }
+
+  /**
+   * Set the channel provider to use for facilities.
+   * 
+   * @param facilityChannelProvider
+   *        the provider to set
+   */
+  public void setFacilityChannelProvider(ChannelProvider facilityChannelProvider) {
+    this.facilityChannelProvider = facilityChannelProvider;
   }
 
 }

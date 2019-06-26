@@ -43,6 +43,7 @@ import org.springframework.core.io.Resource;
 import com.google.protobuf.util.JsonFormat;
 
 import net.solarnetwork.esi.domain.Form;
+import net.solarnetwork.esi.grpc.SimpleChannelProvider;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityRegistrationService;
@@ -82,6 +83,9 @@ public class DerFacilityExchangeConfig {
   @Value("${xchg.registrationFormPath:classpath:/net/solarnetwork/esi/oper/impl/default-registration-form.json}")
   private Resource registrationFormResource = new ClassPathResource(
       "default-registration-form.json", SimpleDerFacilityExchange.class);
+
+  @Value("${xchg.facility.conn.usePlaintext:false}")
+  private boolean usePlaintext = false;
 
   @Autowired
   public FacilityRegistrationEntityDao facilityRegistrationDao;
@@ -193,6 +197,7 @@ public class DerFacilityExchangeConfig {
         exchangeKeyPair(), registrationForms(), cryptoHelper());
     s.setFacilityDao(facilityDao);
     s.setFacilityRegistrationDao(facilityRegistrationDao);
+    s.setFacilityChannelProvider(new SimpleChannelProvider(usePlaintext));
     return s;
   }
 
