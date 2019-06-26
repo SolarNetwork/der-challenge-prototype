@@ -21,6 +21,7 @@ import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -57,6 +58,9 @@ public class RegistrationConfig {
   @Autowired
   private FacilityService facilityService;
 
+  @Autowired
+  private ApplicationEventPublisher eventPublisher;
+
   private ChannelProvider exchangeRegistryChannelProvider() {
     return new StaticChannelProvider(URI.create(uri), usePlaintext);
   }
@@ -76,6 +80,7 @@ public class RegistrationConfig {
         exchangeDao, exchangeRegistrationDao);
     s.setExchangeRegistryChannelProvider(exchangeRegistryChannelProvider());
     s.setExchangeChannelProvider(exchangeChannelProvider());
+    s.setEventPublisher(eventPublisher);
     return s;
   }
 

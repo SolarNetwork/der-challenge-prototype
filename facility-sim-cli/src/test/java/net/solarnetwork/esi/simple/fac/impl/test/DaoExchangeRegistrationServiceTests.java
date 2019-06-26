@@ -49,6 +49,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.context.ApplicationEventPublisher;
 
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Empty;
@@ -74,6 +75,7 @@ import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeRegistrationEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEntity;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEvent.ExchangeRegistrationCompleted;
 import net.solarnetwork.esi.simple.fac.impl.DaoExchangeRegistrationService;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
 import net.solarnetwork.esi.util.CryptoUtils;
@@ -101,6 +103,7 @@ public class DaoExchangeRegistrationServiceTests {
   private KeyPair exchangeKeyPair;
   private ExchangeEntityDao exchangeDao;
   private ExchangeRegistrationEntityDao exchangeRegistrationDao;
+  private ApplicationEventPublisher eventPublisher;
   private DaoExchangeRegistrationService service;
 
   @Before
@@ -113,9 +116,11 @@ public class DaoExchangeRegistrationServiceTests {
     exchangeKeyPair = CryptoUtils.STANDARD_HELPER.generateKeyPair();
     exchangeDao = mock(ExchangeEntityDao.class);
     exchangeRegistrationDao = mock(ExchangeRegistrationEntityDao.class);
+    eventPublisher = mock(ApplicationEventPublisher.class);
     service = new DaoExchangeRegistrationService(facilityService, exchangeDao,
         exchangeRegistrationDao);
     service.setExchangeChannelProvider(new InProcessChannelProvider(true));
+    service.setEventPublisher(eventPublisher);
   }
 
   @Test
@@ -342,6 +347,14 @@ public class DaoExchangeRegistrationServiceTests {
         equalTo(ByteString.copyFrom(exchangeKeyPair.getPublic().getEncoded())));
 
     verify(exchangeRegistrationDao, times(1)).deleteById(exchangeUid);
+
+    ArgumentCaptor<ExchangeRegistrationCompleted> completedEventCaptor = ArgumentCaptor
+        .forClass(ExchangeRegistrationCompleted.class);
+    verify(eventPublisher, times(1)).publishEvent(completedEventCaptor.capture());
+
+    ExchangeRegistrationCompleted evt = completedEventCaptor.getValue();
+    assertThat("Event entity", evt.getSource(), equalTo(exchangeRegistration));
+    assertThat("Event success", evt.isSuccess(), equalTo(true));
   }
 
 }

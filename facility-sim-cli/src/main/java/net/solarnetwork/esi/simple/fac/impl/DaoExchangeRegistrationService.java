@@ -31,6 +31,7 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import org.jline.utils.Log;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.annotation.Propagation;
@@ -63,6 +64,7 @@ import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeRegistrationEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEntity;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEvent.ExchangeRegistrationCompleted;
 import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
 import net.solarnetwork.esi.util.CryptoUtils;
@@ -80,6 +82,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
   private final ExchangeRegistrationEntityDao exchangeRegistrationDao;
   private ChannelProvider exchangeRegistryChannelProvider;
   private ChannelProvider exchangeChannelProvider;
+  private ApplicationEventPublisher eventPublisher;
 
   /**
    * Constructor.
@@ -254,10 +257,20 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
 
     exchangeRegistrationDao.deleteById(reg.getId());
 
-    ExchangeEntity entity = new ExchangeEntity(Instant.now(), reg.getId());
-    entity.setExchangeEndpointUri(reg.getExchangeEndpointUri());
-    entity.setExchangePublicKey(reg.getExchangePublicKey());
-    return exchangeDao.save(entity);
+    ExchangeEntity entity = null;
+    try {
+      if (request.getSuccess()) {
+        entity = new ExchangeEntity(Instant.now(), reg.getId());
+        entity.setExchangeEndpointUri(reg.getExchangeEndpointUri());
+        entity.setExchangePublicKey(reg.getExchangePublicKey());
+        entity = exchangeDao.save(entity);
+      }
+      return entity;
+    } finally {
+      if (eventPublisher != null) {
+        eventPublisher.publishEvent(new ExchangeRegistrationCompleted(reg, request.getSuccess()));
+      }
+    }
   }
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
@@ -284,6 +297,16 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
    */
   public void setExchangeChannelProvider(ChannelProvider exchangeChannelProvider) {
     this.exchangeChannelProvider = exchangeChannelProvider;
+  }
+
+  /**
+   * Set an event publisher to use.
+   * 
+   * @param eventPublisher
+   *        the event publisher to set
+   */
+  public void setEventPublisher(ApplicationEventPublisher eventPublisher) {
+    this.eventPublisher = eventPublisher;
   }
 
 }

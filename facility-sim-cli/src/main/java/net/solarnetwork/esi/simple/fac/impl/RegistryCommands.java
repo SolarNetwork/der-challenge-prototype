@@ -17,22 +17,28 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import static com.github.fonimus.ssh.shell.SshShellCommandFactory.SSH_THREAD_CONTEXT;
 import static net.solarnetwork.esi.simple.fac.impl.ShellUtils.getBold;
 import static net.solarnetwork.esi.simple.fac.impl.ShellUtils.getBoldColored;
 import static net.solarnetwork.esi.simple.fac.impl.ShellUtils.getFaint;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.davidmoten.text.utils.WordWrap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.context.event.EventListener;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
 
 import com.github.fonimus.ssh.shell.PromptColor;
+import com.github.fonimus.ssh.shell.SshContext;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
@@ -43,6 +49,7 @@ import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.FormSetting;
 import net.solarnetwork.esi.domain.FormSetting.FormSettingType;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEntity;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEvent.ExchangeRegistrationCompleted;
 import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
 
 /**
@@ -60,6 +67,10 @@ public class RegistryCommands {
   private final SshShellHelper shell;
   private final ExchangeRegistrationService exchangeRegistrationService;
   private MessageSource messageSource;
+
+  // HACK to gain access to most recently-used shell from other threads; 
+  // need to investigate better way to handle this
+  private AtomicReference<WeakReference<SshContext>> sshContextRef = new AtomicReference<>();
 
   /**
    * Constructor.
@@ -146,6 +157,54 @@ public class RegistryCommands {
     }
     shell.print(
         messageSource.getMessage("reg.list.count", new Object[] { count }, Locale.getDefault()));
+    updateSshContextRef();
+  }
+
+  /**
+   * Hack to keep reference to latest shell.
+   */
+  private void updateSshContextRef() {
+    WeakReference<SshContext> weakRef = sshContextRef.get();
+    SshContext weakCtx = (weakRef != null ? weakRef.get() : null);
+    SshContext threadCtx = SSH_THREAD_CONTEXT.get();
+    if (weakCtx == null || !weakCtx.equals(threadCtx)) {
+      sshContextRef.set(new WeakReference<SshContext>(threadCtx));
+    }
+  }
+
+  private SshContext sshContext() {
+    WeakReference<SshContext> weakRef = sshContextRef.get();
+    return (weakRef != null ? weakRef.get() : null);
+  }
+
+  /**
+   * Handle a registration completed event.
+   * 
+   * <p>
+   * This will print a status message to the shell.
+   * </p>
+   * 
+   * @param event
+   *        the event
+   */
+  @Async
+  @EventListener
+  public void handleExchangeRegistrationCompletedEvent(ExchangeRegistrationCompleted event) {
+    ExchangeRegistrationEntity reg = event.getExchangeRegistration();
+    String armor = messageSource.getMessage("reg.event.armor", null, Locale.getDefault());
+    String msg = String.format("\n%s\n%s\n%s\n", armor,
+        WordWrap
+            .from(messageSource.getMessage(
+                event.isSuccess() ? "reg.event.completed.success" : "reg.event.completed.error",
+                new Object[] { reg.getId(), reg.getExchangeEndpointUri() }, Locale.getDefault()))
+            .maxWidth(SHELL_MAX_COLS).wrap(),
+        armor);
+
+    // we are in some random thread here; so don't have access to the terminal directly;
+    // make use of our hack to access it
+    SshContext ctx = sshContext();
+    ctx.getTerminal().writer()
+        .println(shell.getColored(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED));
   }
 
   private List<DerFacilityExchangeInfo> listExchanges() {
@@ -169,6 +228,7 @@ public class RegistryCommands {
           info.getEndpointUri()));
     }
     shell.print("");
+    updateSshContextRef();
     return result;
   }
 
