@@ -17,28 +17,25 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
-import static com.github.fonimus.ssh.shell.SshShellCommandFactory.SSH_THREAD_CONTEXT;
 import static net.solarnetwork.esi.simple.fac.impl.ShellUtils.getBold;
 import static net.solarnetwork.esi.simple.fac.impl.ShellUtils.getBoldColored;
 import static net.solarnetwork.esi.simple.fac.impl.ShellUtils.getFaint;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.davidmoten.text.utils.WordWrap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.event.EventListener;
 import org.springframework.context.support.ResourceBundleMessageSource;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
 
 import com.github.fonimus.ssh.shell.PromptColor;
-import com.github.fonimus.ssh.shell.SshContext;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
@@ -68,9 +65,8 @@ public class RegistryCommands {
   private final ExchangeRegistrationService exchangeRegistrationService;
   private MessageSource messageSource;
 
-  // HACK to gain access to most recently-used shell from other threads; 
-  // need to investigate better way to handle this
-  private AtomicReference<WeakReference<SshContext>> sshContextRef = new AtomicReference<>();
+  @Autowired
+  public TaskExecutor taskExecutor;
 
   /**
    * Constructor.
@@ -98,6 +94,18 @@ public class RegistryCommands {
   @ShellMethod("List available facility exchanges.")
   public void exchangeList() {
     listExchanges();
+    taskExecutor.execute(new Runnable() {
+
+      @Override
+      public void run() {
+        try {
+          Thread.sleep(500);
+        } catch (InterruptedException e) {
+          // ignore
+        }
+        ShellUtils.wall("\nHowdy, ho!\n");
+      }
+    });
   }
 
   /**
@@ -157,24 +165,6 @@ public class RegistryCommands {
     }
     shell.print(
         messageSource.getMessage("reg.list.count", new Object[] { count }, Locale.getDefault()));
-    updateSshContextRef();
-  }
-
-  /**
-   * Hack to keep reference to latest shell.
-   */
-  private void updateSshContextRef() {
-    WeakReference<SshContext> weakRef = sshContextRef.get();
-    SshContext weakCtx = (weakRef != null ? weakRef.get() : null);
-    SshContext threadCtx = SSH_THREAD_CONTEXT.get();
-    if (weakCtx == null || !weakCtx.equals(threadCtx)) {
-      sshContextRef.set(new WeakReference<SshContext>(threadCtx));
-    }
-  }
-
-  private SshContext sshContext() {
-    WeakReference<SshContext> weakRef = sshContextRef.get();
-    return (weakRef != null ? weakRef.get() : null);
   }
 
   /**
@@ -200,11 +190,8 @@ public class RegistryCommands {
             .maxWidth(SHELL_MAX_COLS).wrap(),
         armor);
 
-    // we are in some random thread here; so don't have access to the terminal directly;
-    // make use of our hack to access it
-    SshContext ctx = sshContext();
-    ctx.getTerminal().writer()
-        .println(shell.getColored(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED));
+    // broadcast message to all available registered terminals
+    ShellUtils.wall(shell.getColored(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED));
   }
 
   private List<DerFacilityExchangeInfo> listExchanges() {
@@ -228,7 +215,6 @@ public class RegistryCommands {
           info.getEndpointUri()));
     }
     shell.print("");
-    updateSshContextRef();
     return result;
   }
 

@@ -21,6 +21,7 @@ import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 
 import com.github.fonimus.ssh.shell.PromptColor;
+import com.github.fonimus.ssh.shell.SshContext;
 
 /**
  * Utilities for the CLI shell.
@@ -64,6 +65,19 @@ public final class ShellUtils {
    */
   public static String getFaint(String message) {
     return new AttributedStringBuilder().append(message, AttributedStyle.DEFAULT.faint()).toAnsi();
+  }
+
+  /**
+   * Broadcast a message to all registered SSH shells.
+   * 
+   * @param message
+   *        the message to broadcast
+   */
+  public static void wall(String message) {
+    for (SshContext ctx : TrackingSshShellCommandFactory.sshContexts()) {
+      ctx.getTerminal().writer().println(message);
+      ctx.getTerminal().flush();
+    }
   }
 
 }
