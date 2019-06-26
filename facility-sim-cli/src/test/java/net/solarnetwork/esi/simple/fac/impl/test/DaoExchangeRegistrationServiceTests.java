@@ -36,7 +36,6 @@ import java.security.KeyPair;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -144,12 +143,12 @@ public class DaoExchangeRegistrationServiceTests {
         new StaticInProcessChannelProvider(regServerName, true));
 
     // when
-    Iterator<DerFacilityExchangeInfo> result = service
+    Iterable<DerFacilityExchangeInfo> result = service
         .listExchanges(DerFacilityExchangeRequest.getDefaultInstance());
     assertThat("Result avaialble", result, notNullValue());
 
     List<DerFacilityExchangeInfo> list = new ArrayList<>();
-    result.forEachRemaining(list::add);
+    result.forEach(list::add);
     assertThat("Result count", list, hasSize(1));
     assertThat("Result instance", list.get(0), sameInstance(exchInfo));
   }
@@ -325,7 +324,9 @@ public class DaoExchangeRegistrationServiceTests {
                 facilityKeyPair.getPublic(), 
                 asList(
                     exchangeUid,
-                    facilityService.getUid())))
+                    facilityService.getUid(),
+                    facilityService.getUri(),
+                    exchangeRegistration.getFacilityNonce())))
             .build())
         .build();
     ExchangeEntity exchange = service.completeExchangeRegistration(derReg);

@@ -17,7 +17,6 @@
 
 package net.solarnetwork.esi.simple.fac.service;
 
-import java.util.Iterator;
 import java.util.Locale;
 
 import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
@@ -43,7 +42,7 @@ public interface ExchangeRegistrationService {
    *        the search criteria
    * @return the results
    */
-  Iterator<DerFacilityExchangeInfo> listExchanges(DerFacilityExchangeRequest criteria);
+  Iterable<DerFacilityExchangeInfo> listExchanges(DerFacilityExchangeRequest criteria);
 
   /**
    * Get the registration form for a given exchange.

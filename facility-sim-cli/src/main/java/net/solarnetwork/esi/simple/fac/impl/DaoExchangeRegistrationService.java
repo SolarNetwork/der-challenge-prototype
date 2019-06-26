@@ -24,10 +24,13 @@ import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 import java.net.URI;
 import java.security.KeyPair;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
+import org.jline.utils.Log;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,15 +98,24 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
   }
 
   @Override
-  public Iterator<DerFacilityExchangeInfo> listExchanges(DerFacilityExchangeRequest criteria) {
+  public Iterable<DerFacilityExchangeInfo> listExchanges(DerFacilityExchangeRequest criteria) {
     ManagedChannel channel = exchangeRegistryChannelProvider.channelForUri(null);
     try {
       DerFacilityExchangeRegistryBlockingStub client = DerFacilityExchangeRegistryGrpc
           .newBlockingStub(channel);
-      return client.listDerFacilityExchanges(
-          criteria != null ? criteria : DerFacilityExchangeRequest.getDefaultInstance());
+      List<DerFacilityExchangeInfo> result = new ArrayList<DerFacilityExchangeInfo>();
+      client
+          .listDerFacilityExchanges(
+              criteria != null ? criteria : DerFacilityExchangeRequest.getDefaultInstance())
+          .forEachRemaining(result::add);
+      return result;
     } finally {
-      channel.enterIdle();
+      channel.shutdown();
+      try {
+        channel.awaitTermination(1, TimeUnit.MINUTES);
+      } catch (InterruptedException e) {
+        Log.debug("Timeout waiting for channel to shut down.");
+      }
     }
   }
 
@@ -117,7 +129,12 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       return client.getDerFacilityRegistrationForm(DerFacilityRegistrationFormRequest.newBuilder()
           .setLanguageCode(locale.getLanguage()).setExchangeUid(exchange.getUid()).build());
     } finally {
-      channel.enterIdle();
+      channel.shutdown();
+      try {
+        channel.awaitTermination(1, TimeUnit.MINUTES);
+      } catch (InterruptedException e) {
+        Log.debug("Timeout waiting for channel to shut down.");
+      }
     }
   }
 
@@ -178,12 +195,17 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       return reg;
     } catch (StatusRuntimeException e) {
       if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
-        throw new IllegalArgumentException(e.getMessage());
+        throw new IllegalArgumentException(e.getStatus().getDescription());
       } else {
         throw e;
       }
     } finally {
-      channel.enterIdle();
+      channel.shutdown();
+      try {
+        channel.awaitTermination(1, TimeUnit.MINUTES);
+      } catch (InterruptedException e) {
+        Log.debug("Timeout waiting for channel to shut down.");
+      }
     }
   }
 
@@ -212,7 +234,8 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
         facilityService.getKeyPair(),
         facilityService.getCryptoHelper().decodePublicKey(
             CryptoKey.newBuilder().setKey(ByteString.copyFrom(reg.getExchangePublicKey())).build()),
-        asList(exchangeUid, facilityService.getUid()));
+        asList(exchangeUid, facilityService.getUid(), facilityService.getUri(),
+            reg.getFacilityNonce()));
 
     // @formatter:off
     ByteString expectedToken = ByteString.copyFrom(CryptoUtils.sha256(Arrays.asList(
