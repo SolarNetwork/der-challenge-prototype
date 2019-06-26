@@ -34,6 +34,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
+import net.solarnetwork.esi.simple.fac.FacilityTool;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
 
@@ -91,6 +92,16 @@ public class FacilityToolBanner extends ResourceBanner {
           new Object[] { AnsiOutput.toString(AnsiStyle.BOLD, "exchange-choose", AnsiStyle.NORMAL) },
           Locale.getDefault())));
     }
+  }
+
+  @Override
+  protected String getApplicationVersion(Class<?> sourceClass) {
+    return super.getApplicationVersion(FacilityTool.class);
+  }
+
+  @Override
+  protected String getApplicationTitle(Class<?> sourceClass) {
+    return super.getApplicationTitle(FacilityTool.class);
   }
 
   /**

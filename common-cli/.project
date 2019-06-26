@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>esi-common</name>
-	<comment>Project esi-common created by Buildship.</comment>
+	<name>esi-common-cli</name>
+	<comment>Project esi-common-cli created by Buildship.</comment>
 	<projects>
 	</projects>
 	<buildSpec>

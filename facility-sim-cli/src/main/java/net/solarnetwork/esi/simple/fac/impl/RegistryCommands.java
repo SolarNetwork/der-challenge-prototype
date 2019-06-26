@@ -17,9 +17,10 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
-import static net.solarnetwork.esi.simple.fac.impl.ShellUtils.getBold;
-import static net.solarnetwork.esi.simple.fac.impl.ShellUtils.getBoldColored;
-import static net.solarnetwork.esi.simple.fac.impl.ShellUtils.getFaint;
+import static net.solarnetwork.esi.cli.ShellUtils.getBold;
+import static net.solarnetwork.esi.cli.ShellUtils.getBoldColored;
+import static net.solarnetwork.esi.cli.ShellUtils.getFaint;
+import static net.solarnetwork.esi.cli.ShellUtils.wall;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +31,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.event.EventListener;
 import org.springframework.context.support.ResourceBundleMessageSource;
-import org.springframework.core.task.TaskExecutor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
@@ -65,9 +65,6 @@ public class RegistryCommands {
   private final ExchangeRegistrationService exchangeRegistrationService;
   private MessageSource messageSource;
 
-  @Autowired
-  public TaskExecutor taskExecutor;
-
   /**
    * Constructor.
    * 
@@ -94,18 +91,6 @@ public class RegistryCommands {
   @ShellMethod("List available facility exchanges.")
   public void exchangeList() {
     listExchanges();
-    taskExecutor.execute(new Runnable() {
-
-      @Override
-      public void run() {
-        try {
-          Thread.sleep(500);
-        } catch (InterruptedException e) {
-          // ignore
-        }
-        ShellUtils.wall("\nHowdy, ho!\n");
-      }
-    });
   }
 
   /**
@@ -191,7 +176,7 @@ public class RegistryCommands {
         armor);
 
     // broadcast message to all available registered terminals
-    ShellUtils.wall(shell.getColored(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED));
+    wall(shell.getColored(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED));
   }
 
   private List<DerFacilityExchangeInfo> listExchanges() {
@@ -279,7 +264,7 @@ public class RegistryCommands {
         continue;
       }
       shell.print(messageSource.getMessage(
-          "reg.form.field.display", new Object[] { ShellUtils.getBold(String.valueOf(i)),
+          "reg.form.field.display", new Object[] { getBold(String.valueOf(i)),
               getBold(field.getLabel()), answers.getDataOrDefault(field.getKey(), "") },
           Locale.getDefault()));
       i += 1;

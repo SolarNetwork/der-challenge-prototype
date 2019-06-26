@@ -25,6 +25,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 
+import net.solarnetwork.esi.cli.CliServices;
 import net.solarnetwork.esi.simple.fac.config.AppConfiguration;
 import net.solarnetwork.esi.simple.fac.impl.AppServices;
 
@@ -34,7 +35,8 @@ import net.solarnetwork.esi.simple.fac.impl.AppServices;
  * @author matt
  * @version 1.0
  */
-@SpringBootApplication(scanBasePackageClasses = { AppConfiguration.class, AppServices.class })
+@SpringBootApplication(scanBasePackageClasses = { AppConfiguration.class, AppServices.class,
+    CliServices.class })
 public class FacilityTool {
 
   /**

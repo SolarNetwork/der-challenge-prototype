@@ -1,0 +1,36 @@
+plugins {
+    id 'checkstyle'
+    id 'java-library'
+    id 'eclipse'
+}
+
+description = 'ESI: Common CLI'
+version = '0.1.0'
+archivesBaseName = 'esi-common-cli'
+
+checkstyle {
+	toolVersion = "${checkstyleVersion}"
+	configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+}
+	
+dependencies {
+	// CLI support
+	implementation 'com.github.fonimus:ssh-shell-spring-boot-starter:1.1.5'
+
+	// Utilities
+	implementation 'org.slf4j:slf4j-api:1.7.26'
+	
+	// Testing
+	testImplementation 'ch.qos.logback:logback-classic:1.2.3'
+}
+
+eclipse {
+	project {
+		natures 'net.sf.eclipsecs.core.CheckstyleNature'
+		buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+	}
+}
+
+jar.manifest {
+    attributes('Implementation-Version': version)
+}
