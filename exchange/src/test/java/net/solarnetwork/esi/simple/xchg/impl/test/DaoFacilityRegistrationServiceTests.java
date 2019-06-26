@@ -26,33 +26,48 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.URI;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import com.google.protobuf.ByteString;
+import com.google.protobuf.Empty;
 import com.google.protobuf.util.JsonFormat;
 
+import io.grpc.inprocess.InProcessServerBuilder;
+import io.grpc.stub.StreamObserver;
+import io.grpc.testing.GrpcCleanupRule;
 import net.solarnetwork.esi.domain.CryptoKey;
+import net.solarnetwork.esi.domain.DerFacilityRegistration;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.MessageSignature;
+import net.solarnetwork.esi.grpc.StaticInProcessChannelProvider;
+import net.solarnetwork.esi.service.DerFacilityServiceGrpc.DerFacilityServiceImplBase;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityRegistrationService;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
@@ -81,6 +96,9 @@ public class DaoFacilityRegistrationServiceTests {
   private FacilityEntityDao facilityDao;
   private FacilityRegistrationEntityDao facilityRegistrationDao;
 
+  @Rule
+  public final GrpcCleanupRule grpcCleanup = new GrpcCleanupRule();
+
   @Before
   public void setUp() throws Exception {
     registrationForms = new ArrayList<>();
@@ -97,6 +115,7 @@ public class DaoFacilityRegistrationServiceTests {
     facilityRegistrationDao = mock(FacilityRegistrationEntityDao.class);
     service.setFacilityDao(facilityDao);
     service.setFacilityRegistrationDao(facilityRegistrationDao);
+
   }
 
   private Form loadForm(String resource) throws IOException {
@@ -140,7 +159,7 @@ public class DaoFacilityRegistrationServiceTests {
   }
 
   @Test
-  public void submitRegistrationOk() throws NoSuchAlgorithmException {
+  public void submitRegistrationOk() {
     // given
     DerFacilityRegistrationFormData formData = defaultFacilityRegFormData();
     given(facilityDao.findByFacilityUid(formData.getRoute().getFacilityUid()))
@@ -324,6 +343,80 @@ public class DaoFacilityRegistrationServiceTests {
     // @formatter:on
 
     service.submitDerFacilityRegistrationForm(formData);
+  }
+
+  @Test
+  public void processRegistrationOk() throws Exception {
+    // given
+    String facilityServerName = InProcessServerBuilder.generateName();
+    URI facilityUri = URI.create("//" + facilityServerName);
+
+    FacilityRegistrationEntity reg = new FacilityRegistrationEntity(Instant.now(),
+        (long) (Math.random() * Integer.MAX_VALUE));
+    reg.setCustomerId(UUID.randomUUID().toString());
+    reg.setExchangeNonce(CryptoUtils.generateRandomBytes(8));
+    reg.setFacilityEndpointUri(facilityUri.toString());
+    reg.setFacilityUid(UUID.randomUUID().toString());
+    reg.setFacilityNonce(CryptoUtils.generateRandomBytes(8));
+    reg.setFacilityPublicKey(facilityKeyPair.getPublic().getEncoded());
+    reg.setUici(UUID.randomUUID().toString());
+
+    ArgumentCaptor<FacilityEntity> facilityCaptor = ArgumentCaptor.forClass(FacilityEntity.class);
+    given(facilityDao.save(facilityCaptor.capture()))
+        .willAnswer(invocationArg(0, FacilityEntity.class));
+
+    // @formatter:off
+    ByteString expectedRegToken = ByteString.copyFrom(CryptoUtils.sha256(Arrays.asList(
+        reg.getExchangeNonce(),
+        reg.getFacilityNonce(),
+        exchangeUid,
+        reg.getFacilityUid(),
+        facilityUri
+        )));
+    // @formatter:on
+
+    DerFacilityServiceImplBase facilityService = new DerFacilityServiceImplBase() {
+
+      @Override
+      public void completeDerFacilityRegistration(DerFacilityRegistration request,
+          StreamObserver<Empty> responseObserver) {
+        assertThat("Success", request.getSuccess(), equalTo(true));
+        assertThat("Registration token", request.getRegistrationToken(), equalTo(expectedRegToken));
+        assertThat("Route provided", request.getRoute(), notNullValue());
+        assertThat("Route exchange UID", request.getRoute().getExchangeUid(), equalTo(exchangeUid));
+        assertThat("Route facility UID", request.getRoute().getFacilityUid(),
+            equalTo(reg.getFacilityUid()));
+        CryptoUtils.validateMessageSignature(CryptoUtils.STANDARD_HELPER,
+            request.getRoute().getSignature(), facilityKeyPair, exchangeKeyPair.getPublic(),
+            Arrays.asList(exchangeUid, reg.getFacilityUid(), facilityUri, reg.getFacilityNonce()));
+        responseObserver.onNext(Empty.getDefaultInstance());
+        responseObserver.onCompleted();
+      }
+
+    };
+
+    grpcCleanup.register(InProcessServerBuilder.forName(facilityServerName).directExecutor()
+        .addService(facilityService).build().start());
+
+    service
+        .setFacilityChannelProvider(new StaticInProcessChannelProvider(facilityServerName, true));
+
+    // when
+    Future<FacilityEntity> future = service.processFacilityRegistration(reg);
+    FacilityEntity result = future.get(5, TimeUnit.MINUTES);
+
+    // then
+    verify(facilityRegistrationDao, times(1)).deleteById(reg.getId());
+
+    assertThat("Facility saved", result, notNullValue());
+    assertThat("Facility saved to DAO", result, equalTo(facilityCaptor.getValue()));
+    assertThat("Facility customer ID", result.getCustomerId(), equalTo(reg.getCustomerId()));
+    assertThat("Facility UICI", result.getUici(), equalTo(reg.getUici()));
+    assertThat("Facility URI", result.getFacilityEndpointUri(),
+        equalTo(reg.getFacilityEndpointUri()));
+    assertThat("Facility ID", result.getFacilityUid(), equalTo(reg.getFacilityUid()));
+    assertThat("Facility public key", ByteString.copyFrom(result.getFacilityPublicKey()),
+        equalTo(ByteString.copyFrom(facilityKeyPair.getPublic().getEncoded())));
   }
 
 }
