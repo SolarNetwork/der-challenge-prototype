@@ -15,6 +15,9 @@ grpc:
     port: 9091
     address: "0.0.0.0"
 
+server:
+  port: 8081
+
 spring:
   datasource:
     tomcat:
@@ -68,3 +71,7 @@ spring:
     initialize: true
   mvc:
     async.request-timeout: -1
+
+ssh:
+  shell:
+    enabled: true
