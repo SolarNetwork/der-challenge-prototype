@@ -17,6 +17,8 @@
 
 package net.solarnetwork.esi.simple.xchg.dao;
 
+import java.util.Optional;
+
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
@@ -29,5 +31,14 @@ import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
  */
 public interface FacilityRegistrationEntityDao
     extends PagingAndSortingRepository<FacilityRegistrationEntity, Long> {
+
+  /**
+   * Find a facility registration by a facility UID.
+   * 
+   * @param facilityUid
+   *        the UID of the facility to find the registration for
+   * @return the facility registration
+   */
+  Optional<FacilityRegistrationEntity> findByFacilityUid(String facilityUid);
 
 }
