@@ -53,7 +53,7 @@ message DerFacilityRegistrationFormData {
   // Note that the MessageSignature of the route must include the 
   // `facility_endpoint_uri` UTF-8 bytes and `facility_nonce` values. The 
   // recipient's public key should already have been obtained by the facility,
-  // and the facilitie's public key is included in this message.
+  // and the facility's public key is included in this message.
   DerRoute route = 1;
   
   // The gRPC compliant URI the exchange can access the facility on.
