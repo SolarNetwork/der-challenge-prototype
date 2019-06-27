@@ -17,6 +17,7 @@
 
 package net.solarnetwork.esi.cli;
 
+import org.davidmoten.text.utils.WordWrap;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 
@@ -78,6 +79,20 @@ public final class ShellUtils {
       ctx.getTerminal().writer().println(message);
       ctx.getTerminal().flush();
     }
+  }
+
+  /**
+   * Wrap a string to a maximum character column width.
+   * 
+   * @param message
+   *        the message to wrap
+   * @param maxColumns
+   *        the maximum number of characters wide to wrap the text at
+   * @return the message with newline characters inserted where needed to wrap the text to at most
+   *         {@code maxColumns} characters wide
+   */
+  public static String wrap(CharSequence message, int maxColumns) {
+    return WordWrap.from(message).maxWidth(maxColumns).wrap();
   }
 
 }
