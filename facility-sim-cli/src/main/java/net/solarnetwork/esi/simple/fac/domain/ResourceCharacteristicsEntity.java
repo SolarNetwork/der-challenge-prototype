@@ -17,8 +17,10 @@
 
 package net.solarnetwork.esi.simple.fac.domain;
 
+import java.nio.ByteBuffer;
 import java.time.Instant;
 
+import javax.annotation.Nonnull;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Basic;
@@ -95,6 +97,31 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    */
   public ResourceCharacteristicsEntity(Instant created, Long id) {
     super(created, id);
+  }
+
+  /**
+   * Encode this entity as a byte array suitable for using as message signature data.
+   * 
+   * @return the bytes
+   */
+  @Nonnull
+  public byte[] toSignatureBytes() {
+    // @formatter:off
+    ByteBuffer bb = ByteBuffer.allocate(64)
+        .putLong(getLoadPowerMax())
+        .putFloat(getLoadPowerFactor())
+        .putLong(getSupplyPowerMax())
+        .putFloat(getSupplyPowerFactor())
+        .putLong(getStorageEnergyCapacity())
+        .putLong(getResponseTime().getMin().getSeconds())
+        .putLong(getResponseTime().getMin().getNano())
+        .putLong(getResponseTime().getMax().getSeconds())
+        .putLong(getResponseTime().getMax().getNano());
+    // @formatter:on
+    bb.flip();
+    byte[] bytes = new byte[bb.limit()];
+    bb.get(bytes);
+    return bytes;
   }
 
   /**
