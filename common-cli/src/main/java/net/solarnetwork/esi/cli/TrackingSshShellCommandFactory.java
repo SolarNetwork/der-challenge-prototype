@@ -115,11 +115,6 @@ public class TrackingSshShellCommandFactory extends SshShellCommandFactory {
     }
 
     @Override
-    public boolean equals(Object obj) {
-      return delegate.equals(obj);
-    }
-
-    @Override
     public void run(InputProvider inputProvider) throws IOException {
       // assumption that SSH_THREAD_CONTEXT has been set for the current thread at this point
       SshContext ctx = SSH_THREAD_CONTEXT.get();
@@ -139,11 +134,6 @@ public class TrackingSshShellCommandFactory extends SshShellCommandFactory {
     @Override
     public List<CompletionProposal> complete(CompletionContext context) {
       return delegate.complete(context);
-    }
-
-    @Override
-    public String toString() {
-      return delegate.toString();
     }
 
   }
