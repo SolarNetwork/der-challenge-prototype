@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
@@ -307,11 +308,20 @@ public final class CryptoUtils {
    * Convert an object to bytes.
    * 
    * <p>
-   * If {@code o} is a {@code byte[]} it will be returned directly. If it is a {@link ByteString}
-   * then it's bytes will be returned. If it is {@literal null} an array of length {@literal 0} will
-   * be returned. For all other objects, {@link Object#toString()} will be used to turn it into a
-   * string, and then the UTF-8 bytes of that will be returned.
+   * The following rules will be used to convert the object into bytes:
    * </p>
+   * 
+   * <ol>
+   * <li>If it is a {@code byte[]} it will be returned directly.</li>
+   * <li>If it is a {@link ByteString} then it's bytes will be returned.</li>
+   * <li>If it is a {@link ByteBuffer} then {@link ByteBuffer#flip()} will be called and then the
+   * remaining bytes will be returned.</li>
+   * <li>If it is a {@link ByteArrayOutputStream} then {@link ByteArrayOutputStream#toByteArray()}
+   * will be returned.</li>
+   * <li>If it is {@literal null} an array of length {@literal 0} will be returned.</li>
+   * <li>For all other objects, {@link Object#toString()} will be used to turn it into a string, and
+   * then the UTF-8 bytes of that will be returned.</li>
+   * </ol>
    * 
    * @param o
    *        the object to convert to bytes
@@ -324,6 +334,13 @@ public final class CryptoUtils {
       bytes = (byte[]) o;
     } else if (o instanceof ByteString) {
       bytes = ((ByteString) o).toByteArray();
+    } else if (o instanceof ByteBuffer) {
+      ByteBuffer bb = ((ByteBuffer) o);
+      bb.flip();
+      bytes = new byte[bb.limit()];
+      bb.get(bytes);
+    } else if (o instanceof ByteArrayOutputStream) {
+      bytes = ((ByteArrayOutputStream) o).toByteArray();
     } else if (o != null) {
       bytes = o.toString().getBytes(STANDARD_CHARSET);
     } else {
