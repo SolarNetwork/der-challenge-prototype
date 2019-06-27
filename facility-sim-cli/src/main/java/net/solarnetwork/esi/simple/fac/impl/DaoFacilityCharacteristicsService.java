@@ -17,13 +17,15 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import static java.util.Arrays.asList;
+import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
+
 import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,9 +39,12 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import net.solarnetwork.esi.domain.DerCharacteristics;
+import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.DurationRange;
 import net.solarnetwork.esi.domain.DurationRangeEmbed;
 import net.solarnetwork.esi.grpc.ChannelProvider;
+import net.solarnetwork.esi.grpc.FutureStreamObserver;
+import net.solarnetwork.esi.grpc.QueuingStreamObserver;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeStub;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
@@ -130,32 +135,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
           .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
       try {
         DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
-        final CountDownLatch latch = new CountDownLatch(1);
-        final AtomicReference<RuntimeException> thrown = new AtomicReference<>();
-        StreamObserver<Empty> out = new StreamObserver<Empty>() {
-
-          @Override
-          public void onNext(Empty value) {
-            // nothing to do with result
-          }
-
-          @Override
-          public void onError(Throwable t) {
-            log.error("Error publishing resource characteristics to exchange {}", exchange.getId(),
-                t);
-            RuntimeException e = (t instanceof RuntimeException ? (RuntimeException) t
-                : new RuntimeException(t));
-            thrown.set(e);
-            latch.countDown();
-          }
-
-          @Override
-          public void onCompleted() {
-            log.info("Successfully published resource characteristics to exchange {}",
-                exchange.getId());
-            latch.countDown();
-          }
-        };
+        FutureStreamObserver<Empty, Iterable<Empty>> out = new QueuingStreamObserver<>(1);
         StreamObserver<DerCharacteristics> in = client.provideDerCharacteristics(out);
         // @formatter:off
         in.onNext(DerCharacteristics.newBuilder()
@@ -174,15 +154,27 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
                     .setNanos(entity.getResponseTime().getMax().getNano())
                     .build())
                 .build())
+            .setRoute(DerRoute.newBuilder()
+                .setExchangeUid(exchange.getId())
+                .setFacilityUid(facilityService.getUid())
+                .setSignature(generateMessageSignature(facilityService.getCryptoHelper(), 
+                    facilityService.getKeyPair(), exchange.publicKey(), asList(
+                        exchange.getId(),
+                        facilityService.getUid(),
+                        characteristics.toSignatureBytes()))
+                    )
+                .build())
             .build());
         // @formatter:on
         in.onCompleted();
-        latch.await(1, TimeUnit.MINUTES);
-        RuntimeException re = thrown.get();
-        if (re != null) {
-          throw re;
-        }
+        out.nab(1, TimeUnit.MINUTES);
+        log.info("Successfully published resource characteristics to exchange {}",
+            exchange.getId());
         resourceCharacteristicsDao.save(entity);
+      } catch (TimeoutException e) {
+        throw new RuntimeException(
+            "Timeout waiting to publish resource characteristics to exchange " + exchange.getId(),
+            e);
       } catch (StatusRuntimeException e) {
         if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
           throw new IllegalArgumentException(e.getStatus().getDescription());
