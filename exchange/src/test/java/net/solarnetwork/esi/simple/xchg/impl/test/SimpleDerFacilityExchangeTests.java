@@ -33,10 +33,8 @@ import java.io.Reader;
 import java.nio.charset.Charset;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -82,7 +80,7 @@ public class SimpleDerFacilityExchangeTests {
   private static final String TEST_LANG_ALT = "mi";
   private static final String TEST_FACILITY_ENDPOINT_URI = "dns:///localhost:9090";
   private static final String TEST_FORM_KEY = "simple-oper-reg-form";
-  private static final byte[] TEST_NONCE = generateNonce(8);
+  private static final byte[] TEST_NONCE = CryptoUtils.generateRandomBytes(8);
   private static final String TEST_CUST_ID = "ABC123456789";
   private static final String TEST_CUST_SURNAME = "Doe-Smith";
   private static final String TEST_UICI = "123-1234-1234";
@@ -119,16 +117,6 @@ public class SimpleDerFacilityExchangeTests {
 
     channel = grpcCleanup
         .register(InProcessChannelBuilder.forName(serverName).directExecutor().build());
-  }
-
-  private static byte[] generateNonce(int size) {
-    byte[] nonce = new byte[size];
-    try {
-      SecureRandom.getInstanceStrong().nextBytes(nonce);
-    } catch (NoSuchAlgorithmException e) {
-      Arrays.fill(nonce, (byte) 8);
-    }
-    return nonce;
   }
 
   private Form loadForm(String resource) throws IOException {
