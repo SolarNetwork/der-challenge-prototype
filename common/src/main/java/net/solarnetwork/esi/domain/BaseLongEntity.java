@@ -66,7 +66,7 @@ public abstract class BaseLongEntity extends BaseEntity<Long> {
    * @param id
    *        the primary key
    */
-  protected BaseLongEntity(Instant created, Long id) {
+  public BaseLongEntity(Instant created, Long id) {
     super(created);
     this.id = id;
   }
