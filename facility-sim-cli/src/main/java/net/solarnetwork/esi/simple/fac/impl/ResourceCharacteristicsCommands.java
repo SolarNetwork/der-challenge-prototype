@@ -17,6 +17,8 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,13 +68,64 @@ public class ResourceCharacteristicsCommands {
   }
 
   /**
-   * List the available facilities in the registry.
+   * List the current resource characteristics.
    */
   @ShellMethod("Show the current resource characteristics.")
   public void resourceShow() {
     ResourceCharacteristicsEntity characteristics = characteristicsService
         .resourceCharacteristics();
-    String fmt = "%-25s : %.1f %s";
+    showResourceCharacteristics(characteristics);
+  }
+
+  /**
+   * Edit the resource characteristics.
+   */
+  @ShellMethod("Show the current resource characteristics.")
+  public void resourceEdit() {
+    ResourceCharacteristicsEntity characteristics = characteristicsService
+        .resourceCharacteristics();
+
+    BigDecimal n;
+
+    n = readNumber("rsrc.char.loadPowerMax", "kW", scaled(characteristics.getLoadPowerMax(), -3),
+        0L, Long.MAX_VALUE / 1000);
+    characteristics.setLoadPowerMax(scaled(n, 3).longValue());
+
+    n = readNumber("rsrc.char.loadPowerFactor", "-1..1",
+        scaled(characteristics.getLoadPowerFactor(), 0), -1, 1);
+    characteristics.setLoadPowerFactor(n.floatValue());
+
+    n = readNumber("rsrc.char.supplyPowerMax", "kW",
+        scaled(characteristics.getSupplyPowerMax(), -3), 0L, Long.MAX_VALUE / 1000);
+    characteristics.setSupplyPowerMax(scaled(n, 3).longValue());
+
+    n = readNumber("rsrc.char.supplyPowerFactor", "-1..1",
+        scaled(characteristics.getSupplyPowerFactor(), 0), -1, 1);
+    characteristics.setSupplyPowerFactor(n.floatValue());
+
+    n = readNumber("rsrc.char.storageEnergyCapacity", "kWh",
+        scaled(characteristics.getStorageEnergyCapacity(), -3), 0L, Long.MAX_VALUE / 1000);
+    characteristics.setStorageEnergyCapacity(scaled(n, 3).longValue());
+
+    Number min = readNumber("rsrc.char.responseTime.min", "s",
+        scaled(characteristics.getResponseTime().getMin().toMillis(), -3), 0L, Integer.MAX_VALUE);
+    characteristics.getResponseTime().setMin(Duration.ofMillis(scaled(min, 3).longValue()));
+
+    n = readNumber("rsrc.char.responseTime.max", "s",
+        scaled(characteristics.getResponseTime().getMax().toMillis(), -3), min, Integer.MAX_VALUE);
+    characteristics.getResponseTime().setMax(Duration.ofMillis(scaled(n, 3).longValue()));
+
+    shell.print(messageSource.getMessage("rsrc.edit.confirm.title", null, Locale.getDefault()));
+    showResourceCharacteristics(characteristics);
+    if (shell
+        .confirm(messageSource.getMessage("rsrc.edit.confirm.ask", null, Locale.getDefault()))) {
+      characteristicsService.saveResourceCharacteristics(characteristics);
+      shell.printSuccess(messageSource.getMessage("rsrc.edit.saved", null, Locale.getDefault()));
+    }
+  }
+
+  private void showResourceCharacteristics(ResourceCharacteristicsEntity characteristics) {
+    String fmt = "%-25s : %.3f %s";
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.loadPowerMax", null, Locale.getDefault()),
         characteristics.getLoadPowerMax() / 1000.0, "kW"));
@@ -90,11 +143,48 @@ public class ResourceCharacteristicsCommands {
         characteristics.getStorageEnergyCapacity() / 1000.0, "kWh"));
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.responseTime.min", null, Locale.getDefault()),
-        (double) characteristics.getResponseTime().getMin().getSeconds(), "s"));
+        scaled(characteristics.getResponseTime().getMin().toMillis(), -3), "s"));
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.responseTime.max", null, Locale.getDefault()),
-        (double) characteristics.getResponseTime().getMax().getSeconds(), "s"));
+        scaled(characteristics.getResponseTime().getMax().toMillis(), -3), "s"));
     shell.print("");
+  }
+
+  private static BigDecimal scaled(Number num, int scale) {
+    BigDecimal n = (num instanceof BigDecimal ? (BigDecimal) num : new BigDecimal(num.toString()));
+    if (scale == 0) {
+      return n;
+    } else if (scale < 0) {
+      return n.movePointLeft(-scale);
+    } else {
+      return n.movePointRight(scale);
+    }
+  }
+
+  private BigDecimal readNumber(String propName, String unit, BigDecimal currValue, Number min,
+      Number max) {
+    while (true) {
+      String val = shell.read(messageSource.getMessage(
+          "rsrc.edit.property", new Object[] {
+              messageSource.getMessage(propName, null, Locale.getDefault()), unit, currValue },
+          Locale.getDefault()));
+      if (val == null || val.trim().isEmpty()) {
+        return currValue;
+      }
+      try {
+        BigDecimal num = new BigDecimal(val);
+        if ((min != null && num.doubleValue() < min.doubleValue())
+            || (max != null && num.doubleValue() > max.doubleValue())) {
+          shell.printError(messageSource.getMessage("rsrc.error.numOutOfRange",
+              new Object[] { min, max }, Locale.getDefault()));
+        } else {
+          return num;
+        }
+      } catch (NumberFormatException e) {
+        shell.printError(
+            messageSource.getMessage("rsrc.error.enterNumber", null, Locale.getDefault()));
+      }
+    }
   }
 
   /**

@@ -30,7 +30,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import org.jline.utils.Log;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Sort.Direction;
@@ -84,6 +85,8 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
   private ChannelProvider exchangeChannelProvider;
   private ApplicationEventPublisher eventPublisher;
 
+  private static final Logger log = LoggerFactory.getLogger(DaoExchangeRegistrationService.class);
+
   /**
    * Constructor.
    * 
@@ -119,7 +122,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       try {
         channel.awaitTermination(1, TimeUnit.MINUTES);
       } catch (InterruptedException e) {
-        Log.debug("Timeout waiting for channel to shut down.");
+        log.debug("Timeout waiting for channel to shut down.");
       }
     }
   }
@@ -138,7 +141,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       try {
         channel.awaitTermination(1, TimeUnit.MINUTES);
       } catch (InterruptedException e) {
-        Log.debug("Timeout waiting for channel to shut down.");
+        log.debug("Timeout waiting for channel to shut down.");
       }
     }
   }
@@ -147,6 +150,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
   @Override
   public ExchangeRegistrationEntity registerWithExchange(DerFacilityExchangeInfo exchange,
       FormData formData) {
+    log.info("Initializing connection to exchange {}", exchange.getEndpointUri());
     ManagedChannel channel = exchangeChannelProvider
         .channelForUri(URI.create(exchange.getEndpointUri()));
     try {
@@ -186,6 +190,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
           .build();
       // @formatter:on
 
+      log.info("Submitting registration form to [{}]: {}", exchange.getEndpointUri(), formData);
       DerFacilityRegistrationFormDataReceipt receipt = client
           .submitDerFacilityRegistrationForm(regFormData);
 
@@ -209,7 +214,7 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
       try {
         channel.awaitTermination(1, TimeUnit.MINUTES);
       } catch (InterruptedException e) {
-        Log.debug("Timeout waiting for channel to shut down.");
+        log.debug("Timeout waiting for channel to shut down.");
       }
     }
   }

@@ -17,17 +17,35 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.google.protobuf.Empty;
+
+import io.grpc.ManagedChannel;
+import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.StreamObserver;
+import net.solarnetwork.esi.domain.DerCharacteristics;
+import net.solarnetwork.esi.domain.DurationRange;
 import net.solarnetwork.esi.domain.DurationRangeEmbed;
+import net.solarnetwork.esi.grpc.ChannelProvider;
+import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
+import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeStub;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.ResourceCharacteristicsEntity;
 import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
+import net.solarnetwork.esi.simple.fac.service.FacilityService;
 
 /**
  * DAO based implementation of {@link FacilityCharacteristicsService}.
@@ -37,7 +55,12 @@ import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
  */
 public class DaoFacilityCharacteristicsService implements FacilityCharacteristicsService {
 
+  private final FacilityService facilityService;
   private final ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
+  private ChannelProvider exchangeChannelProvider;
+
+  private static final Logger log = LoggerFactory
+      .getLogger(DaoFacilityCharacteristicsService.class);
 
   /**
    * Constructor.
@@ -45,9 +68,10 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
    * @param resourceCharacteristicsDao
    *        the resource characteristics DAO
    */
-  public DaoFacilityCharacteristicsService(
+  public DaoFacilityCharacteristicsService(FacilityService facilityService,
       ResourceCharacteristicsEntityDao resourceCharacteristicsDao) {
     super();
+    this.facilityService = facilityService;
     this.resourceCharacteristicsDao = resourceCharacteristicsDao;
   }
 
@@ -99,7 +123,80 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
         }
       }
     }
-    resourceCharacteristicsDao.save(entity);
+    ExchangeEntity exchange = facilityService.getExchange();
+    if (exchange != null) {
+      ManagedChannel channel = exchangeChannelProvider
+          .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
+      try {
+        DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
+        final CountDownLatch latch = new CountDownLatch(1);
+        StreamObserver<Empty> out = new StreamObserver<Empty>() {
+
+          @Override
+          public void onNext(Empty value) {
+            // nothing to do with result
+          }
+
+          @Override
+          public void onError(Throwable t) {
+            latch.countDown();
+          }
+
+          @Override
+          public void onCompleted() {
+            latch.countDown();
+          }
+        };
+        StreamObserver<DerCharacteristics> in = client.provideDerCharacteristics(out);
+        // @formatter:off
+        in.onNext(DerCharacteristics.newBuilder()
+            .setLoadPowerMax(entity.getLoadPowerMax())
+            .setLoadPowerFactor(entity.getLoadPowerFactor())
+            .setSupplyPowerMax(entity.getSupplyPowerMax())
+            .setSupplyPowerFactor(entity.getSupplyPowerFactor())
+            .setStorageEnergyCapacity(entity.getStorageEnergyCapacity())
+            .setReponseTime(DurationRange.newBuilder()
+                .setMin(com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(entity.getResponseTime().getMin().getSeconds())
+                    .setNanos(entity.getResponseTime().getMin().getNano())
+                    .build())
+                .setMax(com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(entity.getResponseTime().getMax().getSeconds())
+                    .setNanos(entity.getResponseTime().getMax().getNano())
+                    .build())
+                .build())
+            .build());
+        // @formatter:on
+        in.onCompleted();
+        latch.await(1, TimeUnit.MINUTES);
+        resourceCharacteristicsDao.save(entity);
+      } catch (StatusRuntimeException e) {
+        if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
+          throw new IllegalArgumentException(e.getStatus().getDescription());
+        } else {
+          throw e;
+        }
+      } catch (InterruptedException e) {
+        throw new RuntimeException("Interrupted waiting for result.");
+      } finally {
+        channel.shutdown();
+        try {
+          channel.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+          log.debug("Timeout waiting for channel to shut down.");
+        }
+      }
+    }
+  }
+
+  /**
+   * Set the channel provider to use for connecting to exchanges.
+   * 
+   * @param exchangeChannelProvider
+   *        the exchangeChannelProvider to set
+   */
+  public void setExchangeChannelProvider(ChannelProvider exchangeChannelProvider) {
+    this.exchangeChannelProvider = exchangeChannelProvider;
   }
 
 }

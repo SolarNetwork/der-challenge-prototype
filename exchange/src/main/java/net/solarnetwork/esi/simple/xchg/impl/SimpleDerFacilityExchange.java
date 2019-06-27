@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
@@ -47,6 +49,7 @@ import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusResponse;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
+import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
 
 /**
@@ -64,6 +67,11 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
   @Autowired
   private FacilityRegistrationService facilityRegistrationService;
+
+  @Autowired
+  private FacilityCharacteristicsService facilityCharacteristicsService;
+
+  private static final Logger log = LoggerFactory.getLogger(SimpleDerFacilityExchange.class);
 
   /**
    * Constructor.
@@ -134,7 +142,7 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   @Override
   public void submitDerFacilityRegistrationForm(DerFacilityRegistrationFormData request,
       StreamObserver<DerFacilityRegistrationFormDataReceipt> responseObserver) {
-
+    log.info("Received facility registration submission: {}", request);
     try {
       FacilityRegistrationEntity entity = facilityRegistrationService
           .submitDerFacilityRegistrationForm(request);
@@ -150,16 +158,14 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       responseObserver.onError(
           Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
     } catch (RuntimeException e) {
-      responseObserver.onError(Status.INTERNAL.withDescription("Internal crypto setup error")
-          .withCause(e).asException());
+      responseObserver
+          .onError(Status.INTERNAL.withDescription("Internal error").withCause(e).asException());
     }
   }
 
   @Override
   public void providePriceMapOfferStatus(PriceMapOfferStatus request,
       StreamObserver<PriceMapOfferStatusResponse> responseObserver) {
-    // TODO Auto-generated method stub
-    super.providePriceMapOfferStatus(request, responseObserver);
   }
 
   @Override
@@ -171,8 +177,33 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   @Override
   public StreamObserver<DerCharacteristics> provideDerCharacteristics(
       StreamObserver<Empty> responseObserver) {
-    // TODO Auto-generated method stub
-    return super.provideDerCharacteristics(responseObserver);
+    return new StreamObserver<DerCharacteristics>() {
+
+      @Override
+      public void onNext(DerCharacteristics value) {
+        try {
+          facilityCharacteristicsService.saveResourceCharacteristics(value);
+        } catch (IllegalArgumentException e) {
+          responseObserver.onError(
+              Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
+        } catch (RuntimeException e) {
+          responseObserver.onError(
+              Status.INTERNAL.withDescription("Internal error").withCause(e).asException());
+        }
+
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        log.error("Error receiving facility DER characteristics", t);
+      }
+
+      @Override
+      public void onCompleted() {
+        responseObserver.onNext(Empty.getDefaultInstance());
+        responseObserver.onCompleted();
+      }
+    };
   }
 
   @Override

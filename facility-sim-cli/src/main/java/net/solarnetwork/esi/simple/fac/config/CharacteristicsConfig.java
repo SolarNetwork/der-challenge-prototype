@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.fac.impl.DaoFacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
+import net.solarnetwork.esi.simple.fac.service.FacilityService;
 
 /**
  * Configuration related to resources and characteristics.
@@ -35,6 +36,9 @@ import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
 public class CharacteristicsConfig {
 
   @Autowired
+  private FacilityService facilityService;
+
+  @Autowired
   private ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
 
   /**
@@ -44,7 +48,7 @@ public class CharacteristicsConfig {
    */
   @Bean
   public FacilityCharacteristicsService characteristicsService() {
-    DaoFacilityCharacteristicsService s = new DaoFacilityCharacteristicsService(
+    DaoFacilityCharacteristicsService s = new DaoFacilityCharacteristicsService(facilityService,
         resourceCharacteristicsDao);
     return s;
   }

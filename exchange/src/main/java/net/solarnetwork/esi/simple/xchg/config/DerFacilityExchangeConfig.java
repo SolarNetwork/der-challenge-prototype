@@ -46,8 +46,10 @@ import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.grpc.SimpleChannelProvider;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
+import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityRegistrationService;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
+import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
 import net.solarnetwork.esi.util.CryptoHelper;
 import net.solarnetwork.esi.util.CryptoUtils;
@@ -192,12 +194,23 @@ public class DerFacilityExchangeConfig {
    * @return the service
    */
   @Bean
-  public DaoFacilityRegistrationService facilityRegistrationService() {
+  public FacilityRegistrationService facilityRegistrationService() {
     DaoFacilityRegistrationService s = new DaoFacilityRegistrationService(exchangeUid(),
         exchangeKeyPair(), registrationForms(), cryptoHelper());
     s.setFacilityDao(facilityDao);
     s.setFacilityRegistrationDao(facilityRegistrationDao);
     s.setFacilityChannelProvider(new SimpleChannelProvider(usePlaintext));
+    return s;
+  }
+
+  /**
+   * Create the {@link FacilityCharacteristicsService}.
+   * 
+   * @return the service
+   */
+  @Bean
+  public FacilityCharacteristicsService facilityCharacteristicsService() {
+    DaoFacilityCharacteristicsService s = new DaoFacilityCharacteristicsService();
     return s;
   }
 
