@@ -181,7 +181,7 @@ the form data (labels, captions, examples) come from the exchange, and are ficti
 simulation:
 
 ```
-To register with Simple Operator Service, you must provide the Utility
+To register with Monopoly Utility, you must provide the Utility
 Interconnection Customer Identifier, Customer Number, and account holder's
 surname, as shown on your most recent account statement. If unsure about
 anything, please call 555-123-1234 for assistance.

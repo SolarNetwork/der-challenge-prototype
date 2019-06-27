@@ -4,7 +4,7 @@
   "settings": [{
     "type": "INFO",
     "key": "intro",
-    "caption": "To register with Simple Operator Service, you must provide the Utility Interconnection Customer Identifier, Customer Number, and account holder's surname, as shown on your most recent account statement. If unsure about anything, please call 555-123-1234 for assistance."
+    "caption": "To register with Monopoly Utility, you must provide the Utility Interconnection Customer Identifier, Customer Number, and account holder's surname, as shown on your most recent account statement. If unsure about anything, please call 555-123-1234 for assistance."
   },{
     "type": "TEXT",
     "key": "uici",
