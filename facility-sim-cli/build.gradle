@@ -30,6 +30,7 @@ dependencies {
 	implementation project(':esi-common-cli')
 	
 	// gRPC
+	implementation "io.grpc:grpc-core:${grpcVersion}"
 	implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
 	implementation 'net.devh:grpc-server-spring-boot-starter:2.4.0.RELEASE'
 
