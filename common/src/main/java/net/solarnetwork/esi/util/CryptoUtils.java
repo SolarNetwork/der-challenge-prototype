@@ -82,11 +82,7 @@ public final class CryptoUtils {
    */
   public static final byte[] generateRandomBytes(int length) {
     byte[] b = new byte[length];
-    try {
-      SecureRandom.getInstanceStrong().nextBytes(b);
-    } catch (NoSuchAlgorithmException e) {
-      throw new RuntimeException("Error generating nonce: " + e.getMessage(), e);
-    }
+    new SecureRandom().nextBytes(b);
     return b;
   }
 
@@ -241,8 +237,7 @@ public final class CryptoUtils {
   public static MessageSignature generateMessageSignature(CryptoHelper helper,
       KeyPair senderKeyPair, PublicKey recipientKey, Iterable<?> messageData) {
     try {
-      final byte[] iv = new byte[helper.getInitializationVectorMinimumSize()];
-      SecureRandom.getInstanceStrong().nextBytes(iv);
+      final byte[] iv = generateRandomBytes(helper.getInitializationVectorMinimumSize());
       final SecretKey encryptKey = helper.deriveSecretKey(recipientKey, senderKeyPair);
       final ByteArrayOutputStream byos = new ByteArrayOutputStream();
       for (Object o : messageData) {
@@ -253,7 +248,7 @@ public final class CryptoUtils {
           senderKeyPair.getPrivate(), iv);
       return MessageSignature.newBuilder().setIv(ByteString.copyFrom(iv))
           .setSignature(ByteString.copyFrom(msgSigData)).build();
-    } catch (NoSuchAlgorithmException | IOException e) {
+    } catch (IOException e) {
       throw new RuntimeException("Error generating message signature: " + e.getMessage(), e);
     }
   }
