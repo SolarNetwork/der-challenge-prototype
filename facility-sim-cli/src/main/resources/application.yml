@@ -1,4 +1,7 @@
 esi:
+  exchange:
+    conn:
+      usePlaintext: true
   facility:
     uid: test-facility
     conn:

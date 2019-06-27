@@ -17,6 +17,9 @@
 
 package net.solarnetwork.esi.simple.xchg.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
@@ -29,16 +32,18 @@ import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
  */
 public class DaoFacilityCharacteristicsService implements FacilityCharacteristicsService {
 
+  private static final Logger log = LoggerFactory
+      .getLogger(DaoFacilityCharacteristicsService.class);
+
   @Override
   public FacilityResourceCharacteristicsEntity resourceCharacteristics(String facilityUid) {
-    // TODO Auto-generated method stub
+    log.info("TOOD: get characteristics for facility not implemented yet.");
     return null;
   }
 
   @Override
   public void saveResourceCharacteristics(DerCharacteristicsOrBuilder characteristics) {
-    // TODO Auto-generated method stub
-
+    log.info("TOOD: save characteristics not implemented yet.");
   }
 
 }

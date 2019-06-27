@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.util.Iterator;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,6 +131,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
       try {
         DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
         final CountDownLatch latch = new CountDownLatch(1);
+        final AtomicReference<RuntimeException> thrown = new AtomicReference<>();
         StreamObserver<Empty> out = new StreamObserver<Empty>() {
 
           @Override
@@ -139,11 +141,18 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
 
           @Override
           public void onError(Throwable t) {
+            log.error("Error publishing resource characteristics to exchange {}", exchange.getId(),
+                t);
+            RuntimeException e = (t instanceof RuntimeException ? (RuntimeException) t
+                : new RuntimeException(t));
+            thrown.set(e);
             latch.countDown();
           }
 
           @Override
           public void onCompleted() {
+            log.info("Successfully published resource characteristics to exchange {}",
+                exchange.getId());
             latch.countDown();
           }
         };
@@ -169,6 +178,10 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
         // @formatter:on
         in.onCompleted();
         latch.await(1, TimeUnit.MINUTES);
+        RuntimeException re = thrown.get();
+        if (re != null) {
+          throw re;
+        }
         resourceCharacteristicsDao.save(entity);
       } catch (StatusRuntimeException e) {
         if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {

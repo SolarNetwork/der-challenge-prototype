@@ -23,6 +23,8 @@ import java.util.Iterator;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort.Direction;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
@@ -94,6 +96,7 @@ public class DaoFacilityService implements FacilityService {
     return cryptoHelper;
   }
 
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
   @Override
   public ExchangeEntity getExchange() {
     // get the first available exchange, sorted by creation date asending, so newest

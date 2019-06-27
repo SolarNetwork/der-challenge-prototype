@@ -17,45 +17,28 @@
 
 package net.solarnetwork.esi.simple.fac.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import net.solarnetwork.esi.grpc.ChannelProvider;
-import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
-import net.solarnetwork.esi.simple.fac.impl.DaoFacilityCharacteristicsService;
-import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
-import net.solarnetwork.esi.simple.fac.service.FacilityService;
+import net.solarnetwork.esi.grpc.SimpleChannelProvider;
 
 /**
- * Configuration related to resources and characteristics.
+ * General exchange configuration.
  * 
  * @author matt
  * @version 1.0
  */
 @Configuration
-public class CharacteristicsConfig {
+public class ExchangeConfig {
 
-  @Autowired
-  private FacilityService facilityService;
+  @Value("${esi.exchange.conn.usePlaintext:false}")
+  private boolean usePlaintext = false;
 
-  @Autowired
-  private ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
-
-  @Autowired
-  private ChannelProvider exchangeChannelProvider;
-
-  /**
-   * Create the {@link FacilityCharacteristicsService}.
-   * 
-   * @return the service
-   */
   @Bean
-  public FacilityCharacteristicsService characteristicsService() {
-    DaoFacilityCharacteristicsService s = new DaoFacilityCharacteristicsService(facilityService,
-        resourceCharacteristicsDao);
-    s.setExchangeChannelProvider(exchangeChannelProvider);
-    return s;
+  public ChannelProvider exchangeChannelProvider() {
+    return new SimpleChannelProvider(usePlaintext);
   }
 
 }

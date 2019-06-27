@@ -181,6 +181,7 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
       @Override
       public void onNext(DerCharacteristics value) {
+        log.info("Received DER characteristics submission: {}", value);
         try {
           facilityCharacteristicsService.saveResourceCharacteristics(value);
         } catch (IllegalArgumentException e) {
