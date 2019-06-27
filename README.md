@@ -17,9 +17,11 @@ This top-level directory serves as an umbrella project for various sub-projects:
 
 Gradle is used for building. Run the `build` task via `gradlew`:
 
-	$ ./gradlew build
+	$ ./gradlew build -x test
 
-Each sub-project will produce its own build artifact(s).
+Each sub-project will produce its own build artifact(s). The `-x test` argument skips running the
+unit tests as part of the build process. If you'd like to run the tests, omit that part from the
+command.
 
 # Simulation example: register a facility with an exchange
 
@@ -34,7 +36,7 @@ You'll need a **Java 8 runtime** (or newer) and a **SSH** client to run this sim
 all projects are built before continuing. This is as simple as:
 
 ```shell
-./gradlew build
+./gradlew build -x test
 ```
 
 **Note** in the following examples the _version number_ of the JAR file arguments might differ
