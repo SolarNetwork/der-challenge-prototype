@@ -21,12 +21,13 @@ import static net.solarnetwork.esi.cli.ShellUtils.getBold;
 import static net.solarnetwork.esi.cli.ShellUtils.getBoldColored;
 import static net.solarnetwork.esi.cli.ShellUtils.getFaint;
 import static net.solarnetwork.esi.cli.ShellUtils.wall;
+import static net.solarnetwork.esi.cli.ShellUtils.wrap;
+import static net.solarnetwork.esi.simple.fac.impl.ShellConstants.SHELL_MAX_COLS;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.davidmoten.text.utils.WordWrap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.event.EventListener;
@@ -50,7 +51,7 @@ import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEvent.Exchange
 import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
 
 /**
- * Shell commands for the ESI Facility Registry client.
+ * Shell commands for the ESI Facility registration functions.
  * 
  * @author matt
  * @version 1.0
@@ -58,8 +59,6 @@ import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
 @SshShellComponent
 @ShellCommandGroup("Registry")
 public class RegistryCommands {
-
-  private static final int SHELL_MAX_COLS = 80;
 
   private final SshShellHelper shell;
   private final ExchangeRegistrationService exchangeRegistrationService;
@@ -168,11 +167,11 @@ public class RegistryCommands {
     ExchangeRegistrationEntity reg = event.getExchangeRegistration();
     String armor = messageSource.getMessage("reg.event.armor", null, Locale.getDefault());
     String msg = String.format("\n%s\n%s\n%s\n", armor,
-        WordWrap
-            .from(messageSource.getMessage(
+        wrap(
+            messageSource.getMessage(
                 event.isSuccess() ? "reg.event.completed.success" : "reg.event.completed.error",
-                new Object[] { reg.getId(), reg.getExchangeEndpointUri() }, Locale.getDefault()))
-            .maxWidth(SHELL_MAX_COLS).wrap(),
+                new Object[] { reg.getId(), reg.getExchangeEndpointUri() }, Locale.getDefault()),
+            SHELL_MAX_COLS),
         armor);
 
     // broadcast message to all available registered terminals
@@ -232,19 +231,19 @@ public class RegistryCommands {
                 .registerWithExchange(exchange, answers.build());
             keepGoing = false;
             // if we're here, the submission was successful
-            shell.printSuccess(WordWrap
-                .from(messageSource.getMessage("reg.success",
-                    new Object[] { exchange.getName(), reg.getId() }, Locale.getDefault()))
-                .maxWidth(SHELL_MAX_COLS).wrap());
+            shell.printSuccess(wrap(
+                messageSource.getMessage("reg.success",
+                    new Object[] { exchange.getName(), reg.getId() }, Locale.getDefault()),
+                SHELL_MAX_COLS));
             shell.print("");
           } catch (IllegalArgumentException e) {
             // there was some error submitting the form; allow the user the chance to re-try
             shell.printError(e.getMessage());
             if (shell.confirm(
                 messageSource.getMessage("reg.form.tryAgain", null, Locale.getDefault()))) {
-              shell.printError(WordWrap
-                  .from(messageSource.getMessage("reg.error.tryAgain", null, Locale.getDefault()))
-                  .maxWidth(SHELL_MAX_COLS).wrap());
+              shell.printError(
+                  wrap(messageSource.getMessage("reg.error.tryAgain", null, Locale.getDefault()),
+                      SHELL_MAX_COLS));
               shell.print("");
             } else {
               keepGoing = false;
@@ -292,7 +291,7 @@ public class RegistryCommands {
   }
 
   private void showFieldInfo(FormSetting field) {
-    shell.printInfo(WordWrap.from(field.getCaption()).maxWidth(SHELL_MAX_COLS).wrap());
+    shell.printInfo(wrap(field.getCaption(), SHELL_MAX_COLS));
     shell.print("");
   }
 
