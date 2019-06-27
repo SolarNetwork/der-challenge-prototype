@@ -17,6 +17,7 @@
 
 package net.solarnetwork.esi.simple.fac.domain;
 
+import java.security.PublicKey;
 import java.time.Instant;
 
 import javax.persistence.Basic;
@@ -25,6 +26,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 import net.solarnetwork.esi.domain.BaseStringEntity;
+import net.solarnetwork.esi.util.CryptoUtils;
 
 /**
  * A facility exchange entity.
@@ -73,6 +75,23 @@ public class ExchangeEntity extends BaseStringEntity {
    */
   public ExchangeEntity(Instant created, String id) {
     super(created, id);
+  }
+
+  /**
+   * Get the exchange {@link PublicKey}.
+   * 
+   * <p>
+   * This derives the instance from the {@link #getExchangePublicKey()} data.
+   * </p>
+   * 
+   * @return the public key
+   */
+  public PublicKey publicKey() {
+    byte[] pk = getExchangePublicKey();
+    if (pk == null) {
+      return null;
+    }
+    return CryptoUtils.decodePublicKey(CryptoUtils.STANDARD_HELPER, pk);
   }
 
   /**
