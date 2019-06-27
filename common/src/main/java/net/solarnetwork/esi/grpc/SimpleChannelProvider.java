@@ -19,6 +19,9 @@ package net.solarnetwork.esi.grpc;
 
 import java.net.URI;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 
@@ -29,6 +32,9 @@ import io.grpc.ManagedChannelBuilder;
  * @version 1.0
  */
 public class SimpleChannelProvider implements ChannelProvider {
+
+  /** A class-level logger. */
+  protected final Logger log = LoggerFactory.getLogger(getClass());
 
   private boolean usePlaintext;
 
@@ -56,6 +62,7 @@ public class SimpleChannelProvider implements ChannelProvider {
     if (usePlaintext) {
       channelBuilder.usePlaintext();
     }
+    log.debug("Building ManagedChannel for gRPC @ {}; SSL = {}", uri, !usePlaintext);
     return channelBuilder.build();
   }
 
