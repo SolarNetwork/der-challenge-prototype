@@ -2,7 +2,12 @@ plugins {
     id 'checkstyle'
     id 'java-library'
     id 'eclipse'
+    id 'org.springframework.boot' version '2.1.5.RELEASE'
 }
+
+apply plugin: 'checkstyle'
+//apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
 
 description = 'ESI: Common CLI'
 version = '0.1.0'
@@ -14,6 +19,9 @@ checkstyle {
 }
 	
 dependencies {
+	// spring support
+	implementation 'org.springframework.boot:spring-boot-starter'
+	
 	// CLI support
 	implementation 'com.github.fonimus:ssh-shell-spring-boot-starter:1.1.5'
 
