@@ -23,6 +23,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -43,14 +44,15 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
-import com.google.protobuf.ByteString;
-
+import net.solarnetwork.esi.domain.DurationRangeEmbed;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
 import net.solarnetwork.esi.simple.xchg.test.SpringTestSupport;
 
 /**
- * Test cases for the {@link FacilityEntityDao} JPA implementation.
+ * Test cases for the {@link FacilityResourceCharacteristicsEntityDao} JPA implementation.
  * 
  * @author matt
  * @version 1.0
@@ -59,7 +61,7 @@ import net.solarnetwork.esi.simple.xchg.test.SpringTestSupport;
 @FlywayTest(invokeCleanDB = false)
 @TestExecutionListeners({ DependencyInjectionTestExecutionListener.class,
     TransactionalTestExecutionListener.class, FlywayTestExecutionListener.class })
-public class JpaFacilityEntityDaoTests extends SpringTestSupport {
+public class JpaFacilityResourceCharacteristicsEntityDaoTests extends SpringTestSupport {
 
   private static final String TEST_CUSTOMER_ID = "A123456789";
   private static final String TEST_UICI = "123-1234-12345";
@@ -71,9 +73,11 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
   private EntityManager em;
 
   private JdbcTemplate jdbcTemplate;
-  private FacilityEntityDao dao;
+  private FacilityEntityDao facilityDao;
+  private FacilityResourceCharacteristicsEntityDao dao;
 
-  private FacilityEntity last;
+  private FacilityEntity lastFacility;
+  private FacilityResourceCharacteristicsEntity last;
 
   @Autowired
   public void setDataSource(DataSource ds) {
@@ -83,52 +87,76 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
   @Before
   public void setup() {
     RepositoryFactorySupport factory = new JpaRepositoryFactory(em);
-    dao = factory.getRepository(FacilityEntityDao.class);
+    facilityDao = factory.getRepository(FacilityEntityDao.class);
+    dao = factory.getRepository(FacilityResourceCharacteristicsEntityDao.class);
   }
 
-  private void assertFacilityRowCountEqualTo(final int expected) {
-    assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "FACILITIES"), equalTo(expected));
+  private void assertFacilityResourceCharacteristicsRowCountEqualTo(final int expected) {
+    assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "FACILITY_RESOURCE_CHARS"),
+        equalTo(expected));
   }
 
-  @Test
-  public void insert() {
+  private FacilityEntity setupFacility() {
     FacilityEntity obj = new FacilityEntity(Instant.now());
     obj.setCustomerId(TEST_CUSTOMER_ID);
     obj.setUici(TEST_UICI);
     obj.setFacilityUid(TEST_UID);
     obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
     obj.setFacilityPublicKey(TEST_KEY);
-    FacilityEntity entity = dao.save(obj);
+    FacilityEntity entity = facilityDao.save(obj);
+    this.lastFacility = entity;
+    return entity;
+  }
+
+  @Test
+  public void insert() {
+    FacilityEntity facility = setupFacility();
+    FacilityResourceCharacteristicsEntity obj = new FacilityResourceCharacteristicsEntity(
+        Instant.now(), facility);
+    obj.setLoadPowerMax(1L);
+    obj.setLoadPowerFactor(0.2f);
+    obj.setSupplyPowerMax(3L);
+    obj.setSupplyPowerFactor(0.4f);
+    obj.setStorageEnergyCapacity(5L);
+    obj.setResponseTime(new DurationRangeEmbed(Duration.ofSeconds(6L), Duration.ofSeconds(7L)));
+    FacilityResourceCharacteristicsEntity entity = dao.save(obj);
     this.last = entity;
     em.flush();
     assertThat("ID", entity.getId(), notNullValue());
     assertThat("Created set", entity.getCreated(), notNullValue());
     assertThat("Modified set", entity.getModified(), notNullValue());
-    assertThat("Customer ID", entity.getCustomerId(), equalTo(TEST_CUSTOMER_ID));
-    assertThat("UICI", entity.getUici(), equalTo(TEST_UICI));
-    assertThat("Facility UID", entity.getFacilityUid(), equalTo(TEST_UID));
-    assertThat("Facility endpoint", entity.getFacilityEndpointUri(), equalTo(TEST_ENDPOINT_URI));
-    assertFacilityRowCountEqualTo(1);
-    assertThat("Facility key", ByteString.copyFrom(entity.getFacilityPublicKey()),
-        equalTo(ByteString.copyFrom(TEST_KEY)));
+    assertFacilityResourceCharacteristicsRowCountEqualTo(1);
     em.clear();
   }
 
   @Test
   public void getById() {
     insert();
-    FacilityEntity entity = dao.findById(last.getId()).get();
+    FacilityResourceCharacteristicsEntity entity = dao.findById(last.getId()).get();
     assertThat("Different instance", entity, not(sameInstance(last)));
     assertThat("ID", entity.getId(), equalTo(last.getId()));
     assertThat("Created", entity.getCreated(), equalTo(last.getCreated()));
     assertThat("Modified", entity.getModified(), equalTo(last.getModified()));
-    assertThat("Customer ID", entity.getCustomerId(), equalTo(last.getCustomerId()));
-    assertThat("UICI", entity.getUici(), equalTo(last.getUici()));
-    assertThat("Facility UID", entity.getFacilityUid(), equalTo(last.getFacilityUid()));
-    assertThat("Facility endpoint URI", entity.getFacilityEndpointUri(),
-        equalTo(last.getFacilityEndpointUri()));
-    assertThat("Facility key", ByteString.copyFrom(entity.getFacilityPublicKey()),
-        equalTo(ByteString.copyFrom(last.getFacilityPublicKey())));
+    assertThat("Load power max", entity.getLoadPowerMax(), equalTo(last.getLoadPowerMax()));
+    assertThat("Load power factor", entity.getLoadPowerFactor(),
+        equalTo(last.getLoadPowerFactor()));
+    assertThat("Supply power max", entity.getSupplyPowerMax(), equalTo(last.getSupplyPowerMax()));
+    assertThat("Supply power factor", entity.getSupplyPowerFactor(),
+        equalTo(last.getSupplyPowerFactor()));
+    assertThat("Storage energy capacity", entity.getStorageEnergyCapacity(),
+        equalTo(last.getStorageEnergyCapacity()));
+    assertThat("Response time min", entity.getResponseTime().getMin(),
+        equalTo(last.getResponseTime().getMin()));
+    assertThat("Response time max", entity.getResponseTime().getMax(),
+        equalTo(last.getResponseTime().getMax()));
+  }
+
+  @Test
+  public void getByFacilityUid() {
+    insert();
+    FacilityResourceCharacteristicsEntity entity = dao
+        .findByFacility_FacilityUid(lastFacility.getFacilityUid()).get();
+    assertThat("Result found", entity, equalTo(last));
   }
 
 }

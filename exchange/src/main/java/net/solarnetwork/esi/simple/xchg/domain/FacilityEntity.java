@@ -17,24 +17,33 @@
 
 package net.solarnetwork.esi.simple.xchg.domain;
 
+import java.security.PublicKey;
 import java.time.Instant;
 import java.util.UUID;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Index;
 import javax.persistence.Table;
 
 import net.solarnetwork.esi.domain.BaseUuidEntity;
+import net.solarnetwork.esi.util.CryptoUtils;
 
 /**
  * Entity for DER facilities that have been registered.
+ * 
+ * <p>
+ * This entity is modeled with UUID primary keys, which are not to be confused with
+ * {@link #getFacilityUid()} values, which are provided by facilities themselves and not required to
+ * be UUID values.
+ * </p>
  * 
  * @author matt
  * @version 1.0
  */
 @Entity
-@Table(name = "FACILITIES")
+@Table(name = "FACILITIES", indexes = { @Index(name = "FAC_UID_IDX", columnList = "FAC_UID") })
 public class FacilityEntity extends BaseUuidEntity {
 
   private static final long serialVersionUID = 1583057782830681381L;
@@ -86,6 +95,23 @@ public class FacilityEntity extends BaseUuidEntity {
    */
   public FacilityEntity(Instant created, UUID id) {
     super(created, id);
+  }
+
+  /**
+   * Get the facility {@link PublicKey}.
+   * 
+   * <p>
+   * This derives the instance from the {@link #getFacilityPublicKey()} data.
+   * </p>
+   * 
+   * @return the public key
+   */
+  public PublicKey publicKey() {
+    byte[] pk = getFacilityPublicKey();
+    if (pk == null) {
+      return null;
+    }
+    return CryptoUtils.decodePublicKey(CryptoUtils.STANDARD_HELPER, pk);
   }
 
   /**

@@ -10,6 +10,7 @@
     <class>net.solarnetwork.esi.domain.BaseUuidEntity</class>
     <class>net.solarnetwork.esi.domain.BaseLongEntity</class>
     <class>net.solarnetwork.esi.domain.BaseStringEntity</class>
+    <class>net.solarnetwork.esi.domain.DurationRangeEmbed</class>
     <exclude-unlisted-classes>false</exclude-unlisted-classes>
   </persistence-unit>
 </persistence>

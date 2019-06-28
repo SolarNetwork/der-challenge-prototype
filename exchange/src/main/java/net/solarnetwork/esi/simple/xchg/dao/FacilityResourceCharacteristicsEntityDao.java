@@ -15,36 +15,31 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.xchg.service;
+package net.solarnetwork.esi.simple.xchg.dao;
 
-import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.data.repository.CrudRepository;
+
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
 
 /**
- * API for supporting facility characteristics.
+ * DAO API for facility resource characteristic entities.
  * 
  * @author matt
  * @version 1.0
  */
-public interface FacilityCharacteristicsService {
+public interface FacilityResourceCharacteristicsEntityDao
+    extends CrudRepository<FacilityResourceCharacteristicsEntity, UUID> {
 
   /**
-   * Get the current resource characteristics for a specific facility.
+   * Find a resource characteristics by the UID of its facility.
    * 
    * @param facilityUid
-   *        the UID of the facility to get the characteristics for
-   * @return the current resource characteristics, or {@literal null} if not available
+   *        the UID of the facility to find
+   * @return the facility
    */
-  FacilityResourceCharacteristicsEntity resourceCharacteristics(String facilityUid);
-
-  /**
-   * Save resource characteristics.
-   * 
-   * @param characteristics
-   *        the characteristics to save
-   * @return the persisted characteristics
-   */
-  FacilityResourceCharacteristicsEntity saveResourceCharacteristics(
-      DerCharacteristicsOrBuilder characteristics);
+  Optional<FacilityResourceCharacteristicsEntity> findByFacility_FacilityUid(String facilityUid);
 
 }

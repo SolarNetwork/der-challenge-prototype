@@ -184,14 +184,16 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
         log.info("Received DER characteristics submission: {}", value);
         try {
           facilityCharacteristicsService.saveResourceCharacteristics(value);
+          responseObserver.onNext(Empty.getDefaultInstance());
+          responseObserver.onCompleted();
         } catch (IllegalArgumentException e) {
           responseObserver.onError(
               Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
         } catch (RuntimeException e) {
+          log.error("Error processing DER characteristics: " + e.getMessage(), e);
           responseObserver.onError(
               Status.INTERNAL.withDescription("Internal error").withCause(e).asException());
         }
-
       }
 
       @Override
@@ -201,8 +203,7 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
       @Override
       public void onCompleted() {
-        responseObserver.onNext(Empty.getDefaultInstance());
-        responseObserver.onCompleted();
+        // nothing
       }
     };
   }

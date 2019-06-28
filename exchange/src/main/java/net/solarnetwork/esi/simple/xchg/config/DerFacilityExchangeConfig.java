@@ -46,6 +46,7 @@ import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.grpc.SimpleChannelProvider;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityRegistrationService;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
@@ -94,6 +95,9 @@ public class DerFacilityExchangeConfig {
 
   @Autowired
   public FacilityEntityDao facilityDao;
+
+  @Autowired
+  public FacilityResourceCharacteristicsEntityDao resourceCharacteristicsDao;
 
   @Qualifier("exchange-uid")
   @Bean
@@ -210,7 +214,10 @@ public class DerFacilityExchangeConfig {
    */
   @Bean
   public FacilityCharacteristicsService facilityCharacteristicsService() {
-    DaoFacilityCharacteristicsService s = new DaoFacilityCharacteristicsService();
+    DaoFacilityCharacteristicsService s = new DaoFacilityCharacteristicsService(exchangeUid(),
+        exchangeKeyPair(), cryptoHelper());
+    s.setFacilityDao(facilityDao);
+    s.setResourceCharacteristicsDao(resourceCharacteristicsDao);
     return s;
   }
 
