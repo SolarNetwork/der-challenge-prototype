@@ -56,6 +56,6 @@ message DerCharacteristics {
   uint64 storage_energy_capacity = 6;
 
   // The expected minimum/maximum response time to start/finish executing load or supply changes.
-  DurationRange reponse_time = 7;
+  DurationRange response_time = 7;
 
 }

@@ -144,9 +144,9 @@ public class DaoFacilityCharacteristicsServiceTests {
                 equalTo(characteristics.getSupplyPowerFactor()));
             assertThat("Storage energy capcity", value.getStorageEnergyCapacity(),
                 equalTo(characteristics.getStorageEnergyCapacity()));
-            assertThat("Respones time min", value.getReponseTime().getMin().getSeconds(),
+            assertThat("Respones time min", value.getResponseTime().getMin().getSeconds(),
                 equalTo(characteristics.getResponseTime().getMin().getSeconds()));
-            assertThat("Respones time max", value.getReponseTime().getMax().getSeconds(),
+            assertThat("Respones time max", value.getResponseTime().getMax().getSeconds(),
                 equalTo(characteristics.getResponseTime().getMax().getSeconds()));
           }
 

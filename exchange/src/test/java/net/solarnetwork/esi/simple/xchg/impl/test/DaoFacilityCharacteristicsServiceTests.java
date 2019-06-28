@@ -142,7 +142,7 @@ public class DaoFacilityCharacteristicsServiceTests {
         .setSupplyPowerMax(3L)
         .setSupplyPowerFactor(0.4f)
         .setStorageEnergyCapacity(5L)
-        .setReponseTime(DurationRange.newBuilder()
+        .setResponseTime(DurationRange.newBuilder()
             .setMin(com.google.protobuf.Duration.newBuilder()
                 .setSeconds(6L)
                 .build())
@@ -181,9 +181,9 @@ public class DaoFacilityCharacteristicsServiceTests {
     assertThat("Storage energy capacity", result.getStorageEnergyCapacity(),
         equalTo(derCharacteristics.getStorageEnergyCapacity()));
     assertThat("Response time min", result.getResponseTime().getMin().getSeconds(),
-        equalTo(derCharacteristics.getReponseTime().getMin().getSeconds()));
+        equalTo(derCharacteristics.getResponseTime().getMin().getSeconds()));
     assertThat("Response time max", result.getResponseTime().getMax().getSeconds(),
-        equalTo(derCharacteristics.getReponseTime().getMax().getSeconds()));
+        equalTo(derCharacteristics.getResponseTime().getMax().getSeconds()));
   }
 
   @Test
@@ -221,7 +221,7 @@ public class DaoFacilityCharacteristicsServiceTests {
         .setSupplyPowerMax(3L)
         .setSupplyPowerFactor(0.4f)
         .setStorageEnergyCapacity(5L)
-        .setReponseTime(DurationRange.newBuilder()
+        .setResponseTime(DurationRange.newBuilder()
             .setMin(com.google.protobuf.Duration.newBuilder()
                 .setSeconds(6L)
                 .build())
@@ -261,8 +261,8 @@ public class DaoFacilityCharacteristicsServiceTests {
     assertThat("Storage energy capacity", result.getStorageEnergyCapacity(),
         equalTo(derCharacteristics.getStorageEnergyCapacity()));
     assertThat("Response time min", result.getResponseTime().getMin().getSeconds(),
-        equalTo(derCharacteristics.getReponseTime().getMin().getSeconds()));
+        equalTo(derCharacteristics.getResponseTime().getMin().getSeconds()));
     assertThat("Response time max", result.getResponseTime().getMax().getSeconds(),
-        equalTo(derCharacteristics.getReponseTime().getMax().getSeconds()));
+        equalTo(derCharacteristics.getResponseTime().getMax().getSeconds()));
   }
 }

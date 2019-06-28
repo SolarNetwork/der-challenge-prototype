@@ -144,7 +144,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
             .setSupplyPowerMax(entity.getSupplyPowerMax())
             .setSupplyPowerFactor(entity.getSupplyPowerFactor())
             .setStorageEnergyCapacity(entity.getStorageEnergyCapacity())
-            .setReponseTime(DurationRange.newBuilder()
+            .setResponseTime(DurationRange.newBuilder()
                 .setMin(com.google.protobuf.Duration.newBuilder()
                     .setSeconds(entity.getResponseTime().getMin().getSeconds())
                     .setNanos(entity.getResponseTime().getMin().getNano())

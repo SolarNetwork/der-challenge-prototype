@@ -149,10 +149,10 @@ public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID> {
     setSupplyPowerFactor(message.getSupplyPowerFactor());
     setStorageEnergyCapacity(message.getStorageEnergyCapacity());
     setResponseTime(new DurationRangeEmbed(
-        Duration.ofSeconds(message.getReponseTime().getMin().getSeconds(),
-            message.getReponseTime().getMin().getNanos()),
-        Duration.ofSeconds(message.getReponseTime().getMax().getSeconds(),
-            message.getReponseTime().getMax().getNanos())));
+        Duration.ofSeconds(message.getResponseTime().getMin().getSeconds(),
+            message.getResponseTime().getMin().getNanos()),
+        Duration.ofSeconds(message.getResponseTime().getMax().getSeconds(),
+            message.getResponseTime().getMax().getNanos())));
   }
 
   /**

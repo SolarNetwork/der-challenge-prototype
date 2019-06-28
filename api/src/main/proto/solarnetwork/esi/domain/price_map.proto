@@ -45,7 +45,7 @@ message PriceMap {
   google.protobuf.Duration duration = 3;
 
   // The expected minimum/maximum response time to start/finish executing power changes.
-  DurationRange reponse_time = 4;
+  DurationRange response_time = 4;
 
   // The power price on offer.
   PriceComponents price = 5;
