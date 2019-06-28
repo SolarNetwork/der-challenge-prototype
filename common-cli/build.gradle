@@ -2,11 +2,10 @@ plugins {
     id 'checkstyle'
     id 'java-library'
     id 'eclipse'
-    id 'org.springframework.boot' version '2.1.5.RELEASE'
+    id 'org.springframework.boot' version '2.1.5.RELEASE' apply false
 }
 
 apply plugin: 'checkstyle'
-//apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
 description = 'ESI: Common CLI'
@@ -18,6 +17,12 @@ checkstyle {
 	configFile = rootProject.file('config/checkstyle/checkstyle.xml')
 }
 	
+dependencyManagement {
+	imports {
+		mavenBom org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES
+	}
+}
+
 dependencies {
 	// spring support
 	implementation 'org.springframework.boot:spring-boot-starter'
