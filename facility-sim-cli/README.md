@@ -97,5 +97,5 @@ Maximum response time     : 6.600 s
 ```
 
 
-[der_facility]: ../api/src/main/proto/solarnetwork/esi/service/der_facility_service.proto
+[der_facility_service]: ../api/src/main/proto/solarnetwork/esi/service/der_facility_service.proto
 [sim-intro]: ../README.md#simulation-example-register-a-facility-with-an-exchange
