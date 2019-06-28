@@ -19,6 +19,9 @@ package net.solarnetwork.esi.simple.fac.service;
 
 import java.net.URI;
 import java.security.KeyPair;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
 
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.util.CryptoHelper;
@@ -72,5 +75,21 @@ public interface FacilityService {
    * @return the exchange, or {@literal null} if not available
    */
   ExchangeEntity getExchange();
+
+  /**
+   * Get the enabled program types.
+   * 
+   * @return the enabled types, never {@literal null}
+   */
+  @Nonnull
+  Set<String> getEnabledProgramTypes();
+
+  /**
+   * Set the enabled program types.
+   * 
+   * @param types
+   *        the enabled types
+   */
+  void setEnabledProgramTypes(Set<String> types);
 
 }

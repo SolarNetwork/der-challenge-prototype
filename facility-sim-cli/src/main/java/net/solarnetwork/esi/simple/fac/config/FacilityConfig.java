@@ -35,6 +35,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
+import net.solarnetwork.esi.simple.fac.dao.FacilitySettingsEntityDao;
 import net.solarnetwork.esi.simple.fac.impl.DaoFacilityService;
 import net.solarnetwork.esi.util.CryptoHelper;
 import net.solarnetwork.esi.util.CryptoUtils;
@@ -75,10 +76,13 @@ public class FacilityConfig {
   @Autowired
   private ExchangeEntityDao exchangeDao;
 
+  @Autowired
+  private FacilitySettingsEntityDao settingsDao;
+
   @Bean
   public DaoFacilityService facilityService() {
     return new DaoFacilityService(facilityUid, URI.create(facilityUri), usePlaintext,
-        facilityKeyPair(), cryptoHelper(), exchangeDao);
+        facilityKeyPair(), cryptoHelper(), exchangeDao, settingsDao);
   }
 
   /**

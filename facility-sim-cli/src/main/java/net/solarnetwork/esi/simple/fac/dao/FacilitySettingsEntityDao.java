@@ -17,7 +17,7 @@
 
 package net.solarnetwork.esi.simple.fac.dao;
 
-import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.PagingAndSortingRepository;
 
 import net.solarnetwork.esi.simple.fac.domain.FacilitySettingsEntity;
 
@@ -27,6 +27,7 @@ import net.solarnetwork.esi.simple.fac.domain.FacilitySettingsEntity;
  * @author matt
  * @version 1.0
  */
-public interface FacilitySettingsEntityDao extends CrudRepository<FacilitySettingsEntity, Long> {
+public interface FacilitySettingsEntityDao
+    extends PagingAndSortingRepository<FacilitySettingsEntity, Long> {
 
 }
