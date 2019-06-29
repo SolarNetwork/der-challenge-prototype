@@ -127,9 +127,6 @@ public class JpaFacilitySettingsEntityDaoTests extends SpringTestSupport {
 
     FacilitySettingsEntity updated = dao.findById(last.getId()).get();
     assertThat("Different instance", updated, not(sameInstance(entity)));
-    assertThat("ID", updated.getId(), equalTo(entity.getId()));
-    assertThat("Created", updated.getCreated(), equalTo(entity.getCreated()));
-    assertThat("Modified", updated.getModified(), equalTo(entity.getModified()));
     assertThat("Program types", updated.getProgramTypes(), equalTo(entity.getProgramTypes()));
   }
 }

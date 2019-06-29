@@ -29,11 +29,17 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
+import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.junit.Before;
 import org.junit.Rule;
@@ -42,6 +48,8 @@ import org.mockito.ArgumentCaptor;
 
 import io.grpc.testing.GrpcCleanupRule;
 import net.solarnetwork.esi.domain.DerCharacteristics;
+import net.solarnetwork.esi.domain.DerProgramSet;
+import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.DurationRange;
 import net.solarnetwork.esi.domain.DurationRangeEmbed;
@@ -90,8 +98,6 @@ public class DaoFacilityCharacteristicsServiceTests {
   @Test
   public void resourceCharacteristicsForFacility() {
     // given
-    String facilityUid = UUID.randomUUID().toString();
-
     // CHECKSTYLE IGNORE LineLength FOR NEXT 2 LINES
     FacilityResourceCharacteristicsEntity characteristics = new FacilityResourceCharacteristicsEntity(
         Instant.now());
@@ -109,8 +115,6 @@ public class DaoFacilityCharacteristicsServiceTests {
   @Test
   public void resourceCharacteristicsForFacilityNotFound() {
     // given
-    String facilityUid = UUID.randomUUID().toString();
-
     given(resourceCharacteristicsDao.findByFacility_FacilityUid(facilityUid))
         .willReturn(Optional.ofNullable(null));
 
@@ -124,7 +128,7 @@ public class DaoFacilityCharacteristicsServiceTests {
   @Test
   public void createResourceCharacteristicsForFacility() {
     // given
-    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.randomUUID());
+    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.fromString(facilityUid));
     facility.setFacilityUid(facilityUid);
     facility.setFacilityPublicKey(facilityKeyPair.getPublic().getEncoded());
     given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
@@ -189,7 +193,7 @@ public class DaoFacilityCharacteristicsServiceTests {
   @Test
   public void updateResourceCharacteristicsForFacility() {
     // given
-    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.randomUUID());
+    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.fromString(facilityUid));
     facility.setFacilityUid(facilityUid);
     facility.setFacilityPublicKey(facilityKeyPair.getPublic().getEncoded());
 
@@ -264,5 +268,67 @@ public class DaoFacilityCharacteristicsServiceTests {
         equalTo(derCharacteristics.getResponseTime().getMin().getSeconds()));
     assertThat("Response time max", result.getResponseTime().getMax().getSeconds(),
         equalTo(derCharacteristics.getResponseTime().getMax().getSeconds()));
+  }
+
+  @Test
+  public void programTypesForFacility() {
+    // given
+    Set<DerProgramType> programTypes = new LinkedHashSet<>(
+        asList(DerProgramType.ARTIFICIAL_INERTIA, DerProgramType.PEAK_CAPACITY_MANAGEMENT));
+    Set<String> programs = programTypes.stream().map(DerProgramType::name)
+        .collect(Collectors.toSet());
+    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.fromString(facilityUid));
+    facility.setFacilityUid(facilityUid);
+    facility.setFacilityPublicKey(facilityKeyPair.getPublic().getEncoded());
+    facility.setProgramTypes(programs);
+    given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
+
+    // when
+    Set<DerProgramType> types = service.activeProgramTypes(facilityUid);
+
+    // then
+    assertThat("Returned types", types, equalTo(programTypes));
+  }
+
+  @Test
+  public void setProgramTypesForFacility() {
+    // given
+    List<DerProgramType> programTypes = asList(DerProgramType.ARTIFICIAL_INERTIA,
+        DerProgramType.PEAK_CAPACITY_MANAGEMENT);
+    ByteBuffer signatureData = ByteBuffer.allocate(Integer.BYTES * programTypes.size());
+    programTypes.stream().forEachOrdered(e -> signatureData.putInt(e.getNumber()));
+
+    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.fromString(facilityUid));
+    facility.setFacilityUid(facilityUid);
+    facility.setFacilityPublicKey(facilityKeyPair.getPublic().getEncoded());
+    facility.setProgramTypes(new HashSet<>());
+    given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
+
+    ArgumentCaptor<FacilityEntity> facilityCaptor = ArgumentCaptor.forClass(FacilityEntity.class);
+    given(facilityDao.save(facilityCaptor.capture()))
+        .willAnswer(invocationArg(0, FacilityEntity.class));
+
+    // when
+    // @formatter:off
+    DerProgramSet programSet = DerProgramSet.newBuilder()
+        .addAllType(programTypes)
+        .setRoute(DerRoute.newBuilder()
+            .setExchangeUid(exchangeUid)
+            .setFacilityUid(facilityUid)
+            .setSignature(generateMessageSignature(CryptoUtils.STANDARD_HELPER, 
+                facilityKeyPair, exchangeKeyPair.getPublic(), asList(
+                    exchangeUid,
+                    facilityUid,
+                    signatureData))
+                )
+            .build())
+        .build();
+    // @formatter:on
+    service.saveActiveProgramTypes(programSet);
+
+    // then
+    assertThat("Facility same as persisted", facility, sameInstance(facilityCaptor.getValue()));
+    assertThat("Facility programs", facility.getProgramTypes(),
+        equalTo(programTypes.stream().map(e -> e.name()).collect(Collectors.toSet())));
   }
 }

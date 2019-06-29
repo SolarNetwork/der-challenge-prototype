@@ -19,14 +19,16 @@ package net.solarnetwork.esi.simple.fac.impl;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Locale;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -88,10 +90,9 @@ public class ProgramCommands {
    */
   @ShellMethod("Configure the active program types.")
   public void programsChoose() {
-    List<String> allPrograms = Arrays.stream(DerProgramType.values())
-        .filter(e -> e != DerProgramType.UNRECOGNIZED).map(e -> e.name()).collect(toList());
-    showProgramTypes(allPrograms);
-    Set<String> choices = new HashSet<>(allPrograms.size());
+    List<ProgramName> allPrograms = showProgramTypes(Arrays.stream(DerProgramType.values())
+        .filter(e -> e != DerProgramType.UNRECOGNIZED).map(e -> e.name()).collect(toList()));
+    Set<ProgramName> choices = new TreeSet<>(PROGRAM_DISPLAY_ORDER);
     while (true) {
       String selection = shell
           .read(messageSource.getMessage("programs.active.ask", null, Locale.getDefault()));
@@ -102,37 +103,79 @@ public class ProgramCommands {
         } catch (NumberFormatException | IndexOutOfBoundsException e) {
           shell.printError(messageSource.getMessage("programs.error.invalid", new Object[] { s },
               Locale.getDefault()));
-          break;
         }
       }
       shell.print(
           messageSource.getMessage("programs.active.confirm.title", null, Locale.getDefault()));
-      showProgramTypes(choices);
+      showProgramNames(choices);
       if (shell.confirm(
           messageSource.getMessage("programs.active.confirm.msg", null, Locale.getDefault()))) {
-        characteristicsService.saveActiveProgramTypes(choices);
-        shell.print(messageSource.getMessage("programs.active.saved", null, Locale.getDefault()));
+        characteristicsService
+            .saveActiveProgramTypes(choices.stream().map(e -> e.name).collect(toSet()));
+        shell.printSuccess(
+            messageSource.getMessage("programs.active.saved", null, Locale.getDefault()));
       }
       return;
     }
   }
 
-  private void showProgramTypes(Collection<String> programs) {
-    List<String> programDisplayNames = sortedProgramDisplayNames(programs);
-    for (ListIterator<String> itr = programDisplayNames.listIterator(); itr.hasNext();) {
-      String p = itr.next();
-      shell.print(messageSource.getMessage("programs.list.item",
-          new Object[] { itr.previousIndex() + 1, p }, Locale.getDefault()));
+  private List<ProgramName> showProgramTypes(Collection<String> programs) {
+    List<ProgramName> programDisplayNames = sortedProgramDisplayNames(programs);
+    showProgramNames(programDisplayNames);
+    return programDisplayNames;
+  }
+
+  private void showProgramNames(Iterable<ProgramName> programDisplayNames) {
+    int idx = 1;
+    for (Iterator<ProgramName> itr = programDisplayNames.iterator(); itr.hasNext();) {
+      ProgramName p = itr.next();
+      shell.print(messageSource.getMessage("programs.list.item", new Object[] { idx, p },
+          Locale.getDefault()));
+      idx++;
     }
   }
 
-  private List<String> sortedProgramDisplayNames(Collection<String> programs) {
-    String unrecognizedMsg = messageSource.getMessage("programs.UNRECOGNIZED.label", null,
-        Locale.getDefault());
-    return programs.stream().map(p -> {
-      return messageSource.getMessage(format("programs.%s.label", p), new Object[] { p },
-          unrecognizedMsg, Locale.getDefault());
-    }).sorted(String.CASE_INSENSITIVE_ORDER).collect(toList());
+  private List<ProgramName> sortedProgramDisplayNames(Collection<String> programs) {
+    return programs.stream().map(p -> new ProgramName(p)).sorted(PROGRAM_DISPLAY_ORDER)
+        .collect(toList());
+  }
+
+  /**
+   * A program paired with its display name.
+   */
+  private class ProgramName {
+
+    private final String name;
+    private final String displayName;
+
+    private ProgramName(String name) {
+      this.name = name;
+      this.displayName = messageSource.getMessage(format("programs.%s.label", name),
+          new Object[] { name },
+          messageSource.getMessage("programs.UNRECOGNIZED.label", null, Locale.getDefault()),
+          Locale.getDefault());
+    }
+
+    @Override
+    public String toString() {
+      return displayName;
+    }
+
+  }
+
+  // CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINE
+  private static final ProgramNameDisplayComparator PROGRAM_DISPLAY_ORDER = new ProgramNameDisplayComparator();
+
+  /**
+   * Compare programs by their display names.
+   */
+  private static final class ProgramNameDisplayComparator implements Comparator<ProgramName> {
+
+    @Override
+    public int compare(ProgramName o1, ProgramName o2) {
+      return o1.displayName.compareToIgnoreCase(o2.displayName);
+    }
+
   }
 
   /**

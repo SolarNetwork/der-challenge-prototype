@@ -19,13 +19,21 @@ package net.solarnetwork.esi.simple.xchg.domain;
 
 import java.security.PublicKey;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.Basic;
+import javax.persistence.CollectionTable;
 import javax.persistence.Column;
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.ForeignKey;
 import javax.persistence.Index;
+import javax.persistence.JoinColumn;
 import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import net.solarnetwork.esi.domain.BaseUuidEntity;
 import net.solarnetwork.esi.util.CryptoUtils;
@@ -46,7 +54,7 @@ import net.solarnetwork.esi.util.CryptoUtils;
 @Table(name = "FACILITIES", indexes = { @Index(name = "FAC_UID_IDX", columnList = "FAC_UID") })
 public class FacilityEntity extends BaseUuidEntity {
 
-  private static final long serialVersionUID = 1583057782830681381L;
+  private static final long serialVersionUID = -4450594216630145370L;
 
   @Basic
   @Column(name = "UICI", nullable = false, insertable = true, updatable = true, length = 20)
@@ -67,6 +75,17 @@ public class FacilityEntity extends BaseUuidEntity {
   @Basic
   @Column(name = "FAC_KEY", nullable = false, insertable = true, updatable = true, length = 255)
   private byte[] facilityPublicKey;
+
+  // @formatter:off
+  @ElementCollection(fetch = FetchType.EAGER)
+  @Column(name = "PROGRAM", nullable = false, length = 64)
+  @CollectionTable(name = "FACILITY_PROGRAM_TYPES", 
+      joinColumns = @JoinColumn(name = "FACILITY_ID", nullable = false), 
+      foreignKey = @ForeignKey(name = "FACILITY_PROGRAM_TYPES_FACILITY_FK"),
+      uniqueConstraints = @UniqueConstraint(name = "FACILITY_PROGRAM_TYPES_PK",
+          columnNames = { "FACILITY_ID", "PROGRAM" }))
+  private Set<String> programTypes;
+  // @formatter:on
 
   /**
    * Default constructor.
@@ -207,6 +226,53 @@ public class FacilityEntity extends BaseUuidEntity {
    */
   public void setFacilityPublicKey(byte[] facilityPublicKey) {
     this.facilityPublicKey = facilityPublicKey;
+  }
+
+  /**
+   * Get the program types.
+   * 
+   * @return the program types
+   */
+  public Set<String> getProgramTypes() {
+    return programTypes;
+  }
+
+  /**
+   * Set the program types.
+   * 
+   * @param programTypes
+   *        the program types to set
+   */
+  public void setProgramTypes(Set<String> programTypes) {
+    this.programTypes = programTypes;
+  }
+
+  /**
+   * Add a program type.
+   * 
+   * @param type
+   *        the type to add
+   */
+  public void addProgramType(String type) {
+    Set<String> tags = getProgramTypes();
+    if (tags == null) {
+      tags = new HashSet<>(4);
+      setProgramTypes(tags);
+    }
+    tags.add(type);
+  }
+
+  /**
+   * Remove a program type.
+   * 
+   * @param type
+   *        the type to remove
+   */
+  public void removeProgramType(String type) {
+    Set<String> tags = getProgramTypes();
+    if (tags != null) {
+      tags.remove(type);
+    }
   }
 
 }

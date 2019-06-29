@@ -18,6 +18,7 @@
 package net.solarnetwork.esi.simple.xchg.dao.test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -98,6 +99,9 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
     obj.setFacilityUid(TEST_UID);
     obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
     obj.setFacilityPublicKey(TEST_KEY);
+    obj.addProgramType("a");
+    obj.addProgramType("b");
+    obj.addProgramType("c");
     FacilityEntity entity = dao.save(obj);
     this.last = entity;
     em.flush();
@@ -111,6 +115,7 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
     assertFacilityRowCountEqualTo(1);
     assertThat("Facility key", ByteString.copyFrom(entity.getFacilityPublicKey()),
         equalTo(ByteString.copyFrom(TEST_KEY)));
+    assertThat("Program types", entity.getProgramTypes(), containsInAnyOrder("a", "b", "c"));
     em.clear();
   }
 
@@ -129,6 +134,21 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
         equalTo(last.getFacilityEndpointUri()));
     assertThat("Facility key", ByteString.copyFrom(entity.getFacilityPublicKey()),
         equalTo(ByteString.copyFrom(last.getFacilityPublicKey())));
+    assertThat("Program types", entity.getProgramTypes(), equalTo(last.getProgramTypes()));
   }
 
+  @Test
+  public void updateProgramTypes() {
+    insert();
+    FacilityEntity entity = dao.findById(last.getId()).get();
+    entity.removeProgramType("b");
+    entity.addProgramType("d");
+    dao.save(entity);
+    em.flush();
+    em.clear();
+
+    FacilityEntity updated = dao.findById(last.getId()).get();
+    assertThat("Different instance", updated, not(sameInstance(entity)));
+    assertThat("Program types", updated.getProgramTypes(), equalTo(entity.getProgramTypes()));
+  }
 }

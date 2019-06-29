@@ -20,8 +20,13 @@ package net.solarnetwork.esi.simple.xchg.impl;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 
+import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.time.Instant;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +35,8 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
+import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
+import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRouteOrBuilder;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
@@ -126,6 +133,81 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
     // TODO: post app event about update
 
     return entity;
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public Set<DerProgramType> activeProgramTypes(String facilityUid) {
+    FacilityEntity facility = facilityDao.findByFacilityUid(facilityUid)
+        .orElseThrow(() -> new IllegalArgumentException("Facility not registered."));
+    Set<String> programs = facility.getProgramTypes();
+    if (programs == null) {
+      return Collections.emptySet();
+    }
+    Set<DerProgramType> result = new HashSet<>(programs.size());
+    for (String program : programs) {
+      try {
+        DerProgramType type = DerProgramType.valueOf(program);
+        if (type != DerProgramType.UNRECOGNIZED) {
+          result.add(type);
+        }
+      } catch (IllegalArgumentException e) {
+        // ignore
+      }
+    }
+    return result;
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public void saveActiveProgramTypes(DerProgramSetOrBuilder programSet) {
+    DerRouteOrBuilder route = programSet.getRouteOrBuilder();
+    if (route == null) {
+      throw new IllegalArgumentException("Route missing");
+    }
+
+    if (!exchangeUid.equals(route.getExchangeUid())) {
+      throw new IllegalArgumentException("Exchange UID not valid.");
+    }
+
+    String facilityUid = route.getFacilityUid();
+    if (facilityUid == null || facilityUid.trim().isEmpty()) {
+      throw new IllegalArgumentException("Facility UID missing.");
+    }
+
+    FacilityEntity facility = facilityDao.findByFacilityUid(facilityUid)
+        .orElseThrow(() -> new IllegalArgumentException("Facility not registered."));
+
+    Set<String> activePrograms = new HashSet<>();
+    ByteBuffer signatureData = ByteBuffer.allocate(Integer.BYTES * programSet.getTypeCount());
+    for (DerProgramType type : programSet.getTypeList()) {
+      activePrograms.add(type.name());
+      signatureData.putInt(type.getNumber());
+    }
+
+    // verify signature
+    // @formatter:off
+    validateMessageSignature(cryptoHelper, route.getSignature(), exchangeKeyPair,
+        facility.publicKey(),
+        asList(exchangeUid, 
+            facilityUid,
+            signatureData));
+    // @formatter:on
+
+    if (facility.getProgramTypes() == null) {
+      facility.setProgramTypes(activePrograms);
+    } else {
+      for (Iterator<String> itr = facility.getProgramTypes().iterator(); itr.hasNext();) {
+        String program = itr.next();
+        if (!activePrograms.contains(program)) {
+          itr.remove();
+        }
+      }
+      facility.getProgramTypes().addAll(activePrograms);
+    }
+
+    log.info("Saving facility {} active programs: {}", facilityUid, activePrograms);
+    facilityDao.save(facility);
   }
 
   /**

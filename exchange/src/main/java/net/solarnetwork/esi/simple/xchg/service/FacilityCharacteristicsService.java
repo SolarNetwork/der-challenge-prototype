@@ -17,7 +17,13 @@
 
 package net.solarnetwork.esi.simple.xchg.service;
 
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+
 import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
+import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
+import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
 
 /**
@@ -46,5 +52,28 @@ public interface FacilityCharacteristicsService {
    */
   FacilityResourceCharacteristicsEntity saveResourceCharacteristics(
       DerCharacteristicsOrBuilder characteristics);
+
+  /**
+   * Get the set of currently active DER program types.
+   * 
+   * @param facilityUid
+   *        the UID of the facility to get the characteristics for
+   * @return the types
+   */
+  @Nonnull
+  Set<DerProgramType> activeProgramTypes(String facilityUid);
+
+  /**
+   * Save the set of active DER program types.
+   * 
+   * <p>
+   * This method completely replaces the set of active program types with the values in the given
+   * set.
+   * </p>
+   * 
+   * @param programSet
+   *        the set of programs to save as active
+   */
+  void saveActiveProgramTypes(DerProgramSetOrBuilder programSet);
 
 }

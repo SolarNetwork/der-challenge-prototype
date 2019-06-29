@@ -179,17 +179,19 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       StreamObserver<Empty> responseObserver) {
     return new StreamObserver<DerCharacteristics>() {
 
+      private boolean error = false;
+
       @Override
       public void onNext(DerCharacteristics value) {
         log.info("Received DER characteristics submission: {}", value);
         try {
           facilityCharacteristicsService.saveResourceCharacteristics(value);
-          responseObserver.onNext(Empty.getDefaultInstance());
-          responseObserver.onCompleted();
         } catch (IllegalArgumentException e) {
+          error = true;
           responseObserver.onError(
               Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
         } catch (RuntimeException e) {
+          error = true;
           log.error("Error processing DER characteristics: " + e.getMessage(), e);
           responseObserver.onError(
               Status.INTERNAL.withDescription("Internal error").withCause(e).asException());
@@ -203,7 +205,10 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
       @Override
       public void onCompleted() {
-        // nothing
+        if (!error) {
+          responseObserver.onNext(Empty.getDefaultInstance());
+          responseObserver.onCompleted();
+        }
       }
     };
   }
@@ -217,8 +222,40 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   @Override
   public StreamObserver<DerProgramSet> provideSupportedDerPrograms(
       StreamObserver<Empty> responseObserver) {
-    // TODO Auto-generated method stub
-    return super.provideSupportedDerPrograms(responseObserver);
+    return new StreamObserver<DerProgramSet>() {
+
+      private boolean error = false;
+
+      @Override
+      public void onNext(DerProgramSet value) {
+        log.info("Received DER program set submission: {}", value);
+        try {
+          facilityCharacteristicsService.saveActiveProgramTypes(value);
+        } catch (IllegalArgumentException e) {
+          error = true;
+          responseObserver.onError(
+              Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
+        } catch (RuntimeException e) {
+          error = true;
+          log.error("Error processing DER characteristics: " + e.getMessage(), e);
+          responseObserver.onError(
+              Status.INTERNAL.withDescription("Internal error").withCause(e).asException());
+        }
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        log.error("Error receiving facility DER program set", t);
+      }
+
+      @Override
+      public void onCompleted() {
+        if (!error) {
+          responseObserver.onNext(Empty.getDefaultInstance());
+          responseObserver.onCompleted();
+        }
+      }
+    };
   }
 
   /**
