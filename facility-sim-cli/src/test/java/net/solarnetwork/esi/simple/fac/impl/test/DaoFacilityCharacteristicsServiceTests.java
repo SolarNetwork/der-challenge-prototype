@@ -18,6 +18,7 @@
 package net.solarnetwork.esi.simple.fac.impl.test;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toCollection;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -27,9 +28,14 @@ import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.Before;
@@ -42,6 +48,8 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
 import net.solarnetwork.esi.domain.DerCharacteristics;
+import net.solarnetwork.esi.domain.DerProgramSet;
+import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DurationRangeEmbed;
 import net.solarnetwork.esi.grpc.InProcessChannelProvider;
 import net.solarnetwork.esi.grpc.StaticInProcessChannelProvider;
@@ -173,5 +181,66 @@ public class DaoFacilityCharacteristicsServiceTests {
 
     // when
     service.saveResourceCharacteristics(characteristics);
+  }
+
+  @Test
+  public void provideSupportedDerPrograms() throws IOException {
+    // given
+    String exchangeServerName = InProcessServerBuilder.generateName();
+    URI exchangeUri = URI.create("//" + exchangeServerName);
+    givenDefaultFacilityService(exchangeUri);
+
+    List<DerProgramType> types = Arrays.asList(DerProgramType.ARTIFICIAL_INERTIA,
+        DerProgramType.PEAK_CAPACITY_MANAGEMENT);
+
+    ByteBuffer signatureData = ByteBuffer.allocate(Integer.BYTES * 2);
+    types.forEach(e -> signatureData.putInt(e.getNumber()));
+
+    DerFacilityExchangeImplBase exchangeService = new DerFacilityExchangeImplBase() {
+
+      @Override
+      public StreamObserver<DerProgramSet> provideSupportedDerPrograms(
+          StreamObserver<Empty> responseObserver) {
+        return new StreamObserver<DerProgramSet>() {
+
+          @Override
+          public void onNext(DerProgramSet value) {
+            // @formatter:off
+            CryptoUtils.validateMessageSignature(CryptoUtils.STANDARD_HELPER,
+                value.getRoute().getSignature(), exchangeKeyPair, facilityKeyPair.getPublic(),
+                asList(
+                    exchangeUid, 
+                    facilityUid,
+                    signatureData));
+            // @formatter:on
+            assertThat("Program types count", value.getTypeCount(), equalTo(2));
+            assertThat("Progame types", value.getTypeList(), equalTo(types));
+          }
+
+          @Override
+          public void onError(Throwable t) {
+            fail(t.toString());
+          }
+
+          @Override
+          public void onCompleted() {
+            responseObserver.onNext(Empty.getDefaultInstance());
+            responseObserver.onCompleted();
+          }
+        };
+      }
+
+    };
+
+    grpcCleanup.register(InProcessServerBuilder.forName(exchangeServerName).directExecutor()
+        .addService(exchangeService).build().start());
+
+    service
+        .setExchangeChannelProvider(new StaticInProcessChannelProvider(exchangeServerName, true));
+
+    // when
+    Set<String> programs = types.stream().map(DerProgramType::name)
+        .collect(toCollection(LinkedHashSet::new));
+    service.saveActiveProgramTypes(programs);
   }
 }

@@ -17,6 +17,8 @@
 
 package net.solarnetwork.esi.simple.fac.service;
 
+import java.util.Set;
+
 import javax.annotation.Nonnull;
 
 import net.solarnetwork.esi.simple.fac.domain.ResourceCharacteristicsEntity;
@@ -49,4 +51,24 @@ public interface FacilityCharacteristicsService {
    */
   void saveResourceCharacteristics(ResourceCharacteristicsEntity characteristics);
 
+  /**
+   * Get the set of currently active DER program types.
+   * 
+   * @return the types
+   */
+  @Nonnull
+  Set<String> activeProgramTypes();
+
+  /**
+   * Save the set of active DER program types.
+   * 
+   * <p>
+   * This method completely replaces the set of active program types with the values in the given
+   * set.
+   * </p>
+   * 
+   * @param programs
+   *        the set of programs to save as active
+   */
+  void saveActiveProgramTypes(Set<String> programs);
 }

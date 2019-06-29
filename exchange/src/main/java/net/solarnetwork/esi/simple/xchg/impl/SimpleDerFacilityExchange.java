@@ -41,7 +41,7 @@ import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
-import net.solarnetwork.esi.domain.DerProgram;
+import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.PriceDatum;
 import net.solarnetwork.esi.domain.PriceMap;
@@ -215,7 +215,7 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   }
 
   @Override
-  public StreamObserver<DerProgram> provideSupportedDerPrograms(
+  public StreamObserver<DerProgramSet> provideSupportedDerPrograms(
       StreamObserver<Empty> responseObserver) {
     // TODO Auto-generated method stub
     return super.provideSupportedDerPrograms(responseObserver);

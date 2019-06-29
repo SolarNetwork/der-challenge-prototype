@@ -21,9 +21,11 @@ import static java.util.Arrays.asList;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -39,6 +41,8 @@ import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
 import io.grpc.stub.StreamObserver;
 import net.solarnetwork.esi.domain.DerCharacteristics;
+import net.solarnetwork.esi.domain.DerProgramSet;
+import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.DurationRange;
 import net.solarnetwork.esi.domain.DurationRangeEmbed;
@@ -130,7 +134,9 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
       }
     }
     ExchangeEntity exchange = facilityService.getExchange();
-    if (exchange != null) {
+    if (exchange == null) {
+      resourceCharacteristicsDao.save(entity);
+    } else {
       ManagedChannel channel = exchangeChannelProvider
           .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
       try {
@@ -171,6 +177,82 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
         log.info("Successfully published resource characteristics to exchange {}",
             exchange.getId());
         resourceCharacteristicsDao.save(entity);
+      } catch (TimeoutException e) {
+        throw new RuntimeException(
+            "Timeout waiting to publish resource characteristics to exchange " + exchange.getId(),
+            e);
+      } catch (StatusRuntimeException e) {
+        if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
+          throw new IllegalArgumentException(e.getStatus().getDescription());
+        } else {
+          throw e;
+        }
+      } catch (InterruptedException e) {
+        throw new RuntimeException("Interrupted waiting for result.");
+      } finally {
+        channel.shutdown();
+        try {
+          channel.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+          log.debug("Timeout waiting for channel to shut down.");
+        }
+      }
+    }
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public Set<String> activeProgramTypes() {
+    return facilityService.getEnabledProgramTypes();
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public void saveActiveProgramTypes(Set<String> programs) {
+    ExchangeEntity exchange = facilityService.getExchange();
+    if (exchange == null) {
+      facilityService.setEnabledProgramTypes(programs);
+    } else {
+      ManagedChannel channel = exchangeChannelProvider
+          .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
+      try {
+        DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
+        FutureStreamObserver<Empty, Iterable<Empty>> out = new QueuingStreamObserver<>(1);
+        StreamObserver<DerProgramSet> in = client.provideSupportedDerPrograms(out);
+        DerProgramSet.Builder derProgramSetBuilder = DerProgramSet.newBuilder();
+        ByteBuffer signatureData = ByteBuffer.allocate(Integer.BYTES * programs.size());
+        for (String program : programs) {
+          if (program == null) {
+            continue;
+          }
+          try {
+            DerProgramType type = DerProgramType.valueOf(program);
+            signatureData.putInt(type.getNumber());
+            derProgramSetBuilder.addType(type);
+          } catch (IllegalArgumentException e) {
+            log.info("Program type {} is not supported by exchange API; ignoring.", program);
+          }
+        }
+        // @formatter:off
+        DerProgramSet derProgram = derProgramSetBuilder
+            .setRoute(DerRoute.newBuilder()
+                .setExchangeUid(exchange.getId())
+                .setFacilityUid(facilityService.getUid())
+                .setSignature(generateMessageSignature(facilityService.getCryptoHelper(), 
+                    facilityService.getKeyPair(), exchange.publicKey(), asList(
+                        exchange.getId(),
+                        facilityService.getUid(),
+                        signatureData))
+                    )
+                .build())
+            .build();
+        // @formatter:on
+        in.onNext(derProgram);
+        in.onCompleted();
+        out.nab(1, TimeUnit.MINUTES);
+        log.info("Successfully published active programs {} to exchange {}", programs,
+            exchange.getId());
+        facilityService.setEnabledProgramTypes(programs);
       } catch (TimeoutException e) {
         throw new RuntimeException(
             "Timeout waiting to publish resource characteristics to exchange " + exchange.getId(),

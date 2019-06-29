@@ -30,7 +30,7 @@ import "solarnetwork/esi/domain/der_facility_registration_form.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_data.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_data_receipt.proto";
 import "solarnetwork/esi/domain/der_facility_registration_form_request.proto";
-import "solarnetwork/esi/domain/der_program.proto";
+import "solarnetwork/esi/domain/der_program_set.proto";
 import "solarnetwork/esi/domain/der_characteristics.proto";
 import "solarnetwork/esi/domain/price_datum.proto";
 import "solarnetwork/esi/domain/price_map.proto";
@@ -86,7 +86,7 @@ service DerFacilityExchange {
   returns (google.protobuf.Empty);
   
   // Publish the supported program types.
-  rpc ProvideSupportedDerPrograms(stream solarnetwork.esi.domain.DerProgram)
+  rpc ProvideSupportedDerPrograms(stream solarnetwork.esi.domain.DerProgramSet)
   returns (google.protobuf.Empty);
 
   // ==========================================================================
