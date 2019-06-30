@@ -22,7 +22,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
-import javax.annotation.Nonnull;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Basic;
@@ -39,6 +38,7 @@ import javax.persistence.Table;
 import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.domain.jpa.BaseEntity;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * Facility-specific resource characteristics entity.
@@ -48,7 +48,8 @@ import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
  */
 @Entity
 @Table(name = "FACILITY_RESOURCE_CHARS")
-public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID> {
+public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID>
+    implements SignableMessage {
 
   // NOTE that this class does NOT extend BaseUuidEntity so that it can override the @Id using
   // the @MapsId on the one-to-one facility relationship
@@ -155,29 +156,23 @@ public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID> {
             message.getResponseTime().getMax().getNanos())));
   }
 
-  /**
-   * Encode this entity as a byte array suitable for using as message signature data.
-   * 
-   * @return the bytes
-   */
-  @Nonnull
-  public byte[] toSignatureBytes() {
+  @Override
+  public int signatureMessageBytesSize() {
+    return Long.BYTES * 7 + Float.BYTES * 2;
+  }
+
+  @Override
+  public void addSignatureMessageBytes(ByteBuffer bb) {
     // @formatter:off
-    ByteBuffer bb = ByteBuffer.allocate(64)
-        .putLong(getLoadPowerMax())
+    bb.putLong(getLoadPowerMax())
         .putFloat(getLoadPowerFactor())
         .putLong(getSupplyPowerMax())
         .putFloat(getSupplyPowerFactor())
-        .putLong(getStorageEnergyCapacity())
-        .putLong(getResponseTime().getMin().getSeconds())
-        .putLong(getResponseTime().getMin().getNano())
-        .putLong(getResponseTime().getMax().getSeconds())
-        .putLong(getResponseTime().getMax().getNano());
+        .putLong(getStorageEnergyCapacity());
     // @formatter:on
-    bb.flip();
-    byte[] bytes = new byte[bb.limit()];
-    bb.get(bytes);
-    return bytes;
+    DurationRangeEmbed d = responseTime != null ? responseTime
+        : new DurationRangeEmbed(Duration.ZERO, Duration.ZERO);
+    d.addSignatureMessageBytes(bb);
   }
 
   @Override

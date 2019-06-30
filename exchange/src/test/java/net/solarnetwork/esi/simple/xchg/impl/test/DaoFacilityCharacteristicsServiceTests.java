@@ -163,7 +163,7 @@ public class DaoFacilityCharacteristicsServiceTests {
                     exchangeUid,
                     facilityUid,
                     FacilityResourceCharacteristicsEntity.entityForMessage(
-                        derCharacteristicsBuilder).toSignatureBytes()))
+                        derCharacteristicsBuilder)))
                 )
             .build())
         .build();
@@ -242,7 +242,7 @@ public class DaoFacilityCharacteristicsServiceTests {
                     exchangeUid,
                     facilityUid,
                     FacilityResourceCharacteristicsEntity.entityForMessage(
-                        derCharacteristicsBuilder).toSignatureBytes()))
+                        derCharacteristicsBuilder)))
                 )
             .build())
         .build();

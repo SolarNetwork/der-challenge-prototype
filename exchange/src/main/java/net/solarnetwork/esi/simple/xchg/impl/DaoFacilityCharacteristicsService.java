@@ -121,7 +121,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
         entity.getFacility().publicKey(),
         asList(exchangeUid, 
             facilityUid,
-            posted.toSignatureBytes()));
+            posted));
     // @formatter:on
 
     log.info("Saving facility {} resource characteristcs: {}", facilityUid, characteristics);
