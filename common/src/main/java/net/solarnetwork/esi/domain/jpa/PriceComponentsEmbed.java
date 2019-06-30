@@ -18,6 +18,8 @@
 package net.solarnetwork.esi.domain.jpa;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Objects;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
@@ -69,6 +71,74 @@ public class PriceComponentsEmbed {
     this.currencyCode = currencyCode;
     this.realEnergyPrice = realEnergyPrice;
     this.apparentEnergyPrice = apparentEnergyPrice;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(apparentEnergyPrice, currencyCode, realEnergyPrice);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof PriceComponentsEmbed)) {
+      return false;
+    }
+    PriceComponentsEmbed other = (PriceComponentsEmbed) obj;
+    return Objects.equals(apparentEnergyPrice, other.apparentEnergyPrice)
+        && Objects.equals(currencyCode, other.currencyCode)
+        && Objects.equals(realEnergyPrice, other.realEnergyPrice);
+  }
+
+  @Override
+  public String toString() {
+    return "PriceComponentsEmbed{currencyCode=" + currencyCode + ", realEnergyPrice="
+        + realEnergyPrice + ", apparentEnergyPrice=" + apparentEnergyPrice + "}";
+  }
+
+  /**
+   * Create a copy of the price components with a specific decimal scale.
+   * 
+   * @param scale
+   *        the desired scale
+   * @param roundingMode
+   *        the rounding mode to use
+   * @return the new price components
+   */
+  public PriceComponentsEmbed scaled(int scale, RoundingMode roundingMode) {
+    return new PriceComponentsEmbed(currencyCode,
+        realEnergyPrice != null ? realEnergyPrice.setScale(scale, roundingMode) : null,
+        apparentEnergyPrice != null ? apparentEnergyPrice.setScale(scale, roundingMode) : null);
+  }
+
+  /**
+   * Create a copy of the price components with a specific decimal scale, with
+   * {@link RoundingMode#HALF_UP} rounding.
+   * 
+   * @param scale
+   *        the desired scale
+   * @return the new price components
+   */
+  public PriceComponentsEmbed scaled(int scale) {
+    return scaled(scale, RoundingMode.HALF_UP);
+  }
+
+  /**
+   * Create a copy of the price components with a specific decimal scale, without rounding.
+   * 
+   * @param scale
+   *        the desired scale
+   * @return the new price components
+   * @throws ArithmeticException
+   *         if any price cannot be set to the given scale without rounding
+   */
+  public PriceComponentsEmbed scaledExactly(int scale) {
+    return scaled(scale, RoundingMode.UNNECESSARY);
   }
 
   /**

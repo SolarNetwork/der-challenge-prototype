@@ -17,6 +17,8 @@
 
 package net.solarnetwork.esi.domain.jpa;
 
+import java.util.Objects;
+
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -57,6 +59,27 @@ public class PowerComponentsEmbed {
     super();
     this.realPower = realPower;
     this.reactivePower = reactivePower;
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(reactivePower, realPower);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof PowerComponentsEmbed)) {
+      return false;
+    }
+    PowerComponentsEmbed other = (PowerComponentsEmbed) obj;
+    return Objects.equals(reactivePower, other.reactivePower)
+        && Objects.equals(realPower, other.realPower);
   }
 
   /**
