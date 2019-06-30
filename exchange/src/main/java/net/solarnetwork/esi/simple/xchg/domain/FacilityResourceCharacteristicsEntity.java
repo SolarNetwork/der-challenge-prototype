@@ -36,9 +36,9 @@ import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
-import net.solarnetwork.esi.domain.BaseEntity;
 import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
-import net.solarnetwork.esi.domain.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.BaseEntity;
+import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 
 /**
  * Facility-specific resource characteristics entity.

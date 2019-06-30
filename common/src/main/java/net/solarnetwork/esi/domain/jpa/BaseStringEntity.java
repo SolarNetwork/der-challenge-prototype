@@ -15,36 +15,33 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.domain;
+package net.solarnetwork.esi.domain.jpa;
 
 import java.time.Instant;
 
 import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
 /**
- * A helpful base class for auto-generated Long primary key based entities.
+ * A helpful base entity for application-defined string keys.
  * 
  * @author matt
  * @version 1.0
  */
 @MappedSuperclass
-public abstract class BaseLongEntity extends BaseEntity<Long> {
+public abstract class BaseStringEntity extends BaseEntity<String> {
 
-  private static final long serialVersionUID = 4943764965909917227L;
+  private static final long serialVersionUID = -1007750822014142165L;
 
   @Id
-  @Column(name = "ID")
-  @GeneratedValue(strategy = GenerationType.AUTO)
-  private Long id;
+  @Column(name = "IDENT", insertable = true, updatable = false, length = 40)
+  private String id;
 
   /**
    * Default constructor.
    */
-  public BaseLongEntity() {
+  public BaseStringEntity() {
     super();
   }
 
@@ -54,26 +51,30 @@ public abstract class BaseLongEntity extends BaseEntity<Long> {
    * @param created
    *        the creation date
    */
-  public BaseLongEntity(Instant created) {
+  public BaseStringEntity(Instant created) {
     super(created);
   }
 
   /**
-   * Construct with values.
+   * Construct with creation date and ID.
    * 
    * @param created
    *        the creation date
    * @param id
-   *        the primary key
+   *        the ID
    */
-  public BaseLongEntity(Instant created, Long id) {
+  public BaseStringEntity(Instant created, String id) {
     super(created);
     this.id = id;
   }
 
   @Override
-  public Long getId() {
+  public String getId() {
     return id;
+  }
+
+  public void setId(String id) {
+    this.id = id;
   }
 
 }

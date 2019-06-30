@@ -24,7 +24,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-import net.solarnetwork.esi.domain.BaseStringEntity;
+import net.solarnetwork.esi.domain.jpa.BaseStringEntity;
 
 /**
  * A facility exchange registration entity.

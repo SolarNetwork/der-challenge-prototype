@@ -15,33 +15,36 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.domain;
+package net.solarnetwork.esi.domain.jpa;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
 /**
- * A helpful base entity for application-defined string keys.
+ * A helpful base class for auto-generated UUID primary key based entities.
  * 
  * @author matt
  * @version 1.0
  */
 @MappedSuperclass
-public abstract class BaseStringEntity extends BaseEntity<String> {
+public abstract class BaseUuidEntity extends BaseEntity<UUID> {
 
-  private static final long serialVersionUID = -1007750822014142165L;
+  private static final long serialVersionUID = 4582556470770011903L;
 
   @Id
-  @Column(name = "IDENT", insertable = true, updatable = false, length = 40)
-  private String id;
+  @GeneratedValue
+  @Column(name = "ID", nullable = false, insertable = true, updatable = false, length = 16)
+  private UUID id;
 
   /**
    * Default constructor.
    */
-  public BaseStringEntity() {
+  public BaseUuidEntity() {
     super();
   }
 
@@ -51,7 +54,7 @@ public abstract class BaseStringEntity extends BaseEntity<String> {
    * @param created
    *        the creation date
    */
-  public BaseStringEntity(Instant created) {
+  public BaseUuidEntity(Instant created) {
     super(created);
   }
 
@@ -63,18 +66,14 @@ public abstract class BaseStringEntity extends BaseEntity<String> {
    * @param id
    *        the ID
    */
-  public BaseStringEntity(Instant created, String id) {
+  public BaseUuidEntity(Instant created, UUID id) {
     super(created);
     this.id = id;
   }
 
   @Override
-  public String getId() {
+  public UUID getId() {
     return id;
-  }
-
-  public void setId(String id) {
-    this.id = id;
   }
 
 }

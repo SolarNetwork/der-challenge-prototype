@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.domain;
+package net.solarnetwork.esi.domain.jpa;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;

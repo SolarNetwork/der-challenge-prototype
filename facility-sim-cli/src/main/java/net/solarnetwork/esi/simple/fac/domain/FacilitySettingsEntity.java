@@ -31,7 +31,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import net.solarnetwork.esi.domain.BaseLongEntity;
+import net.solarnetwork.esi.domain.jpa.BaseLongEntity;
 
 /**
  * Overall settings for a facility.

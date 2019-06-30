@@ -43,7 +43,7 @@ import org.springframework.test.context.support.DependencyInjectionTestExecution
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.jdbc.JdbcTestUtils;
 
-import net.solarnetwork.esi.domain.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ResourceCharacteristicsEntity;
 import net.solarnetwork.esi.simple.fac.test.SpringTestSupport;

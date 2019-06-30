@@ -15,36 +15,36 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.domain;
+package net.solarnetwork.esi.domain.jpa;
 
 import java.time.Instant;
-import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
 /**
- * A helpful base class for auto-generated UUID primary key based entities.
+ * A helpful base class for auto-generated Long primary key based entities.
  * 
  * @author matt
  * @version 1.0
  */
 @MappedSuperclass
-public abstract class BaseUuidEntity extends BaseEntity<UUID> {
+public abstract class BaseLongEntity extends BaseEntity<Long> {
 
-  private static final long serialVersionUID = 4582556470770011903L;
+  private static final long serialVersionUID = 4943764965909917227L;
 
   @Id
-  @GeneratedValue
-  @Column(name = "ID", nullable = false, insertable = true, updatable = false, length = 16)
-  private UUID id;
+  @Column(name = "ID")
+  @GeneratedValue(strategy = GenerationType.AUTO)
+  private Long id;
 
   /**
    * Default constructor.
    */
-  public BaseUuidEntity() {
+  public BaseLongEntity() {
     super();
   }
 
@@ -54,25 +54,25 @@ public abstract class BaseUuidEntity extends BaseEntity<UUID> {
    * @param created
    *        the creation date
    */
-  public BaseUuidEntity(Instant created) {
+  public BaseLongEntity(Instant created) {
     super(created);
   }
 
   /**
-   * Construct with creation date and ID.
+   * Construct with values.
    * 
    * @param created
    *        the creation date
    * @param id
-   *        the ID
+   *        the primary key
    */
-  public BaseUuidEntity(Instant created, UUID id) {
+  public BaseLongEntity(Instant created, Long id) {
     super(created);
     this.id = id;
   }
 
   @Override
-  public UUID getId() {
+  public Long getId() {
     return id;
   }
 

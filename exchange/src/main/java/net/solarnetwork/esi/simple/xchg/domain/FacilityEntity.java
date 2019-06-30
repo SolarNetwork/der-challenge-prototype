@@ -35,7 +35,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-import net.solarnetwork.esi.domain.BaseUuidEntity;
+import net.solarnetwork.esi.domain.jpa.BaseUuidEntity;
 import net.solarnetwork.esi.util.CryptoUtils;
 
 /**

@@ -24,7 +24,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-import net.solarnetwork.esi.domain.BaseLongEntity;
+import net.solarnetwork.esi.domain.jpa.BaseLongEntity;
 
 /**
  * Entity for DER facilities undergoing registration.

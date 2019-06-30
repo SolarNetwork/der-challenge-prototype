@@ -6,11 +6,13 @@
     http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd">
   <persistence-unit name="esi-exchange">
     <!-- Note: these classes are listed to work around Eclipse bug where "No @Id defined" error is otherwise shown. -->
-    <class>net.solarnetwork.esi.domain.BaseEntity</class>
-    <class>net.solarnetwork.esi.domain.BaseUuidEntity</class>
-    <class>net.solarnetwork.esi.domain.BaseLongEntity</class>
-    <class>net.solarnetwork.esi.domain.BaseStringEntity</class>
-    <class>net.solarnetwork.esi.domain.DurationRangeEmbed</class>
+    <class>net.solarnetwork.esi.domain.jpa.BaseEntity</class>
+    <class>net.solarnetwork.esi.domain.jpa.BaseUuidEntity</class>
+    <class>net.solarnetwork.esi.domain.jpa.BaseLongEntity</class>
+    <class>net.solarnetwork.esi.domain.jpa.BaseStringEntity</class>
+    <class>net.solarnetwork.esi.domain.jpa.DurationRangeEmbed</class>
+    <class>net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed</class>
+    <class>net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed</class>
     <exclude-unlisted-classes>false</exclude-unlisted-classes>
   </persistence-unit>
 </persistence>

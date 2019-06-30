@@ -25,7 +25,7 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-import net.solarnetwork.esi.domain.BaseStringEntity;
+import net.solarnetwork.esi.domain.jpa.BaseStringEntity;
 import net.solarnetwork.esi.util.CryptoUtils;
 
 /**

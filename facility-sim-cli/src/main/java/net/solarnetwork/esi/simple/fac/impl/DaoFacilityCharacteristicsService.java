@@ -45,7 +45,7 @@ import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.DurationRange;
-import net.solarnetwork.esi.domain.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.grpc.ChannelProvider;
 import net.solarnetwork.esi.grpc.FutureStreamObserver;
 import net.solarnetwork.esi.grpc.QueuingStreamObserver;

@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.domain;
+package net.solarnetwork.esi.domain.support;
 
 import java.security.KeyFactory;
 import java.security.KeyPair;

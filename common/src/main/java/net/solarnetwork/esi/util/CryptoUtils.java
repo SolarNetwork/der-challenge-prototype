@@ -51,8 +51,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.protobuf.ByteString;
 
 import net.solarnetwork.esi.domain.CryptoKey;
-import net.solarnetwork.esi.domain.KeyPairStore;
 import net.solarnetwork.esi.domain.MessageSignature;
+import net.solarnetwork.esi.domain.support.KeyPairStore;
 
 /**
  * Cryptographic utilities.

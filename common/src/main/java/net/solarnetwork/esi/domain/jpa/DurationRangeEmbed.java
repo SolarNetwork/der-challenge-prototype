@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.domain;
+package net.solarnetwork.esi.domain.jpa;
 
 import java.time.Duration;
 import java.util.Objects;

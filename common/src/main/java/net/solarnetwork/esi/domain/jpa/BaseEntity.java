@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.domain;
+package net.solarnetwork.esi.domain.jpa;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -28,6 +28,9 @@ import javax.persistence.Version;
 
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
+
+import net.solarnetwork.esi.domain.support.Entity;
+import net.solarnetwork.esi.domain.support.Identity;
 
 /**
  * A helpful base entity object.

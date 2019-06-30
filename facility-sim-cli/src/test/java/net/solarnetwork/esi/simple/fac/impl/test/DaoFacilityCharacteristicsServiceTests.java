@@ -50,7 +50,7 @@ import io.grpc.testing.GrpcCleanupRule;
 import net.solarnetwork.esi.domain.DerCharacteristics;
 import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.DerProgramType;
-import net.solarnetwork.esi.domain.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.grpc.InProcessChannelProvider;
 import net.solarnetwork.esi.grpc.StaticInProcessChannelProvider;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;

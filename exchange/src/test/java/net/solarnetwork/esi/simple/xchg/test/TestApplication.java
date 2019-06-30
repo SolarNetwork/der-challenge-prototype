@@ -21,7 +21,7 @@ import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
-import net.solarnetwork.esi.domain.Entity;
+import net.solarnetwork.esi.domain.support.Entity;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
 

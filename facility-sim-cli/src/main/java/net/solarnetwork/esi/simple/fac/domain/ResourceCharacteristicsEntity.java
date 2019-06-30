@@ -29,8 +29,8 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
-import net.solarnetwork.esi.domain.BaseLongEntity;
-import net.solarnetwork.esi.domain.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.BaseLongEntity;
+import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 
 /**
  * Resource characterisitcs entity.
