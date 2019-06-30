@@ -23,9 +23,11 @@ import static org.junit.Assert.assertThat;
 
 import java.math.BigDecimal;
 import java.util.Currency;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.Test;
 
+import com.google.protobuf.Duration;
 import com.google.type.Money;
 
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
@@ -110,5 +112,22 @@ public class ProtobufUtilsTests {
         .setNanos(-999999999).build();
     BigDecimal value = ProtobufUtils.decimalValue(m);
     assertThat("Result", value, equalTo(new BigDecimal("-9129879182731.999999999")));
+  }
+
+  @Test
+  public void durationForDuration() {
+    java.time.Duration value = java.time.Duration.ofMillis(123456L);
+    Duration d = ProtobufUtils.durationForDuration(value);
+    assertThat("Seconds", d.getSeconds(), equalTo(123L));
+    assertThat("Nanos", d.getNanos(), equalTo((int) TimeUnit.MILLISECONDS.toNanos(456)));
+  }
+
+  @Test
+  public void durationValue() {
+    Duration d = Duration.newBuilder().setSeconds(123456L)
+        .setNanos((int) TimeUnit.MILLISECONDS.toNanos(789)).build();
+    java.time.Duration value = ProtobufUtils.durationValue(d);
+    assertThat("Seconds", value.getSeconds(), equalTo(123456L));
+    assertThat("Nanos", value.getNano(), equalTo((int) TimeUnit.MILLISECONDS.toNanos(789)));
   }
 }

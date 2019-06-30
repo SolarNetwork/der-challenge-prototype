@@ -23,6 +23,7 @@ import java.util.Locale;
 
 import javax.annotation.Nonnull;
 
+import com.google.protobuf.Duration;
 import com.google.type.Money;
 
 import net.solarnetwork.esi.util.NumberUtils;
@@ -72,6 +73,34 @@ public final class ProtobufUtils {
       return BigDecimal.ZERO;
     }
     return new BigDecimal(String.valueOf(money.getUnits()) + "." + Math.abs(money.getNanos()));
+  }
+
+  /**
+   * Derive a {@link Duration} from a {@link java.time.Duration}.
+   * 
+   * @param value
+   *        the value, or {@literal null} for {@literal 0}
+   * @return the new duration instance
+   */
+  @Nonnull
+  public static Duration durationForDuration(java.time.Duration value) {
+    java.time.Duration d = (value != null ? value : java.time.Duration.ZERO);
+    return Duration.newBuilder().setSeconds(d.getSeconds()).setNanos(d.getNano()).build();
+  }
+
+  /**
+   * Derive a {@link java.time.Duration} from a {@link Duration}.
+   * 
+   * @param duration
+   *        the duration to derive from
+   * @return the value; if {@code duration} is {@literal null} then {@literal 0} will be returned
+   */
+  @Nonnull
+  public static java.time.Duration durationValue(Duration duration) {
+    if (duration == null) {
+      return java.time.Duration.ZERO;
+    }
+    return java.time.Duration.ofSeconds(duration.getSeconds(), duration.getNanos());
   }
 
 }
