@@ -17,12 +17,15 @@
 
 package net.solarnetwork.esi.domain.jpa;
 
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Objects;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
+
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * An embeddable duration range.
@@ -31,7 +34,7 @@ import javax.persistence.Embeddable;
  * @version 1.0
  */
 @Embeddable
-public class DurationRangeEmbed {
+public class DurationRangeEmbed implements SignableMessage {
 
   @Basic
   @Column(name = "DUR_MIN", nullable = false, insertable = true, updatable = true)
@@ -80,6 +83,39 @@ public class DurationRangeEmbed {
     }
     DurationRangeEmbed other = (DurationRangeEmbed) obj;
     return Objects.equals(max, other.max) && Objects.equals(min, other.min);
+  }
+
+  @Override
+  public int signatureMessageBytesSize() {
+    return SignableMessage.durationSignatureMessageSize() * 2;
+  }
+
+  /**
+   * Encode this object as a byte array suitable for using as signature message data.
+   * 
+   * <p>
+   * <b>Note</b> that the duration values are encoded in a manner compatible with the
+   * {@code google.type.duration} Protobuf specification.
+   * </p>
+   * 
+   * @return the bytes
+   * @see <a href=
+   *      "https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/duration.proto">duration.proro</a>
+   */
+  @Override
+  public byte[] toSignatureMessageBytes() {
+    ByteBuffer buf = ByteBuffer.allocate(signatureMessageBytesSize());
+    addSignatureMessageBytes(buf);
+    buf.flip();
+    byte[] bytes = new byte[buf.limit()];
+    buf.get(bytes);
+    return bytes;
+  }
+
+  @Override
+  public void addSignatureMessageBytes(ByteBuffer buf) {
+    SignableMessage.addDurationSignatureMessageBytes(buf, min);
+    SignableMessage.addDurationSignatureMessageBytes(buf, max);
   }
 
   /**

@@ -53,6 +53,7 @@ import com.google.protobuf.ByteString;
 import net.solarnetwork.esi.domain.CryptoKey;
 import net.solarnetwork.esi.domain.MessageSignature;
 import net.solarnetwork.esi.domain.support.KeyPairStore;
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * Cryptographic utilities.
@@ -318,6 +319,8 @@ public final class CryptoUtils {
    * remaining bytes will be returned.</li>
    * <li>If it is a {@link ByteArrayOutputStream} then {@link ByteArrayOutputStream#toByteArray()}
    * will be returned.</li>
+   * <li>If it is a {@link SignableMessage} then {@link SignableMessage#toSignatureMessageBytes()}
+   * will be returned.</li>
    * <li>If it is {@literal null} an array of length {@literal 0} will be returned.</li>
    * <li>For all other objects, {@link Object#toString()} will be used to turn it into a string, and
    * then the UTF-8 bytes of that will be returned.</li>
@@ -341,6 +344,8 @@ public final class CryptoUtils {
       bb.get(bytes);
     } else if (o instanceof ByteArrayOutputStream) {
       bytes = ((ByteArrayOutputStream) o).toByteArray();
+    } else if (o instanceof SignableMessage) {
+      bytes = ((SignableMessage) o).toSignatureMessageBytes();
     } else if (o != null) {
       bytes = o.toString().getBytes(STANDARD_CHARSET);
     } else {

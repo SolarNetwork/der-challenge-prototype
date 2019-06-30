@@ -17,11 +17,14 @@
 
 package net.solarnetwork.esi.domain.jpa;
 
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
+
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * Embeddable components of power.
@@ -30,7 +33,7 @@ import javax.persistence.Embeddable;
  * @version 1.0
  */
 @Embeddable
-public class PowerComponentsEmbed {
+public class PowerComponentsEmbed implements SignableMessage {
 
   @Basic
   @Column(name = "POWER_REAL", nullable = true, insertable = true, updatable = true)
@@ -80,6 +83,27 @@ public class PowerComponentsEmbed {
     PowerComponentsEmbed other = (PowerComponentsEmbed) obj;
     return Objects.equals(reactivePower, other.reactivePower)
         && Objects.equals(realPower, other.realPower);
+  }
+
+  @Override
+  public int signatureMessageBytesSize() {
+    return Long.BYTES * 2;
+  }
+
+  @Override
+  public byte[] toSignatureMessageBytes() {
+    ByteBuffer buf = ByteBuffer.allocate(signatureMessageBytesSize());
+    addSignatureMessageBytes(buf);
+    buf.flip();
+    byte[] bytes = new byte[buf.limit()];
+    buf.get(bytes);
+    return bytes;
+  }
+
+  @Override
+  public void addSignatureMessageBytes(ByteBuffer buf) {
+    buf.putLong(realPower != null ? realPower.longValue() : 0L);
+    buf.putLong(reactivePower != null ? reactivePower.longValue() : 0L);
   }
 
   /**

@@ -21,10 +21,14 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 
 import org.junit.Test;
 
+import com.google.protobuf.ByteString;
+
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * Test cases for the {@link PriceComponentsEmbed} class.
@@ -115,4 +119,121 @@ public class PriceComponentsEmbedTests {
         equalTo(new PriceComponentsEmbed("USD", new BigDecimal("2.3"), new BigDecimal("3.5"))));
   }
 
+  @Test
+  public void signatureMessageBytesSize() {
+    // given
+    PriceComponentsEmbed p = new PriceComponentsEmbed("USD", new BigDecimal("2.34"),
+        new BigDecimal("3.45"));
+
+    // when
+    int size = p.signatureMessageBytesSize();
+
+    // then
+    assertThat("Size", size, equalTo(3 * 2 + Long.BYTES * 2 + Integer.BYTES * 2));
+  }
+
+  @Test
+  public void signatureMessageBytesSizeNoCurrency() {
+    // given
+    PriceComponentsEmbed p = new PriceComponentsEmbed(null, new BigDecimal("2.34"),
+        new BigDecimal("3.45"));
+
+    // when
+    int size = p.signatureMessageBytesSize();
+
+    // then
+    assertThat("Size", size, equalTo(Long.BYTES * 2 + Integer.BYTES * 2));
+  }
+
+  @Test
+  public void toSignatureMessage() {
+    // given
+    PriceComponentsEmbed p = new PriceComponentsEmbed("USD", new BigDecimal("2.34"),
+        new BigDecimal("3.45"));
+
+    // when
+    byte[] data = p.toSignatureMessageBytes();
+
+    // then
+    // @formatter:off
+    ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
+        .put(p.getCurrencyCode().getBytes(SignableMessage.UTF8))
+        .putLong(2L)
+        .putInt(34)
+        .put(p.getCurrencyCode().getBytes(SignableMessage.UTF8))
+        .putLong(3L)
+        .putInt(45);
+    // @formatter:on
+    assertThat("Result", ByteString.copyFrom(data),
+        equalTo(ByteString.copyFrom((ByteBuffer) bb.flip())));
+  }
+
+  @Test
+  public void toSignatureMessageNegativePrice() {
+    // given
+    PriceComponentsEmbed p = new PriceComponentsEmbed("USD", new BigDecimal("2.34"),
+        new BigDecimal("-3.45"));
+
+    // when
+    byte[] data = p.toSignatureMessageBytes();
+
+    // then
+    // @formatter:off
+    ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
+        .put(p.getCurrencyCode().getBytes(SignableMessage.UTF8))
+        .putLong(2L)
+        .putInt(34)
+        .put(p.getCurrencyCode().getBytes(SignableMessage.UTF8))
+        .putLong(-3L)
+        .putInt(-45);
+    // @formatter:on
+    assertThat("Result", ByteString.copyFrom(data),
+        equalTo(ByteString.copyFrom((ByteBuffer) bb.flip())));
+  }
+
+  @Test
+  public void toSignatureMessageTruncatedPrice() {
+    // given
+    PriceComponentsEmbed p = new PriceComponentsEmbed("USD", new BigDecimal("2.34"),
+        new BigDecimal("3.99999999999999"));
+
+    // when
+    byte[] data = p.toSignatureMessageBytes();
+
+    // then
+    // @formatter:off
+    ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
+        .put(p.getCurrencyCode().getBytes(SignableMessage.UTF8))
+        .putLong(2L)
+        .putInt(34)
+        .put(p.getCurrencyCode().getBytes(SignableMessage.UTF8))
+        .putLong(3L)
+        .putInt(999999999);
+    // @formatter:on
+    assertThat("Result", ByteString.copyFrom(data),
+        equalTo(ByteString.copyFrom((ByteBuffer) bb.flip())));
+  }
+
+  @Test
+  public void toSignatureMessageTruncatedNegativePrice() {
+    // given
+    PriceComponentsEmbed p = new PriceComponentsEmbed("USD", new BigDecimal("2.34"),
+        new BigDecimal("-3.99999999999999"));
+
+    // when
+    byte[] data = p.toSignatureMessageBytes();
+
+    // then
+    // @formatter:off
+    ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
+        .put(p.getCurrencyCode().getBytes(SignableMessage.UTF8))
+        .putLong(2L)
+        .putInt(34)
+        .put(p.getCurrencyCode().getBytes(SignableMessage.UTF8))
+        .putLong(-3L)
+        .putInt(-999999999);
+    // @formatter:on
+    assertThat("Result", ByteString.copyFrom(data),
+        equalTo(ByteString.copyFrom((ByteBuffer) bb.flip())));
+  }
 }

@@ -19,11 +19,14 @@ package net.solarnetwork.esi.domain.jpa;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
+
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * Embeddable components of price.
@@ -32,7 +35,7 @@ import javax.persistence.Embeddable;
  * @version 1.0
  */
 @Embeddable
-public class PriceComponentsEmbed {
+public class PriceComponentsEmbed implements SignableMessage {
 
   // CHECKSTYLE IGNORE LineLength FOR NEXT 12 LINES
 
@@ -99,6 +102,54 @@ public class PriceComponentsEmbed {
   public String toString() {
     return "PriceComponentsEmbed{currencyCode=" + currencyCode + ", realEnergyPrice="
         + realEnergyPrice + ", apparentEnergyPrice=" + apparentEnergyPrice + "}";
+  }
+
+  @Override
+  public int signatureMessageBytesSize() {
+    int ccLength = 0;
+    if (currencyCode != null) {
+      ccLength += currencyCode.getBytes(UTF8).length;
+    }
+    return (ccLength * 2 + Long.BYTES * 2 + Integer.BYTES * 2);
+  }
+
+  /**
+   * Encode this object as a byte array suitable for using as signature message data.
+   * 
+   * <p>
+   * <b>Note</b> that the price values are encoded in a manner compatible with the
+   * {@code google.type.money} Protobuf specification; the fractional portion is limited to 9
+   * decimal digits.
+   * </p>
+   * 
+   * @return the bytes
+   * @see <a href=
+   *      "https://github.com/googleapis/googleapis/blob/master/google/type/money.proto">money.proto</a>
+   */
+  @Override
+  public byte[] toSignatureMessageBytes() {
+    ByteBuffer buf = ByteBuffer.allocate(signatureMessageBytesSize());
+    addSignatureMessageBytes(buf);
+    buf.flip();
+    byte[] bytes = new byte[buf.limit()];
+    buf.get(bytes);
+    return bytes;
+  }
+
+  @Override
+  public void addSignatureMessageBytes(ByteBuffer buf) {
+    byte[] cc = currencyCode != null ? currencyCode.getBytes(UTF8) : null;
+    addPrice(buf, cc, realEnergyPrice);
+    addPrice(buf, cc, apparentEnergyPrice);
+  }
+
+  private void addPrice(ByteBuffer buf, byte[] currencyCodeBytes, BigDecimal d) {
+    if (currencyCodeBytes != null) {
+      buf.put(currencyCodeBytes);
+    }
+    buf.putLong(d != null ? d.longValue() : 0L);
+    int i = SignableMessage.fractionalPartToInteger(d, 9).intValue();
+    buf.putInt(i);
   }
 
   /**
