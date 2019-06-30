@@ -25,14 +25,18 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Currency;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -50,12 +54,16 @@ import io.grpc.testing.GrpcCleanupRule;
 import net.solarnetwork.esi.domain.DerCharacteristics;
 import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.DerProgramType;
+import net.solarnetwork.esi.domain.PriceMap;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
+import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.grpc.InProcessChannelProvider;
 import net.solarnetwork.esi.grpc.StaticInProcessChannelProvider;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.fac.domain.ResourceCharacteristicsEntity;
 import net.solarnetwork.esi.simple.fac.impl.DaoFacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
@@ -181,6 +189,9 @@ public class DaoFacilityCharacteristicsServiceTests {
 
     // when
     service.saveResourceCharacteristics(characteristics);
+
+    // then
+    verify(resourceCharacteristicsDao, times(1)).save(characteristics);
   }
 
   @Test
@@ -242,5 +253,100 @@ public class DaoFacilityCharacteristicsServiceTests {
     Set<String> programs = types.stream().map(DerProgramType::name)
         .collect(toCollection(LinkedHashSet::new));
     service.saveActiveProgramTypes(programs);
+
+    // then
+    verify(facilityService, times(1)).setEnabledProgramTypes(programs);
   }
+
+  @Test
+  public void providePriceMap() throws IOException {
+    // given
+    String exchangeServerName = InProcessServerBuilder.generateName();
+    URI exchangeUri = URI.create("//" + exchangeServerName);
+    givenDefaultFacilityService(exchangeUri);
+
+    PriceMapEntity priceMap = new PriceMapEntity(Instant.now());
+    priceMap.setPowerComponents(new PowerComponentsEmbed(1L, 2L));
+    priceMap.setDuration(Duration.ofMillis(12345L));
+    priceMap.setResponseTime(
+        new DurationRangeEmbed(Duration.ofMillis(2456L), Duration.ofMillis(4567L)));
+    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
+        new BigDecimal("123.12345"), new BigDecimal("234.23456")));
+
+    DerFacilityExchangeImplBase exchangeService = new DerFacilityExchangeImplBase() {
+
+      @Override
+      public StreamObserver<PriceMap> providePriceMaps(StreamObserver<Empty> responseObserver) {
+        return new StreamObserver<PriceMap>() {
+
+          @Override
+          public void onNext(PriceMap value) {
+            // @formatter:off
+            CryptoUtils.validateMessageSignature(CryptoUtils.STANDARD_HELPER,
+                value.getRoute().getSignature(), exchangeKeyPair, facilityKeyPair.getPublic(),
+                asList(
+                    exchangeUid, 
+                    facilityUid,
+                    priceMap));
+            // @formatter:on
+            assertThat("Real power", value.getPowerComponents().getRealPower(),
+                equalTo(priceMap.getPowerComponents().getRealPower()));
+            assertThat("Reactive power", value.getPowerComponents().getReactivePower(),
+                equalTo(priceMap.getPowerComponents().getReactivePower()));
+            assertThat("Duration seconds", value.getDuration().getSeconds(),
+                equalTo(priceMap.getDuration().getSeconds()));
+            assertThat("Duration nanos", value.getDuration().getNanos(),
+                equalTo(priceMap.getDuration().getNano()));
+            assertThat("Response time min seconds", value.getResponseTime().getMin().getSeconds(),
+                equalTo(priceMap.getResponseTime().getMin().getSeconds()));
+            assertThat("Response time min nanos", value.getResponseTime().getMin().getNanos(),
+                equalTo(priceMap.getResponseTime().getMin().getNano()));
+            assertThat("Response time max seconds", value.getResponseTime().getMax().getSeconds(),
+                equalTo(priceMap.getResponseTime().getMax().getSeconds()));
+            assertThat("Response time max nanos", value.getResponseTime().getMax().getNanos(),
+                equalTo(priceMap.getResponseTime().getMax().getNano()));
+            assertThat("Real energy price currency code",
+                value.getPrice().getRealEnergyPrice().getCurrencyCode(),
+                equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
+            assertThat("Real energy price",
+                value.getPrice().getRealEnergyPrice().getUnits() + "."
+                    + value.getPrice().getRealEnergyPrice().getNanos(),
+                equalTo(priceMap.getPriceComponents().getRealEnergyPrice().toString()));
+            assertThat("Apparent energy price currency code",
+                value.getPrice().getRealEnergyPrice().getCurrencyCode(),
+                equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
+            assertThat("Apparent energy price",
+                value.getPrice().getApparentEnergyPrice().getUnits() + "."
+                    + value.getPrice().getApparentEnergyPrice().getNanos(),
+                equalTo(priceMap.getPriceComponents().getApparentEnergyPrice().toString()));
+          }
+
+          @Override
+          public void onError(Throwable t) {
+            fail(t.toString());
+          }
+
+          @Override
+          public void onCompleted() {
+            responseObserver.onNext(Empty.getDefaultInstance());
+            responseObserver.onCompleted();
+          }
+        };
+      }
+
+    };
+
+    grpcCleanup.register(InProcessServerBuilder.forName(exchangeServerName).directExecutor()
+        .addService(exchangeService).build().start());
+
+    service
+        .setExchangeChannelProvider(new StaticInProcessChannelProvider(exchangeServerName, true));
+
+    // when
+    service.savePriceMap(priceMap);
+
+    // then
+    verify(facilityService, times(1)).savePriceMap(priceMap);
+  }
+
 }

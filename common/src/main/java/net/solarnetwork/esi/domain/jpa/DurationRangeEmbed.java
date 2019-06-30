@@ -30,6 +30,11 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
 /**
  * An embeddable duration range.
  * 
+ * <p>
+ * <b>Note</b> that the duration values are encoded in a manner compatible with the
+ * {@code google.type.duration} Protobuf specification in the {@link SignableMessage} methods.
+ * </p>
+ * 
  * @author matt
  * @version 1.0
  */
@@ -88,28 +93,6 @@ public class DurationRangeEmbed implements SignableMessage {
   @Override
   public int signatureMessageBytesSize() {
     return SignableMessage.durationSignatureMessageSize() * 2;
-  }
-
-  /**
-   * Encode this object as a byte array suitable for using as signature message data.
-   * 
-   * <p>
-   * <b>Note</b> that the duration values are encoded in a manner compatible with the
-   * {@code google.type.duration} Protobuf specification.
-   * </p>
-   * 
-   * @return the bytes
-   * @see <a href=
-   *      "https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/duration.proto">duration.proro</a>
-   */
-  @Override
-  public byte[] toSignatureMessageBytes() {
-    ByteBuffer buf = ByteBuffer.allocate(signatureMessageBytesSize());
-    addSignatureMessageBytes(buf);
-    buf.flip();
-    byte[] bytes = new byte[buf.limit()];
-    buf.get(bytes);
-    return bytes;
   }
 
   @Override

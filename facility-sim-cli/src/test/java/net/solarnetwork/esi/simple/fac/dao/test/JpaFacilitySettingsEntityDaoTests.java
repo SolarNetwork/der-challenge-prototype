@@ -27,6 +27,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Currency;
 
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
@@ -146,8 +147,8 @@ public class JpaFacilitySettingsEntityDaoTests extends SpringTestSupport {
     PriceMapEntity priceMap = new PriceMapEntity(Instant.now());
     priceMap.setDuration(Duration.ofSeconds(1L));
     priceMap.setPowerComponents(new PowerComponentsEmbed(2L, 3L));
-    priceMap.setPriceComponents(
-        new PriceComponentsEmbed("USD", new BigDecimal("1.23"), new BigDecimal("2.34")));
+    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
+        new BigDecimal("1.23"), new BigDecimal("2.34")));
     priceMap
         .setResponseTime(new DurationRangeEmbed(Duration.ofSeconds(4L), Duration.ofSeconds(5L)));
 

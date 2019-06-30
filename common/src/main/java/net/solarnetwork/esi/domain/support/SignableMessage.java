@@ -17,9 +17,6 @@
 
 package net.solarnetwork.esi.domain.support;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.time.Duration;
@@ -47,10 +44,23 @@ public interface SignableMessage {
   /**
    * Encode this object as a byte array suitable for using as signature message data.
    * 
+   * <p>
+   * This default implementation allocates a buffer of size {@link #signatureMessageBytesSize()} and
+   * passes that to {@link #addSignatureMessageBytes(ByteBuffer)}. Then the buffer is flipped and
+   * the contents are returned as a byte array.
+   * </p>
+   * 
    * @return the bytes
    */
   @Nonnull
-  byte[] toSignatureMessageBytes();
+  default byte[] toSignatureMessageBytes() {
+    ByteBuffer buf = ByteBuffer.allocate(signatureMessageBytesSize());
+    addSignatureMessageBytes(buf);
+    buf.flip();
+    byte[] bytes = new byte[buf.limit()];
+    buf.get(bytes);
+    return bytes;
+  }
 
   /**
    * Add the signature message data of this object to an existing byte buffer.
@@ -59,44 +69,6 @@ public interface SignableMessage {
    *        the buffer to add to
    */
   void addSignatureMessageBytes(ByteBuffer buf);
-
-  /**
-   * Get the fractional part of a {@link BigDecimal} as a {@link BigInteger}.
-   * 
-   * @param decimal
-   *        the decimal part
-   * @return the fractional part as an integer, or zero if {@code decimal} is {@literal null}
-   */
-  @Nonnull
-  static BigInteger fractionalPartToInteger(BigDecimal decimal) {
-    if (decimal == null) {
-      return BigInteger.ZERO;
-    }
-    return fractionalPartToInteger(decimal, decimal.scale());
-  }
-
-  /**
-   * Get the fractional part of a {@link BigDecimal} as a {@link BigInteger} with a maximum scale.
-   * 
-   * <p>
-   * If the fractional part must be rounded, the {@link RoundingMode#HALF_DOWN} method will be used
-   * to truncate the value to keep it within the desired scale.
-   * </p>
-   * 
-   * @param decimal
-   *        the decimal part
-   * @param maxScale
-   *        the maximum power-of-10 scale
-   * @return the fractional part as an integer, or zero if {@code decimal} is {@literal null}
-   */
-  @Nonnull
-  static BigInteger fractionalPartToInteger(BigDecimal decimal, int maxScale) {
-    if (decimal == null) {
-      return BigInteger.ZERO;
-    }
-    return decimal.remainder(BigDecimal.ONE).movePointRight(Math.min(decimal.scale(), maxScale))
-        .setScale(maxScale, RoundingMode.HALF_DOWN).toBigInteger();
-  }
 
   /**
    * Get the size, in bytes, needed to encode a {@link Duration} in the

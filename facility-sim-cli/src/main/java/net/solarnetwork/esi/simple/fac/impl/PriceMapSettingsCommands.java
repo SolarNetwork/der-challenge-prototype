@@ -19,6 +19,7 @@ package net.solarnetwork.esi.simple.fac.impl;
 
 import java.math.BigDecimal;
 import java.time.Duration;
+import java.util.Currency;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -109,17 +110,18 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
 
     PriceComponentsEmbed pr = priceMap.getPriceComponents();
     if (pr == null) {
-      pr = new PriceComponentsEmbed("USD", null, null);
+      pr = new PriceComponentsEmbed(Currency.getInstance("USD"), null, null);
     }
 
-    String s = readString("priceMap.price.currency", "3-character code", pr.getCurrencyCode());
-    pr.setCurrencyCode(s);
+    String s = readString("priceMap.price.currency", "3-character code",
+        pr.getCurrency().getCurrencyCode());
+    pr.setCurrency(Currency.getInstance(s));
 
-    n = readNumber("priceMap.price.real", pr.getCurrencyCode() + "/kWh",
+    n = readNumber("priceMap.price.real", pr.getCurrency().getCurrencyCode() + "/kWh",
         scaled(pr.getRealEnergyPrice(), -3), 0L, Long.MAX_VALUE / 1000);
     pr.setRealEnergyPrice(scaled(n, 3));
 
-    n = readNumber("priceMap.price.apparent", pr.getCurrencyCode() + "/kVAh",
+    n = readNumber("priceMap.price.apparent", pr.getCurrency().getCurrencyCode() + "/kVAh",
         scaled(pr.getApparentEnergyPrice(), -3), 0L, Long.MAX_VALUE / 1000);
     pr.setApparentEnergyPrice(scaled(n, 3));
     priceMap.setPowerComponents(p);
@@ -155,10 +157,10 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
     PriceComponentsEmbed pr = priceMap.getPriceComponents();
     shell.print(String.format(fmt,
         messageSource.getMessage("priceMap.price.real", null, Locale.getDefault()),
-        scaled(pr.getRealEnergyPrice(), -3), pr.getCurrencyCode() + "/kWh"));
+        scaled(pr.getRealEnergyPrice(), -3), pr.getCurrency().getCurrencyCode() + "/kWh"));
     shell.print(String.format(fmt,
         messageSource.getMessage("priceMap.price.apparent", null, Locale.getDefault()),
-        scaled(pr.getApparentEnergyPrice(), -3), pr.getCurrencyCode() + "/kVAh"));
+        scaled(pr.getApparentEnergyPrice(), -3), pr.getCurrency().getCurrencyCode() + "/kVAh"));
     shell.print("");
   }
 

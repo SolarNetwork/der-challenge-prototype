@@ -45,7 +45,11 @@ import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.DurationRange;
+import net.solarnetwork.esi.domain.PowerComponents;
+import net.solarnetwork.esi.domain.PriceComponents;
+import net.solarnetwork.esi.domain.PriceMap;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.grpc.ChannelProvider;
 import net.solarnetwork.esi.grpc.FutureStreamObserver;
 import net.solarnetwork.esi.grpc.QueuingStreamObserver;
@@ -286,7 +290,81 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
   public void savePriceMap(PriceMapEntity priceMap) {
-    facilityService.savePriceMap(priceMap);
+    ExchangeEntity exchange = facilityService.getExchange();
+    if (exchange == null) {
+      facilityService.savePriceMap(priceMap);
+    } else {
+      ManagedChannel channel = exchangeChannelProvider
+          .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
+      try {
+        DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
+        FutureStreamObserver<Empty, Iterable<Empty>> out = new QueuingStreamObserver<>(1);
+        StreamObserver<PriceMap> in = client.providePriceMaps(out);
+        // @formatter:off
+        in.onNext(PriceMap.newBuilder()
+            .setPowerComponents(PowerComponents.newBuilder()
+                .setRealPower(priceMap.getPowerComponents().getRealPower())
+                .setReactivePower(priceMap.getPowerComponents().getReactivePower())
+                .build())
+            .setDuration(com.google.protobuf.Duration.newBuilder()
+                .setSeconds(priceMap.getDuration().getSeconds())
+                .setNanos(priceMap.getDuration().getNano())
+                .build())
+            .setResponseTime(DurationRange.newBuilder()
+                .setMin(com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(priceMap.getResponseTime().getMin().getSeconds())
+                    .setNanos(priceMap.getResponseTime().getMin().getNano())
+                    .build())
+                .setMax(com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(priceMap.getResponseTime().getMax().getSeconds())
+                    .setNanos(priceMap.getResponseTime().getMax().getNano())
+                    .build())
+                .build())
+            .setPrice(PriceComponents.newBuilder()
+                .setRealEnergyPrice(ProtobufUtils.moneyForDecimal(
+                    priceMap.getPriceComponents().getCurrency(), 
+                    priceMap.getPriceComponents().getRealEnergyPrice()))
+                .setApparentEnergyPrice(ProtobufUtils.moneyForDecimal(
+                    priceMap.getPriceComponents().getCurrency(), 
+                    priceMap.getPriceComponents().getApparentEnergyPrice()))
+                .build())
+            .setRoute(DerRoute.newBuilder()
+                .setExchangeUid(exchange.getId())
+                .setFacilityUid(facilityService.getUid())
+                .setSignature(generateMessageSignature(facilityService.getCryptoHelper(), 
+                    facilityService.getKeyPair(), exchange.publicKey(), asList(
+                        exchange.getId(),
+                        facilityService.getUid(),
+                        priceMap))
+                    )
+                .build())
+            .build());
+        // @formatter:on
+        in.onCompleted();
+        out.nab(1, TimeUnit.MINUTES);
+        log.info("Successfully published price map to exchange {}", exchange.getId());
+        facilityService.savePriceMap(priceMap);
+      } catch (TimeoutException e) {
+        throw new RuntimeException(
+            "Timeout waiting to publish resource characteristics to exchange " + exchange.getId(),
+            e);
+      } catch (StatusRuntimeException e) {
+        if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
+          throw new IllegalArgumentException(e.getStatus().getDescription());
+        } else {
+          throw e;
+        }
+      } catch (InterruptedException e) {
+        throw new RuntimeException("Interrupted waiting for result.");
+      } finally {
+        channel.shutdown();
+        try {
+          channel.awaitTermination(1, TimeUnit.MINUTES);
+        } catch (InterruptedException e) {
+          log.debug("Timeout waiting for channel to shut down.");
+        }
+      }
+    }
   }
 
   /**

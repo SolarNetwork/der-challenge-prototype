@@ -20,6 +20,7 @@ package net.solarnetwork.esi.domain.jpa;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
+import java.util.Currency;
 import java.util.Objects;
 
 import javax.persistence.Basic;
@@ -27,9 +28,16 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
 import net.solarnetwork.esi.domain.support.SignableMessage;
+import net.solarnetwork.esi.util.NumberUtils;
 
 /**
  * Embeddable components of price.
+ * 
+ * <p>
+ * <b>Note</b> that the price values are encoded in a manner compatible with the
+ * {@code google.type.money} Protobuf specification in the {@link SignableMessage} methods; the
+ * fractional portion is limited to 9 decimal digits.
+ * </p>
  * 
  * @author matt
  * @version 1.0
@@ -41,7 +49,7 @@ public class PriceComponentsEmbed implements SignableMessage {
 
   @Basic
   @Column(name = "PRICE_CURRENCY", nullable = false, insertable = true, updatable = true, length = 3)
-  private String currencyCode;
+  private Currency currency;
 
   @Basic
   @Column(name = "PRICE_ENERGY_REAL", nullable = true, insertable = true, updatable = true, precision = 18, scale = 9)
@@ -61,24 +69,24 @@ public class PriceComponentsEmbed implements SignableMessage {
   /**
    * Construct with values.
    * 
-   * @param currencyCode
-   *        the currency code
+   * @param currency
+   *        the currency
    * @param realEnergyPrice
    *        the real energy price, in units per watt hour (Wh)
    * @param apparentEnergyPrice
    *        the apparent energy price, in units per volt-amp hour (VAh)
    */
-  public PriceComponentsEmbed(String currencyCode, BigDecimal realEnergyPrice,
+  public PriceComponentsEmbed(Currency currency, BigDecimal realEnergyPrice,
       BigDecimal apparentEnergyPrice) {
     super();
-    this.currencyCode = currencyCode;
+    this.currency = currency;
     this.realEnergyPrice = realEnergyPrice;
     this.apparentEnergyPrice = apparentEnergyPrice;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(apparentEnergyPrice, currencyCode, realEnergyPrice);
+    return Objects.hash(apparentEnergyPrice, currency, realEnergyPrice);
   }
 
   @Override
@@ -94,51 +102,28 @@ public class PriceComponentsEmbed implements SignableMessage {
     }
     PriceComponentsEmbed other = (PriceComponentsEmbed) obj;
     return Objects.equals(apparentEnergyPrice, other.apparentEnergyPrice)
-        && Objects.equals(currencyCode, other.currencyCode)
+        && Objects.equals(currency, other.currency)
         && Objects.equals(realEnergyPrice, other.realEnergyPrice);
   }
 
   @Override
   public String toString() {
-    return "PriceComponentsEmbed{currencyCode=" + currencyCode + ", realEnergyPrice="
-        + realEnergyPrice + ", apparentEnergyPrice=" + apparentEnergyPrice + "}";
+    return "PriceComponentsEmbed{currency=" + currency + ", realEnergyPrice=" + realEnergyPrice
+        + ", apparentEnergyPrice=" + apparentEnergyPrice + "}";
   }
 
   @Override
   public int signatureMessageBytesSize() {
     int ccLength = 0;
-    if (currencyCode != null) {
-      ccLength += currencyCode.getBytes(UTF8).length;
+    if (currency != null) {
+      ccLength += currency.getCurrencyCode().getBytes(UTF8).length;
     }
     return (ccLength * 2 + Long.BYTES * 2 + Integer.BYTES * 2);
   }
 
-  /**
-   * Encode this object as a byte array suitable for using as signature message data.
-   * 
-   * <p>
-   * <b>Note</b> that the price values are encoded in a manner compatible with the
-   * {@code google.type.money} Protobuf specification; the fractional portion is limited to 9
-   * decimal digits.
-   * </p>
-   * 
-   * @return the bytes
-   * @see <a href=
-   *      "https://github.com/googleapis/googleapis/blob/master/google/type/money.proto">money.proto</a>
-   */
-  @Override
-  public byte[] toSignatureMessageBytes() {
-    ByteBuffer buf = ByteBuffer.allocate(signatureMessageBytesSize());
-    addSignatureMessageBytes(buf);
-    buf.flip();
-    byte[] bytes = new byte[buf.limit()];
-    buf.get(bytes);
-    return bytes;
-  }
-
   @Override
   public void addSignatureMessageBytes(ByteBuffer buf) {
-    byte[] cc = currencyCode != null ? currencyCode.getBytes(UTF8) : null;
+    byte[] cc = currency != null ? currency.getCurrencyCode().getBytes(UTF8) : null;
     addPrice(buf, cc, realEnergyPrice);
     addPrice(buf, cc, apparentEnergyPrice);
   }
@@ -147,9 +132,8 @@ public class PriceComponentsEmbed implements SignableMessage {
     if (currencyCodeBytes != null) {
       buf.put(currencyCodeBytes);
     }
-    buf.putLong(d != null ? d.longValue() : 0L);
-    int i = SignableMessage.fractionalPartToInteger(d, 9).intValue();
-    buf.putInt(i);
+    buf.putLong(NumberUtils.wholePartToInteger(d).longValue());
+    buf.putInt(NumberUtils.fractionalPartToInteger(d, 9).intValue());
   }
 
   /**
@@ -162,7 +146,7 @@ public class PriceComponentsEmbed implements SignableMessage {
    * @return the new price components
    */
   public PriceComponentsEmbed scaled(int scale, RoundingMode roundingMode) {
-    return new PriceComponentsEmbed(currencyCode,
+    return new PriceComponentsEmbed(currency,
         realEnergyPrice != null ? realEnergyPrice.setScale(scale, roundingMode) : null,
         apparentEnergyPrice != null ? apparentEnergyPrice.setScale(scale, roundingMode) : null);
   }
@@ -193,26 +177,22 @@ public class PriceComponentsEmbed implements SignableMessage {
   }
 
   /**
-   * Get the currency code.
+   * Get the currency.
    * 
-   * @return the currencyCode the currency code
+   * @return the currency
    */
-  public String getCurrencyCode() {
-    return currencyCode;
+  public Currency getCurrency() {
+    return currency;
   }
 
   /**
-   * Set the currency code.
+   * Set the currency.
    * 
-   * <p>
-   * This should be a 3-letter currency code defined in ISO 4217.
-   * </p>
-   * 
-   * @param currencyCode
-   *        the currency code to set
+   * @param currency
+   *        the currency to set
    */
-  public void setCurrencyCode(String currencyCode) {
-    this.currencyCode = currencyCode;
+  public void setCurrency(Currency currency) {
+    this.currency = currency;
   }
 
   /**

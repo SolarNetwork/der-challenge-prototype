@@ -17,6 +17,7 @@
 
 package net.solarnetwork.esi.simple.fac.domain;
 
+import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -32,6 +33,7 @@ import net.solarnetwork.esi.domain.jpa.BaseLongEntity;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * A price map entity.
@@ -41,7 +43,7 @@ import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
  */
 @Entity
 @Table(name = "PRICE_MAPS")
-public class PriceMapEntity extends BaseLongEntity {
+public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
 
   private static final long serialVersionUID = 6873938081379625344L;
 
@@ -108,6 +110,33 @@ public class PriceMapEntity extends BaseLongEntity {
     c.setPriceComponents(getPriceComponents());
     c.setResponseTime(getResponseTime());
     return c;
+  }
+
+  @Override
+  public int signatureMessageBytesSize() {
+    PowerComponentsEmbed power = powerComponents != null ? powerComponents
+        : new PowerComponentsEmbed();
+    DurationRangeEmbed rt = responseTime != null ? responseTime : new DurationRangeEmbed();
+    PriceComponentsEmbed price = priceComponents != null ? priceComponents
+        : new PriceComponentsEmbed();
+    return power.signatureMessageBytesSize() + SignableMessage.durationSignatureMessageSize()
+        + rt.signatureMessageBytesSize() + price.signatureMessageBytesSize();
+  }
+
+  @Override
+  public void addSignatureMessageBytes(ByteBuffer buf) {
+    PowerComponentsEmbed power = powerComponents != null ? powerComponents
+        : new PowerComponentsEmbed();
+    power.addSignatureMessageBytes(buf);
+
+    SignableMessage.addDurationSignatureMessageBytes(buf, duration);
+
+    DurationRangeEmbed rt = responseTime != null ? responseTime : new DurationRangeEmbed();
+    rt.addSignatureMessageBytes(buf);
+
+    PriceComponentsEmbed price = priceComponents != null ? priceComponents
+        : new PriceComponentsEmbed();
+    price.addSignatureMessageBytes(buf);
   }
 
   /**

@@ -91,16 +91,6 @@ public class PowerComponentsEmbed implements SignableMessage {
   }
 
   @Override
-  public byte[] toSignatureMessageBytes() {
-    ByteBuffer buf = ByteBuffer.allocate(signatureMessageBytesSize());
-    addSignatureMessageBytes(buf);
-    buf.flip();
-    byte[] bytes = new byte[buf.limit()];
-    buf.get(bytes);
-    return bytes;
-  }
-
-  @Override
   public void addSignatureMessageBytes(ByteBuffer buf) {
     buf.putLong(realPower != null ? realPower.longValue() : 0L);
     buf.putLong(reactivePower != null ? reactivePower.longValue() : 0L);

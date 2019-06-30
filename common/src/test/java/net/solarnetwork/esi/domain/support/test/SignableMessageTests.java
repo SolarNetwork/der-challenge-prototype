@@ -20,8 +20,8 @@ package net.solarnetwork.esi.domain.support.test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.time.Duration;
 
 import org.junit.Test;
 
@@ -36,52 +36,17 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
 public class SignableMessageTests {
 
   @Test
-  public void fractionalPartFromNull() {
-    BigInteger bi = SignableMessage.fractionalPartToInteger(null);
-    assertThat("Result", bi, equalTo(BigInteger.ZERO));
+  public void durationSignatureMessageSize() {
+    int size = SignableMessage.durationSignatureMessageSize();
+    assertThat("Duratino bytes size", size, equalTo(Long.BYTES + Integer.BYTES));
   }
 
   @Test
-  public void fractionalPartFromSmallDecimal() {
-    BigInteger bi = SignableMessage.fractionalPartToInteger(new BigDecimal("123.12345"));
-    assertThat("Result", bi, equalTo(new BigInteger("12345")));
+  public void addDurationSignatureMessageBytes() {
+    ByteBuffer bb = ByteBuffer.allocate(SignableMessage.durationSignatureMessageSize());
+    SignableMessage.addDurationSignatureMessageBytes(bb, Duration.ofMillis(123456789));
+    bb.flip();
+    assertThat("Seconds", bb.getLong(), equalTo(123456L));
   }
 
-  @Test
-  public void fractionalPartFromSmallDecimalNegative() {
-    BigInteger bi = SignableMessage.fractionalPartToInteger(new BigDecimal("-123.12345"));
-    assertThat("Result", bi, equalTo(new BigInteger("-12345")));
-  }
-
-  @Test
-  public void fractionalPartFromScaledDecimal() {
-    BigInteger bi = SignableMessage.fractionalPartToInteger(new BigDecimal("123.12345"), 9);
-    assertThat("Result", bi, equalTo(new BigInteger("12345")));
-  }
-
-  @Test
-  public void fractionalPartFromScaledDecimalTruncated() {
-    BigInteger bi = SignableMessage
-        .fractionalPartToInteger(new BigDecimal("123.123456789123456789"), 9);
-    assertThat("Result", bi, equalTo(new BigInteger("123456789")));
-  }
-
-  @Test
-  public void fractionalPartFromScaledDecimalTruncatedNegative() {
-    BigInteger bi = SignableMessage
-        .fractionalPartToInteger(new BigDecimal("-123.123456789123456789"), 9);
-    assertThat("Result", bi, equalTo(new BigInteger("-123456789")));
-  }
-
-  @Test
-  public void fractionalPartScaledRounded() {
-    BigInteger bi = SignableMessage.fractionalPartToInteger(new BigDecimal("3.99999999999999"), 9);
-    assertThat("Result", bi, equalTo(new BigInteger(String.valueOf("999999999"))));
-  }
-
-  @Test
-  public void fractionalPartScaledRoundedNegative() {
-    BigInteger bi = SignableMessage.fractionalPartToInteger(new BigDecimal("-3.99999999999999"), 9);
-    assertThat("Result", bi, equalTo(new BigInteger(String.valueOf("-999999999"))));
-  }
 }

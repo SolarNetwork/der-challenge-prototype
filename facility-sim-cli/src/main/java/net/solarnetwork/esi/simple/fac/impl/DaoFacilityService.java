@@ -23,6 +23,7 @@ import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Currency;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -169,8 +170,8 @@ public class DaoFacilityService implements FacilityService {
       priceMap = new PriceMapEntity(Instant.now());
       priceMap.setDuration(Duration.ofSeconds(0));
       priceMap.setPowerComponents(new PowerComponentsEmbed(0L, 0L));
-      priceMap
-          .setPriceComponents(new PriceComponentsEmbed("USD", BigDecimal.ZERO, BigDecimal.ZERO));
+      priceMap.setPriceComponents(
+          new PriceComponentsEmbed(Currency.getInstance("USD"), BigDecimal.ZERO, BigDecimal.ZERO));
       priceMap
           .setResponseTime(new DurationRangeEmbed(Duration.ofSeconds(0L), Duration.ofSeconds(0L)));
     }
