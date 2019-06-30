@@ -17,8 +17,10 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import java.math.BigDecimal;
 import java.net.URI;
 import java.security.KeyPair;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
@@ -29,10 +31,14 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
+import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.FacilitySettingsEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.FacilitySettingsEntity;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
 import net.solarnetwork.esi.util.CryptoHelper;
 
@@ -147,6 +153,53 @@ public class DaoFacilityService implements FacilityService {
         }
       }
       settings.getProgramTypes().addAll(types);
+    }
+    settingsDao.save(settings);
+  }
+
+  // propagation is REQUIRED for lazy JPA init of settings.priceMap
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+  @Override
+  public PriceMapEntity getPriceMap() {
+    FacilitySettingsEntity settings = settings();
+    PriceMapEntity priceMap = settings != null ? settings.getPriceMap() : null;
+    if (priceMap != null) {
+      priceMap = priceMap.copy();
+    } else {
+      priceMap = new PriceMapEntity(Instant.now());
+      priceMap.setDuration(Duration.ofSeconds(0));
+      priceMap.setPowerComponents(new PowerComponentsEmbed(0L, 0L));
+      priceMap
+          .setPriceComponents(new PriceComponentsEmbed("USD", BigDecimal.ZERO, BigDecimal.ZERO));
+      priceMap
+          .setResponseTime(new DurationRangeEmbed(Duration.ofSeconds(0L), Duration.ofSeconds(0L)));
+    }
+    return priceMap;
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public void savePriceMap(PriceMapEntity priceMap) {
+    FacilitySettingsEntity settings = settings();
+    if (settings == null) {
+      settings = new FacilitySettingsEntity(Instant.now());
+    }
+    PriceMapEntity pm = settings.getPriceMap();
+    if (pm == null) {
+      settings.setPriceMap(priceMap);
+    } else {
+      if (priceMap.getDuration() != null) {
+        pm.setDuration(priceMap.getDuration());
+      }
+      if (priceMap.getPowerComponents() != null) {
+        pm.setPowerComponents(priceMap.getPowerComponents());
+      }
+      if (priceMap.getPriceComponents() != null) {
+        pm.setPriceComponents(priceMap.getPriceComponents());
+      }
+      if (priceMap.getResponseTime() != null) {
+        pm.setResponseTime(priceMap.getResponseTime());
+      }
     }
     settingsDao.save(settings);
   }

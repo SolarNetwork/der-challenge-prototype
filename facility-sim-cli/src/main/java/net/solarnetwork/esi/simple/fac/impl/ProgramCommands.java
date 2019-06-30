@@ -31,8 +31,6 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
 
@@ -50,11 +48,7 @@ import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
  */
 @SshShellComponent
 @ShellCommandGroup("Characteristics")
-public class ProgramCommands {
-
-  private final SshShellHelper shell;
-  private final FacilityCharacteristicsService characteristicsService;
-  private MessageSource messageSource;
+public class ProgramCommands extends BaseFacilityCharacteristicsShell {
 
   /**
    * Constructor.
@@ -67,13 +61,7 @@ public class ProgramCommands {
   @Autowired
   public ProgramCommands(SshShellHelper shell,
       FacilityCharacteristicsService characteristicsService) {
-    super();
-    this.shell = shell;
-    this.characteristicsService = characteristicsService;
-
-    ResourceBundleMessageSource ms = new ResourceBundleMessageSource();
-    ms.setBasename(getClass().getName());
-    setMessageSource(ms);
+    super(shell, characteristicsService);
   }
 
   /**
@@ -176,16 +164,6 @@ public class ProgramCommands {
       return o1.displayName.compareToIgnoreCase(o2.displayName);
     }
 
-  }
-
-  /**
-   * Configure the message source.
-   * 
-   * @param messageSource
-   *        the message source to set
-   */
-  public void setMessageSource(MessageSource messageSource) {
-    this.messageSource = messageSource;
   }
 
 }

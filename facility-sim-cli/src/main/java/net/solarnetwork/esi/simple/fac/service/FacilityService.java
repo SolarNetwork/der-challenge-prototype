@@ -24,6 +24,7 @@ import java.util.Set;
 import javax.annotation.Nonnull;
 
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
 import net.solarnetwork.esi.util.CryptoHelper;
 
 /**
@@ -91,5 +92,21 @@ public interface FacilityService {
    *        the enabled types
    */
   void setEnabledProgramTypes(Set<String> types);
+
+  /**
+   * Get the current facility price map settings.
+   * 
+   * @return the price map
+   */
+  @Nonnull
+  PriceMapEntity getPriceMap();
+
+  /**
+   * Update the facility price map settings.
+   * 
+   * @param priceMap
+   *        the price map
+   */
+  void savePriceMap(PriceMapEntity priceMap);
 
 }

@@ -21,6 +21,7 @@ import java.util.Set;
 
 import javax.annotation.Nonnull;
 
+import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.fac.domain.ResourceCharacteristicsEntity;
 
 /**
@@ -71,4 +72,25 @@ public interface FacilityCharacteristicsService {
    *        the set of programs to save as active
    */
   void saveActiveProgramTypes(Set<String> programs);
+
+  /**
+   * Get the current facility price map.
+   * 
+   * @return the current price map, never {@literal null}
+   */
+  @Nonnull
+  PriceMapEntity priceMap();
+
+  /**
+   * Save the facility price map.
+   * 
+   * <p>
+   * Only non-{@literal null} properties will be persisted.
+   * </p>
+   * 
+   * @param priceMap
+   *        the price map to save
+   */
+  void savePriceMap(PriceMapEntity priceMap);
+
 }

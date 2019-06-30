@@ -67,7 +67,6 @@ public class PriceMapEntity extends BaseLongEntity {
    */
   public PriceMapEntity() {
     super();
-    // TODO Auto-generated constructor stub
   }
 
   /**
@@ -90,6 +89,25 @@ public class PriceMapEntity extends BaseLongEntity {
    */
   public PriceMapEntity(Instant created, Long id) {
     super(created, id);
+  }
+
+  /**
+   * Create a copy of this instance.
+   * 
+   * <p>
+   * All properties are copied onto the new instance.
+   * </p>
+   * 
+   * @return the copy
+   */
+  public PriceMapEntity copy() {
+    PriceMapEntity c = new PriceMapEntity(getCreated());
+    c.setDuration(getDuration());
+    c.setModified(getModified());
+    c.setPowerComponents(getPowerComponents());
+    c.setPriceComponents(getPriceComponents());
+    c.setResponseTime(getResponseTime());
+    return c;
   }
 
   /**

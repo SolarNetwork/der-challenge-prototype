@@ -22,8 +22,6 @@ import java.time.Duration;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
 
@@ -41,11 +39,7 @@ import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
  */
 @SshShellComponent
 @ShellCommandGroup("Characteristics")
-public class ResourceCharacteristicsCommands {
-
-  private final SshShellHelper shell;
-  private final FacilityCharacteristicsService characteristicsService;
-  private MessageSource messageSource;
+public class ResourceCharacteristicsCommands extends BaseFacilityCharacteristicsShell {
 
   /**
    * Constructor.
@@ -58,13 +52,7 @@ public class ResourceCharacteristicsCommands {
   @Autowired
   public ResourceCharacteristicsCommands(SshShellHelper shell,
       FacilityCharacteristicsService characteristicsService) {
-    super();
-    this.shell = shell;
-    this.characteristicsService = characteristicsService;
-
-    ResourceBundleMessageSource ms = new ResourceBundleMessageSource();
-    ms.setBasename(getClass().getName());
-    setMessageSource(ms);
+    super(shell, characteristicsService);
   }
 
   /**
@@ -115,10 +103,9 @@ public class ResourceCharacteristicsCommands {
         scaled(characteristics.getResponseTime().getMax().toMillis(), -3), min, Integer.MAX_VALUE);
     characteristics.getResponseTime().setMax(Duration.ofMillis(scaled(n, 3).longValue()));
 
-    shell.print(messageSource.getMessage("rsrc.edit.confirm.title", null, Locale.getDefault()));
+    shell.print(messageSource.getMessage("edit.confirm.title", null, Locale.getDefault()));
     showResourceCharacteristics(characteristics);
-    if (shell
-        .confirm(messageSource.getMessage("rsrc.edit.confirm.ask", null, Locale.getDefault()))) {
+    if (shell.confirm(messageSource.getMessage("edit.confirm.ask", null, Locale.getDefault()))) {
       characteristicsService.saveResourceCharacteristics(characteristics);
       shell.printSuccess(messageSource.getMessage("rsrc.edit.saved", null, Locale.getDefault()));
     }
@@ -150,50 +137,4 @@ public class ResourceCharacteristicsCommands {
     shell.print("");
   }
 
-  private static BigDecimal scaled(Number num, int scale) {
-    BigDecimal n = (num instanceof BigDecimal ? (BigDecimal) num : new BigDecimal(num.toString()));
-    if (scale == 0) {
-      return n;
-    } else if (scale < 0) {
-      return n.movePointLeft(-scale);
-    } else {
-      return n.movePointRight(scale);
-    }
-  }
-
-  private BigDecimal readNumber(String propName, String unit, BigDecimal currValue, Number min,
-      Number max) {
-    while (true) {
-      String val = shell.read(messageSource.getMessage(
-          "rsrc.edit.property", new Object[] {
-              messageSource.getMessage(propName, null, Locale.getDefault()), unit, currValue },
-          Locale.getDefault()));
-      if (val == null || val.trim().isEmpty()) {
-        return currValue;
-      }
-      try {
-        BigDecimal num = new BigDecimal(val);
-        if ((min != null && num.doubleValue() < min.doubleValue())
-            || (max != null && num.doubleValue() > max.doubleValue())) {
-          shell.printError(messageSource.getMessage("rsrc.error.numOutOfRange",
-              new Object[] { min, max }, Locale.getDefault()));
-        } else {
-          return num;
-        }
-      } catch (NumberFormatException e) {
-        shell.printError(
-            messageSource.getMessage("rsrc.error.enterNumber", null, Locale.getDefault()));
-      }
-    }
-  }
-
-  /**
-   * Configure the message source.
-   * 
-   * @param messageSource
-   *        the message source to set
-   */
-  public void setMessageSource(MessageSource messageSource) {
-    this.messageSource = messageSource;
-  }
 }

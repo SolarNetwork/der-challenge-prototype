@@ -29,9 +29,7 @@ import java.util.List;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.context.event.EventListener;
-import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
@@ -58,11 +56,10 @@ import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
  */
 @SshShellComponent
 @ShellCommandGroup("Registry")
-public class RegistryCommands {
+public class RegistryCommands extends BaseMessageSourceSupport {
 
   private final SshShellHelper shell;
   private final ExchangeRegistrationService exchangeRegistrationService;
-  private MessageSource messageSource;
 
   /**
    * Constructor.
@@ -78,10 +75,6 @@ public class RegistryCommands {
     super();
     this.shell = shell;
     this.exchangeRegistrationService = exchangeRegistrationService;
-
-    ResourceBundleMessageSource ms = new ResourceBundleMessageSource();
-    ms.setBasename(getClass().getName());
-    setMessageSource(ms);
   }
 
   /**
@@ -322,16 +315,6 @@ public class RegistryCommands {
       }
     }
     answers.putData(key, ans);
-  }
-
-  /**
-   * Configure the message source.
-   * 
-   * @param messageSource
-   *        the message source to set
-   */
-  public void setMessageSource(MessageSource messageSource) {
-    this.messageSource = messageSource;
   }
 
 }

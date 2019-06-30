@@ -53,6 +53,7 @@ import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeStub;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.fac.domain.ResourceCharacteristicsEntity;
 import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
@@ -274,6 +275,18 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
         }
       }
     }
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public PriceMapEntity priceMap() {
+    return facilityService.getPriceMap();
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public void savePriceMap(PriceMapEntity priceMap) {
+    facilityService.savePriceMap(priceMap);
   }
 
   /**
