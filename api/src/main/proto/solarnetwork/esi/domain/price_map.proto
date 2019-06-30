@@ -36,6 +36,22 @@ import "solarnetwork/esi/domain/price_components.proto";
 message PriceMap {
 
   // The routing info.
+  //
+  // The MessageSignature of the route must include: the following:
+  //
+  // * `exchange_uid` UTF-8 bytes
+  // * `facility_uid` UTF-8 bytes
+  // * `power_components.real_power` big-endian encoded bytes
+  // * `power_components.reactive_power` big-endian encoded bytes
+  // * `duration.seconds` big-endian encoded bytes
+  // * `duration.nanos` big-endian encoded bytes
+  // * `response_time.min.seconds` big-endian encoded bytes
+  // * `response_time.min.nanos` big-endian encoded bytes
+  // * `response_time.max.seconds` big-endian encoded bytes
+  // * `response_time.max.nanos` big-endian encoded bytes
+  // * `price_components.currency_code` UTF-8 bytes
+  // * `price_components.units` big-endian encoded bytes
+  // * `price_components.nanos` big-endian encoded bytes
   DerRoute route = 1;
 
   // The power components in the offer.
