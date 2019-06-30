@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -28,6 +29,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ForeignKey;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -47,7 +49,7 @@ import net.solarnetwork.esi.domain.jpa.BaseLongEntity;
 @Table(name = "FAC_SETTINGS")
 public class FacilitySettingsEntity extends BaseLongEntity {
 
-  private static final long serialVersionUID = 8719086959611842465L;
+  private static final long serialVersionUID = -718415775150394699L;
 
   // @formatter:off
   @ElementCollection(fetch = FetchType.EAGER)
@@ -58,6 +60,13 @@ public class FacilitySettingsEntity extends BaseLongEntity {
       uniqueConstraints = @UniqueConstraint(name = "PROGRAM_TYPES_PK",
           columnNames = { "FAC_SETTING_ID", "PROGRAM" }))
   private Set<String> programTypes;
+  // @formatter:on
+
+  // @formatter:off
+  @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "PRICE_MAP_ID", nullable = true, 
+      foreignKey = @ForeignKey(name = "FAC_SETTINGS_PRICE_MAP_FK"))
+  private PriceMapEntity priceMap;
   // @formatter:on
 
   /**
@@ -134,6 +143,25 @@ public class FacilitySettingsEntity extends BaseLongEntity {
     if (tags != null) {
       tags.remove(type);
     }
+  }
+
+  /**
+   * Get the price map.
+   * 
+   * @return the price map, or {@literal null} if not available
+   */
+  public PriceMapEntity getPriceMap() {
+    return priceMap;
+  }
+
+  /**
+   * SEt the price map.
+   * 
+   * @param priceMap
+   *        the price map to set
+   */
+  public void setPriceMap(PriceMapEntity priceMap) {
+    this.priceMap = priceMap;
   }
 
 }
