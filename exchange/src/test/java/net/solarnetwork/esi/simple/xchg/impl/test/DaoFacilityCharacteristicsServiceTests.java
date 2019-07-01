@@ -60,6 +60,7 @@ import net.solarnetwork.esi.domain.DurationRange;
 import net.solarnetwork.esi.domain.PowerComponents;
 import net.solarnetwork.esi.domain.PriceComponents;
 import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristics;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
@@ -389,39 +390,41 @@ public class DaoFacilityCharacteristicsServiceTests {
 
     // when
     // @formatter:off
-    PriceMap.Builder priceMapBuilder = PriceMap.newBuilder()
-        .setPowerComponents(PowerComponents.newBuilder()
-            .setRealPower(1L)
-            .setReactivePower(2L)
-            .build())
-        .setDuration(com.google.protobuf.Duration.newBuilder()
-            .setSeconds(1234L)
-            .setNanos(456000000)
-            .build())
-        .setResponseTime(DurationRange.newBuilder()
-            .setMin(com.google.protobuf.Duration.newBuilder()
-                .setSeconds(234L)
-                .setNanos(567000000)
+    PriceMapCharacteristics.Builder priceMapBuilder = PriceMapCharacteristics.newBuilder()
+        .setPriceMap(PriceMap.newBuilder()
+            .setPowerComponents(PowerComponents.newBuilder()
+                .setRealPower(1L)
+                .setReactivePower(2L)
                 .build())
-            .setMax(com.google.protobuf.Duration.newBuilder()
-                .setSeconds(345L)
-                .setNanos(678000000)
+            .setDuration(com.google.protobuf.Duration.newBuilder()
+                .setSeconds(1234L)
+                .setNanos(456000000)
                 .build())
-            .build())
-        .setPrice(PriceComponents.newBuilder()
-            .setRealEnergyPrice(Money.newBuilder()
-                .setCurrencyCode("USD")
-                .setUnits(9L)
-                .setNanos(99)
+            .setResponseTime(DurationRange.newBuilder()
+                .setMin(com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(234L)
+                    .setNanos(567000000)
+                    .build())
+                .setMax(com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(345L)
+                    .setNanos(678000000)
+                    .build())
                 .build())
-            .setApparentEnergyPrice(Money.newBuilder()
-                .setCurrencyCode("USD")
-                .setUnits(99L)
-                .setNanos(88)
+            .setPrice(PriceComponents.newBuilder()
+                .setRealEnergyPrice(Money.newBuilder()
+                    .setCurrencyCode("USD")
+                    .setUnits(9L)
+                    .setNanos(99)
+                    .build())
+                .setApparentEnergyPrice(Money.newBuilder()
+                    .setCurrencyCode("USD")
+                    .setUnits(99L)
+                    .setNanos(88)
+                    .build())
                 .build())
             .build());
     
-    PriceMap priceMapMessage = priceMapBuilder
+    PriceMapCharacteristics priceMapMessage = priceMapBuilder
         .setRoute(DerRoute.newBuilder()
             .setExchangeUid(exchangeUid)
             .setFacilityUid(facilityUid)
@@ -430,7 +433,7 @@ public class DaoFacilityCharacteristicsServiceTests {
                     exchangeUid,
                     facilityUid,
                     FacilityPriceMapEntity.entityForMessage(
-                        priceMapBuilder)))
+                        priceMapBuilder.getPriceMapOrBuilder())))
                 )
             .build())
         .build();

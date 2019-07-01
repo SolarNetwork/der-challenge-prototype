@@ -55,6 +55,7 @@ import net.solarnetwork.esi.domain.DerCharacteristics;
 import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristics;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
@@ -276,11 +277,12 @@ public class DaoFacilityCharacteristicsServiceTests {
     DerFacilityExchangeImplBase exchangeService = new DerFacilityExchangeImplBase() {
 
       @Override
-      public StreamObserver<PriceMap> providePriceMaps(StreamObserver<Empty> responseObserver) {
-        return new StreamObserver<PriceMap>() {
+      public StreamObserver<PriceMapCharacteristics> providePriceMaps(
+          StreamObserver<Empty> responseObserver) {
+        return new StreamObserver<PriceMapCharacteristics>() {
 
           @Override
-          public void onNext(PriceMap value) {
+          public void onNext(PriceMapCharacteristics value) {
             // @formatter:off
             CryptoUtils.validateMessageSignature(CryptoUtils.STANDARD_HELPER,
                 value.getRoute().getSignature(), exchangeKeyPair, facilityKeyPair.getPublic(),
@@ -289,35 +291,36 @@ public class DaoFacilityCharacteristicsServiceTests {
                     facilityUid,
                     priceMap));
             // @formatter:on
-            assertThat("Real power", value.getPowerComponents().getRealPower(),
+            PriceMap pm = value.getPriceMap();
+            assertThat("Real power", pm.getPowerComponents().getRealPower(),
                 equalTo(priceMap.getPowerComponents().getRealPower()));
-            assertThat("Reactive power", value.getPowerComponents().getReactivePower(),
+            assertThat("Reactive power", pm.getPowerComponents().getReactivePower(),
                 equalTo(priceMap.getPowerComponents().getReactivePower()));
-            assertThat("Duration seconds", value.getDuration().getSeconds(),
+            assertThat("Duration seconds", pm.getDuration().getSeconds(),
                 equalTo(priceMap.getDuration().getSeconds()));
-            assertThat("Duration nanos", value.getDuration().getNanos(),
+            assertThat("Duration nanos", pm.getDuration().getNanos(),
                 equalTo(priceMap.getDuration().getNano()));
-            assertThat("Response time min seconds", value.getResponseTime().getMin().getSeconds(),
+            assertThat("Response time min seconds", pm.getResponseTime().getMin().getSeconds(),
                 equalTo(priceMap.getResponseTime().getMin().getSeconds()));
-            assertThat("Response time min nanos", value.getResponseTime().getMin().getNanos(),
+            assertThat("Response time min nanos", pm.getResponseTime().getMin().getNanos(),
                 equalTo(priceMap.getResponseTime().getMin().getNano()));
-            assertThat("Response time max seconds", value.getResponseTime().getMax().getSeconds(),
+            assertThat("Response time max seconds", pm.getResponseTime().getMax().getSeconds(),
                 equalTo(priceMap.getResponseTime().getMax().getSeconds()));
-            assertThat("Response time max nanos", value.getResponseTime().getMax().getNanos(),
+            assertThat("Response time max nanos", pm.getResponseTime().getMax().getNanos(),
                 equalTo(priceMap.getResponseTime().getMax().getNano()));
             assertThat("Real energy price currency code",
-                value.getPrice().getRealEnergyPrice().getCurrencyCode(),
+                pm.getPrice().getRealEnergyPrice().getCurrencyCode(),
                 equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
             assertThat("Real energy price",
-                value.getPrice().getRealEnergyPrice().getUnits() + "."
-                    + value.getPrice().getRealEnergyPrice().getNanos(),
+                pm.getPrice().getRealEnergyPrice().getUnits() + "."
+                    + pm.getPrice().getRealEnergyPrice().getNanos(),
                 equalTo(priceMap.getPriceComponents().getRealEnergyPrice().toString()));
             assertThat("Apparent energy price currency code",
-                value.getPrice().getRealEnergyPrice().getCurrencyCode(),
+                pm.getPrice().getRealEnergyPrice().getCurrencyCode(),
                 equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
             assertThat("Apparent energy price",
-                value.getPrice().getApparentEnergyPrice().getUnits() + "."
-                    + value.getPrice().getApparentEnergyPrice().getNanos(),
+                pm.getPrice().getApparentEnergyPrice().getUnits() + "."
+                    + pm.getPrice().getApparentEnergyPrice().getNanos(),
                 equalTo(priceMap.getPriceComponents().getApparentEnergyPrice().toString()));
           }
 

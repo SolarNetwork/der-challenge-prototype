@@ -48,6 +48,7 @@ import net.solarnetwork.esi.domain.DurationRange;
 import net.solarnetwork.esi.domain.PowerComponents;
 import net.solarnetwork.esi.domain.PriceComponents;
 import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristics;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.grpc.ChannelProvider;
@@ -299,34 +300,36 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
       try {
         DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
         FutureStreamObserver<Empty, Iterable<Empty>> out = new QueuingStreamObserver<>(1);
-        StreamObserver<PriceMap> in = client.providePriceMaps(out);
+        StreamObserver<PriceMapCharacteristics> in = client.providePriceMaps(out);
         // @formatter:off
-        in.onNext(PriceMap.newBuilder()
-            .setPowerComponents(PowerComponents.newBuilder()
-                .setRealPower(priceMap.getPowerComponents().getRealPower())
-                .setReactivePower(priceMap.getPowerComponents().getReactivePower())
-                .build())
-            .setDuration(com.google.protobuf.Duration.newBuilder()
-                .setSeconds(priceMap.getDuration().getSeconds())
-                .setNanos(priceMap.getDuration().getNano())
-                .build())
-            .setResponseTime(DurationRange.newBuilder()
-                .setMin(com.google.protobuf.Duration.newBuilder()
-                    .setSeconds(priceMap.getResponseTime().getMin().getSeconds())
-                    .setNanos(priceMap.getResponseTime().getMin().getNano())
+        in.onNext(PriceMapCharacteristics.newBuilder()
+            .setPriceMap(PriceMap.newBuilder()
+                .setPowerComponents(PowerComponents.newBuilder()
+                    .setRealPower(priceMap.getPowerComponents().getRealPower())
+                    .setReactivePower(priceMap.getPowerComponents().getReactivePower())
                     .build())
-                .setMax(com.google.protobuf.Duration.newBuilder()
-                    .setSeconds(priceMap.getResponseTime().getMax().getSeconds())
-                    .setNanos(priceMap.getResponseTime().getMax().getNano())
+                .setDuration(com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(priceMap.getDuration().getSeconds())
+                    .setNanos(priceMap.getDuration().getNano())
                     .build())
-                .build())
-            .setPrice(PriceComponents.newBuilder()
-                .setRealEnergyPrice(ProtobufUtils.moneyForDecimal(
-                    priceMap.getPriceComponents().getCurrency(), 
-                    priceMap.getPriceComponents().getRealEnergyPrice()))
-                .setApparentEnergyPrice(ProtobufUtils.moneyForDecimal(
-                    priceMap.getPriceComponents().getCurrency(), 
-                    priceMap.getPriceComponents().getApparentEnergyPrice()))
+                .setResponseTime(DurationRange.newBuilder()
+                    .setMin(com.google.protobuf.Duration.newBuilder()
+                        .setSeconds(priceMap.getResponseTime().getMin().getSeconds())
+                        .setNanos(priceMap.getResponseTime().getMin().getNano())
+                        .build())
+                    .setMax(com.google.protobuf.Duration.newBuilder()
+                        .setSeconds(priceMap.getResponseTime().getMax().getSeconds())
+                        .setNanos(priceMap.getResponseTime().getMax().getNano())
+                        .build())
+                    .build())
+                .setPrice(PriceComponents.newBuilder()
+                    .setRealEnergyPrice(ProtobufUtils.moneyForDecimal(
+                        priceMap.getPriceComponents().getCurrency(), 
+                        priceMap.getPriceComponents().getRealEnergyPrice()))
+                    .setApparentEnergyPrice(ProtobufUtils.moneyForDecimal(
+                        priceMap.getPriceComponents().getCurrency(), 
+                        priceMap.getPriceComponents().getApparentEnergyPrice()))
+                    .build())
                 .build())
             .setRoute(DerRoute.newBuilder()
                 .setExchangeUid(exchange.getId())

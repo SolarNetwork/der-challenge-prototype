@@ -24,7 +24,6 @@ option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
 import "google/protobuf/duration.proto";
-import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/duration_range.proto";
 import "solarnetwork/esi/domain/power_components.proto";
 import "solarnetwork/esi/domain/price_components.proto";
@@ -35,35 +34,16 @@ import "solarnetwork/esi/domain/price_components.proto";
  */
 message PriceMap {
 
-  // The routing info.
-  //
-  // The MessageSignature of the route must include: the following:
-  //
-  // * `exchange_uid` UTF-8 bytes
-  // * `facility_uid` UTF-8 bytes
-  // * `power_components.real_power` big-endian encoded bytes
-  // * `power_components.reactive_power` big-endian encoded bytes
-  // * `duration.seconds` big-endian encoded bytes
-  // * `duration.nanos` big-endian encoded bytes
-  // * `response_time.min.seconds` big-endian encoded bytes
-  // * `response_time.min.nanos` big-endian encoded bytes
-  // * `response_time.max.seconds` big-endian encoded bytes
-  // * `response_time.max.nanos` big-endian encoded bytes
-  // * `price_components.currency_code` UTF-8 bytes
-  // * `price_components.units` big-endian encoded bytes
-  // * `price_components.nanos` big-endian encoded bytes
-  DerRoute route = 1;
-
   // The power components in the offer.
-  PowerComponents power_components = 2;
+  PowerComponents power_components = 1;
 
   // The time duration offered by this price map.
-  google.protobuf.Duration duration = 3;
+  google.protobuf.Duration duration = 2;
 
   // The expected minimum/maximum response time to start/finish executing power changes.
-  DurationRange response_time = 4;
+  DurationRange response_time = 3;
 
   // The power price on offer.
-  PriceComponents price = 5;
+  PriceComponents price = 4;
 
 }

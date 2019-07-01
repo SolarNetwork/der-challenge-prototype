@@ -38,7 +38,7 @@ import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRouteOrBuilder;
-import net.solarnetwork.esi.domain.PriceMapOrBuilder;
+import net.solarnetwork.esi.domain.PriceMapCharacteristicsOrBuilder;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
@@ -221,8 +221,8 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
-  public void savePriceMap(PriceMapOrBuilder priceMap) {
-    DerRouteOrBuilder route = priceMap.getRouteOrBuilder();
+  public void savePriceMap(PriceMapCharacteristicsOrBuilder priceMapCharacteristics) {
+    DerRouteOrBuilder route = priceMapCharacteristics.getRouteOrBuilder();
     if (route == null) {
       throw new IllegalArgumentException("Route missing");
     }
@@ -239,7 +239,8 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
     FacilityEntity facility = facilityDao.findByFacilityUid(facilityUid)
         .orElseThrow(() -> new IllegalArgumentException("Facility not registered."));
 
-    FacilityPriceMapEntity posted = FacilityPriceMapEntity.entityForMessage(priceMap);
+    FacilityPriceMapEntity posted = FacilityPriceMapEntity
+        .entityForMessage(priceMapCharacteristics.getPriceMapOrBuilder());
 
     // verify signature
     // @formatter:off
@@ -255,7 +256,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
       pm = new FacilityPriceMapEntity(Instant.now(), facility);
       facility.setPriceMap(pm);
     }
-    pm.populateFromMessage(priceMap);
+    pm.populateFromMessage(priceMapCharacteristics.getPriceMapOrBuilder());
 
     log.info("Saving facility {} price map: {}", facilityUid, pm);
     facilityDao.save(facility);

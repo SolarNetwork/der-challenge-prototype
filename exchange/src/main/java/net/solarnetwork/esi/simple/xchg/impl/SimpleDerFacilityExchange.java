@@ -44,7 +44,7 @@ import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
 import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.PriceDatum;
-import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristics;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusResponse;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
@@ -214,13 +214,14 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   }
 
   @Override
-  public StreamObserver<PriceMap> providePriceMaps(StreamObserver<Empty> responseObserver) {
-    return new StreamObserver<PriceMap>() {
+  public StreamObserver<PriceMapCharacteristics> providePriceMaps(
+      StreamObserver<Empty> responseObserver) {
+    return new StreamObserver<PriceMapCharacteristics>() {
 
       private boolean error = false;
 
       @Override
-      public void onNext(PriceMap value) {
+      public void onNext(PriceMapCharacteristics value) {
         log.info("Received facility price map submission: {}", value);
         try {
           facilityCharacteristicsService.savePriceMap(value);
