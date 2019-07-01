@@ -15,7 +15,7 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.fac.impl;
+package net.solarnetwork.esi.cli;
 
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -44,6 +44,14 @@ public abstract class BaseMessageSourceSupport {
     ResourceBundleMessageSource ms = new ResourceBundleMessageSource();
     ms.setBasenames(BaseMessageSourceSupport.class.getName(), getClass().getName());
     setMessageSource(ms);
+  }
+
+  /**
+   * Constructor.
+   */
+  public BaseMessageSourceSupport(MessageSource messageSource) {
+    super();
+    setMessageSource(messageSource);
   }
 
   /**

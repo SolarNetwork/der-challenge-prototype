@@ -38,6 +38,7 @@ import com.github.fonimus.ssh.shell.PromptColor;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
+import net.solarnetwork.esi.cli.BaseShellSupport;
 import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.Form;
@@ -56,9 +57,8 @@ import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
  */
 @SshShellComponent
 @ShellCommandGroup("Registry")
-public class RegistryCommands extends BaseMessageSourceSupport {
+public class RegistryCommands extends BaseShellSupport {
 
-  private final SshShellHelper shell;
   private final ExchangeRegistrationService exchangeRegistrationService;
 
   /**
@@ -72,8 +72,7 @@ public class RegistryCommands extends BaseMessageSourceSupport {
   @Autowired
   public RegistryCommands(SshShellHelper shell,
       ExchangeRegistrationService exchangeRegistrationService) {
-    super();
-    this.shell = shell;
+    super(shell);
     this.exchangeRegistrationService = exchangeRegistrationService;
   }
 
