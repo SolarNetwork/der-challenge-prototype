@@ -13,6 +13,7 @@
     <class>net.solarnetwork.esi.domain.jpa.DurationRangeEmbed</class>
     <class>net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed</class>
     <class>net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed</class>
+    <class>net.solarnetwork.esi.domain.jpa.PriceMapEmbed</class>
     <exclude-unlisted-classes>false</exclude-unlisted-classes>
   </persistence-unit>
 </persistence>

@@ -20,11 +20,9 @@ package net.solarnetwork.esi.simple.fac.domain;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Basic;
-import javax.persistence.Column;
+import javax.annotation.Nonnull;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Table;
@@ -33,6 +31,7 @@ import net.solarnetwork.esi.domain.jpa.BaseLongEntity;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
+import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -45,24 +44,10 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
 @Table(name = "PRICE_MAPS")
 public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
 
-  private static final long serialVersionUID = 6873938081379625344L;
+  private static final long serialVersionUID = -305242540130865864L;
 
   @Embedded
-  private PowerComponentsEmbed powerComponents;
-
-  @Basic
-  @Column(name = "DUR", nullable = false, insertable = true, updatable = true)
-  private Duration duration;
-
-  // CHECKSTYLE IGNORE LineLength FOR NEXT 4 LINES
-  @Embedded
-  @AttributeOverrides({
-      @AttributeOverride(name = "min", column = @Column(name = "RESP_TIME_MIN", nullable = false)),
-      @AttributeOverride(name = "max", column = @Column(name = "RESP_TIME_MAX", nullable = false)) })
-  private DurationRangeEmbed responseTime;
-
-  @Embedded
-  private PriceComponentsEmbed priceComponents;
+  private PriceMapEmbed priceMap;
 
   /**
    * Default constructor.
@@ -104,39 +89,67 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    */
   public PriceMapEntity copy() {
     PriceMapEntity c = new PriceMapEntity(getCreated());
-    c.setDuration(getDuration());
     c.setModified(getModified());
-    c.setPowerComponents(getPowerComponents());
-    c.setPriceComponents(getPriceComponents());
-    c.setResponseTime(getResponseTime());
+    PriceMapEmbed pm = getPriceMap();
+    if (pm != null) {
+      c.setPriceMap(pm.copy());
+    }
     return c;
   }
 
   @Override
   public int signatureMessageBytesSize() {
-    PowerComponentsEmbed power = powerComponents != null ? powerComponents
-        : new PowerComponentsEmbed();
-    DurationRangeEmbed rt = responseTime != null ? responseTime : new DurationRangeEmbed();
-    PriceComponentsEmbed price = priceComponents != null ? priceComponents
-        : new PriceComponentsEmbed();
-    return power.signatureMessageBytesSize() + SignableMessage.durationSignatureMessageSize()
-        + rt.signatureMessageBytesSize() + price.signatureMessageBytesSize();
+    PriceMapEmbed e = (priceMap != null ? priceMap : new PriceMapEmbed());
+    return e.signatureMessageBytesSize();
   }
 
   @Override
   public void addSignatureMessageBytes(ByteBuffer buf) {
-    PowerComponentsEmbed power = powerComponents != null ? powerComponents
-        : new PowerComponentsEmbed();
-    power.addSignatureMessageBytes(buf);
+    PriceMapEmbed e = (priceMap != null ? priceMap : new PriceMapEmbed());
+    e.addSignatureMessageBytes(buf);
+  }
 
-    SignableMessage.addDurationSignatureMessageBytes(buf, duration);
+  /**
+   * Get the price map details.
+   * 
+   * @return the price map details
+   */
+  public PriceMapEmbed getPriceMap() {
+    return priceMap;
+  }
 
-    DurationRangeEmbed rt = responseTime != null ? responseTime : new DurationRangeEmbed();
-    rt.addSignatureMessageBytes(buf);
+  /**
+   * Set the price map details.
+   * 
+   * @param priceMap
+   *        the price map details to set
+   */
+  public void setPriceMap(PriceMapEmbed priceMap) {
+    this.priceMap = priceMap;
+  }
 
-    PriceComponentsEmbed price = priceComponents != null ? priceComponents
-        : new PriceComponentsEmbed();
-    price.addSignatureMessageBytes(buf);
+  /**
+   * Get an optional of the price map details.
+   * 
+   * @return the optional price map details
+   */
+  public Optional<PriceMapEmbed> priceMapOpt() {
+    return Optional.ofNullable(getPriceMap());
+  }
+
+  /**
+   * Get the price map details, creating a new one if it doesn't already exist.
+   * 
+   * @return the price map details
+   */
+  @Nonnull
+  public PriceMapEmbed priceMap() {
+    PriceMapEmbed pm = getPriceMap();
+    if (pm == null) {
+      pm = new PriceMapEmbed();
+      setPriceMap(pm);
+    }
+    return pm;
   }
 
   /**
@@ -145,7 +158,7 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    * @return the power components
    */
   public PowerComponentsEmbed getPowerComponents() {
-    return powerComponents;
+    return priceMapOpt().map(PriceMapEmbed::getPowerComponents).orElse(null);
   }
 
   /**
@@ -155,7 +168,7 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    *        the power components to set
    */
   public void setPowerComponents(PowerComponentsEmbed powerComponents) {
-    this.powerComponents = powerComponents;
+    priceMap().setPowerComponents(powerComponents);
   }
 
   /**
@@ -164,7 +177,7 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    * @return the duration
    */
   public Duration getDuration() {
-    return duration;
+    return priceMapOpt().map(PriceMapEmbed::getDuration).orElse(null);
   }
 
   /**
@@ -174,7 +187,7 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    *        the duration to set
    */
   public void setDuration(Duration duration) {
-    this.duration = duration;
+    priceMap().setDuration(duration);
   }
 
   /**
@@ -183,7 +196,7 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    * @return the response time range
    */
   public DurationRangeEmbed getResponseTime() {
-    return responseTime;
+    return priceMapOpt().map(PriceMapEmbed::getResponseTime).orElse(null);
   }
 
   /**
@@ -193,7 +206,7 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    *        the response time range to set
    */
   public void setResponseTime(DurationRangeEmbed responseTime) {
-    this.responseTime = responseTime;
+    priceMap().setResponseTime(responseTime);
   }
 
   /**
@@ -202,7 +215,7 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    * @return the price components
    */
   public PriceComponentsEmbed getPriceComponents() {
-    return priceComponents;
+    return priceMapOpt().map(PriceMapEmbed::getPriceComponents).orElse(null);
   }
 
   /**
@@ -212,7 +225,7 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    *        the price components to set
    */
   public void setPriceComponents(PriceComponentsEmbed priceComponents) {
-    this.priceComponents = priceComponents;
+    priceMap().setPriceComponents(priceComponents);
   }
 
 }
