@@ -57,7 +57,7 @@ public class FacilityPriceMapEntity extends BaseUuidEntity implements SignableMe
 
   // CHECKSTYLE IGNORE LineLength FOR NEXT 4 LINES
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "FACILITY_ID", nullable = false, foreignKey = @ForeignKey(name = "FACILITY_RESOURCE_CHARS_FACILITY_FK"))
+  @JoinColumn(name = "FACILITY_ID", nullable = false, foreignKey = @ForeignKey(name = "FACILITY_PRICE_MAPS_FACILITY_FK"))
   private FacilityEntity facility;
 
   @Embedded
