@@ -155,5 +155,81 @@ The active program types have been saved.
 
 The facility then saves the values so you can make updates to them in the future if you like.
 
+
+# Simulation example: edit price map
+
+A facility is expected to maintain a set of parameters related to grid event financial settings,
+known as a _price map_, and share that information with the exchange it integrates with. A price map
+represents concepts such as the amount of power the facility can offer to reduce or increase by, the
+length of time it can maintain that change in power, and an indicative price the facility would like
+to actually participate in grid events. Following on from the [introduction example][sim-intro],
+this example shows how to configure the price map of the simulated facility.
+
+![Edit a price map](docs/esi-sim-price-map-edit.gif)
+
+## Start up all simulated entities, and SSH into the facility CLI
+
+If you're not continuing from the [introduction example][sim-intro], then go back and follow that to
+get the facility registered with the exchange.
+
+## Edit the price map
+
+Use the `price-map-edit` command to edit the price map settings for the facility. The CLI will
+prompt you for values in specific units, showing you the current values inside `[]` brackets, like
+this:
+
+```
+Fac> price-map-edit 
+Enter Real power (kW) [0]
+1000
+
+Enter Reactive power (kVAR) [0]
+1000
+
+Enter Duration (s) [0]
+100
+
+Enter Minimum response time (s) [0]
+120
+
+Enter Maximum response time (s) [0]
+300
+
+Enter Currency code (3-character code) [USD]
+
+
+Enter Real energy price (USD/kWh) [0]
+50.99
+
+Enter Apparent energy price (USD/kVAh) [0]
+51.99
+```
+
+Then, the CLI will show you what you've entered and confirm you'd like to save the changes. Type
+<kbd>y</kbd> to confirm, and then the price map will be posted to the exchange.
+
+```
+Here are the values you entered:
+Real power                : 1000.000 kW
+Reactive power            : 1000.000 kVAR
+Duration                  : 100.000 s
+Minimum response time     : 120.000 s
+Maximum response time     : 300.000 s
+Real energy price         : 50.990 USD/kWh
+Apparent energy price     : 51.990 USD/kVAh
+
+Would you like to save these changes?
+y
+```
+
+The exchange verifies the values and then saves them so it can make use of them going forward. The
+exchange replies to the facility that the price map has been saved successfully.
+
+```
+The price map has been saved.
+```
+
+The facility then saves the values so you can make updates to them in the future if you like.
+
 [der_facility_service]: ../api/src/main/proto/solarnetwork/esi/service/der_facility_service.proto
 [sim-intro]: ../README.md#simulation-example-register-a-facility-with-an-exchange
