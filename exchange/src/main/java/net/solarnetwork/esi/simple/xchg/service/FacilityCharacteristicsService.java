@@ -24,6 +24,8 @@ import javax.annotation.Nonnull;
 import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramType;
+import net.solarnetwork.esi.domain.PriceMapOrBuilder;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
 
 /**
@@ -75,5 +77,28 @@ public interface FacilityCharacteristicsService {
    *        the set of programs to save as active
    */
   void saveActiveProgramTypes(DerProgramSetOrBuilder programSet);
+
+  /**
+   * Get the current price map for a specific facility.
+   * 
+   * @param facilityUid
+   *        the UID of the facility to get the price map for
+   * @return the types
+   */
+  @Nonnull
+  FacilityPriceMapEntity priceMap(String facilityUid);
+
+  /**
+   * Save the price map for a facility.
+   * 
+   * <p>
+   * This method completely replaces price map details for the specified facility with the given
+   * price map.
+   * </p>
+   * 
+   * @param priceMap
+   *        the price map to save
+   */
+  void savePriceMap(PriceMapOrBuilder priceMap);
 
 }

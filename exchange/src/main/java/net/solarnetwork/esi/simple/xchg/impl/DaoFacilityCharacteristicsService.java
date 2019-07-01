@@ -38,9 +38,11 @@ import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRouteOrBuilder;
+import net.solarnetwork.esi.domain.PriceMapOrBuilder;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.util.CryptoHelper;
@@ -130,8 +132,6 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
 
     entity = resourceCharacteristicsDao.save(entity);
 
-    // TODO: post app event about update
-
     return entity;
   }
 
@@ -207,6 +207,56 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
     }
 
     log.info("Saving facility {} active programs: {}", facilityUid, activePrograms);
+    facilityDao.save(facility);
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+  @Override
+  public FacilityPriceMapEntity priceMap(String facilityUid) {
+    FacilityEntity facility = facilityDao.findByFacilityUid(facilityUid)
+        .orElseThrow(() -> new IllegalArgumentException("Facility not registered."));
+    FacilityPriceMapEntity result = facility.getPriceMap();
+    return (result != null ? result.copy() : null);
+  }
+
+  @Override
+  public void savePriceMap(PriceMapOrBuilder priceMap) {
+    DerRouteOrBuilder route = priceMap.getRouteOrBuilder();
+    if (route == null) {
+      throw new IllegalArgumentException("Route missing");
+    }
+
+    if (!exchangeUid.equals(route.getExchangeUid())) {
+      throw new IllegalArgumentException("Exchange UID not valid.");
+    }
+
+    String facilityUid = route.getFacilityUid();
+    if (facilityUid == null || facilityUid.trim().isEmpty()) {
+      throw new IllegalArgumentException("Facility UID missing.");
+    }
+
+    FacilityEntity facility = facilityDao.findByFacilityUid(facilityUid)
+        .orElseThrow(() -> new IllegalArgumentException("Facility not registered."));
+
+    FacilityPriceMapEntity posted = FacilityPriceMapEntity.entityForMessage(priceMap);
+
+    // verify signature
+    // @formatter:off
+    validateMessageSignature(cryptoHelper, route.getSignature(), exchangeKeyPair,
+        facility.publicKey(),
+        asList(exchangeUid, 
+            facilityUid,
+            posted));
+    // @formatter:on
+
+    FacilityPriceMapEntity pm = facility.getPriceMap();
+    if (pm == null) {
+      pm = new FacilityPriceMapEntity(Instant.now(), facility);
+      facility.setPriceMap(pm);
+    }
+    pm.populateFromMessage(priceMap);
+
+    log.info("Saving facility {} price map: {}", facilityUid, pm);
     facilityDao.save(facility);
   }
 

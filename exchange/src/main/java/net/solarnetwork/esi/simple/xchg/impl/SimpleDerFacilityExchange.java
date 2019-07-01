@@ -215,8 +215,40 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
   @Override
   public StreamObserver<PriceMap> providePriceMaps(StreamObserver<Empty> responseObserver) {
-    // TODO Auto-generated method stub
-    return super.providePriceMaps(responseObserver);
+    return new StreamObserver<PriceMap>() {
+
+      private boolean error = false;
+
+      @Override
+      public void onNext(PriceMap value) {
+        log.info("Received facility price map submission: {}", value);
+        try {
+          facilityCharacteristicsService.savePriceMap(value);
+        } catch (IllegalArgumentException e) {
+          error = true;
+          responseObserver.onError(
+              Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
+        } catch (RuntimeException e) {
+          error = true;
+          log.error("Error processing DER characteristics: " + e.getMessage(), e);
+          responseObserver.onError(
+              Status.INTERNAL.withDescription("Internal error").withCause(e).asException());
+        }
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        log.error("Error receiving facility price map", t);
+      }
+
+      @Override
+      public void onCompleted() {
+        if (!error) {
+          responseObserver.onNext(Empty.getDefaultInstance());
+          responseObserver.onCompleted();
+        }
+      }
+    };
   }
 
   @Override

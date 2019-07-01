@@ -24,7 +24,10 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
+import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Currency;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -46,8 +49,12 @@ import org.springframework.test.jdbc.JdbcTestUtils;
 
 import com.google.protobuf.ByteString;
 
+import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
+import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.test.SpringTestSupport;
 
 /**
@@ -75,6 +82,7 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
   private FacilityEntityDao dao;
 
   private FacilityEntity last;
+  private FacilityPriceMapEntity lastPriceMap;
 
   @Autowired
   public void setDataSource(DataSource ds) {
@@ -89,6 +97,11 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
 
   private void assertFacilityRowCountEqualTo(final int expected) {
     assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "FACILITIES"), equalTo(expected));
+  }
+
+  private void assertFacilityPriceMapRowCountEqualTo(final int expected) {
+    assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "FACILITY_PRICE_MAPS"),
+        equalTo(expected));
   }
 
   @Test
@@ -150,5 +163,40 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
     FacilityEntity updated = dao.findById(last.getId()).get();
     assertThat("Different instance", updated, not(sameInstance(entity)));
     assertThat("Program types", updated.getProgramTypes(), equalTo(entity.getProgramTypes()));
+  }
+
+  @Test
+  public void addPriceMap() {
+    insert();
+    FacilityEntity entity = dao.findById(last.getId()).get();
+
+    FacilityPriceMapEntity priceMap = new FacilityPriceMapEntity(Instant.now(), entity);
+    priceMap.setPowerComponents(new PowerComponentsEmbed(1L, 2L));
+    priceMap.setDuration(Duration.ofMillis(123456L));
+    priceMap.setResponseTime(
+        new DurationRangeEmbed(Duration.ofMillis(234567L), Duration.ofMillis(345678L)));
+    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
+        new BigDecimal("9.99"), new BigDecimal("99.99")));
+    entity.setPriceMap(priceMap);
+    entity = dao.save(entity);
+    em.flush();
+    assertFacilityPriceMapRowCountEqualTo(1);
+    lastPriceMap = entity.getPriceMap();
+  }
+
+  @Test
+  public void getByIdWithPriceMap() {
+    addPriceMap();
+    em.clear();
+    FacilityEntity facility = dao.findById(last.getId()).get();
+    FacilityPriceMapEntity entity = facility.getPriceMap();
+    assertThat("Created", entity.getCreated(), equalTo(lastPriceMap.getCreated()));
+    assertThat("Modified", entity.getModified(), equalTo(lastPriceMap.getModified()));
+    assertThat("Duration", entity.getDuration(), equalTo(lastPriceMap.getDuration()));
+    assertThat("Power components", entity.getPowerComponents(),
+        equalTo(lastPriceMap.getPowerComponents()));
+    assertThat("Price components", entity.getPriceComponents().scaledExactly(2),
+        equalTo(lastPriceMap.getPriceComponents().scaledExactly(2)));
+    assertThat("Response time", entity.getResponseTime(), equalTo(lastPriceMap.getResponseTime()));
   }
 }

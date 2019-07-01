@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.Basic;
+import javax.persistence.CascadeType;
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
 import javax.persistence.ElementCollection;
@@ -32,6 +33,7 @@ import javax.persistence.FetchType;
 import javax.persistence.ForeignKey;
 import javax.persistence.Index;
 import javax.persistence.JoinColumn;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -54,7 +56,7 @@ import net.solarnetwork.esi.util.CryptoUtils;
 @Table(name = "FACILITIES", indexes = { @Index(name = "FAC_UID_IDX", columnList = "FAC_UID") })
 public class FacilityEntity extends BaseUuidEntity {
 
-  private static final long serialVersionUID = -4450594216630145370L;
+  private static final long serialVersionUID = -4777273455189387417L;
 
   @Basic
   @Column(name = "UICI", nullable = false, insertable = true, updatable = true, length = 20)
@@ -85,6 +87,13 @@ public class FacilityEntity extends BaseUuidEntity {
       uniqueConstraints = @UniqueConstraint(name = "FACILITY_PROGRAM_TYPES_PK",
           columnNames = { "FACILITY_ID", "PROGRAM" }))
   private Set<String> programTypes;
+  // @formatter:on
+
+  // @formatter:off
+  @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinColumn(name = "PRICE_MAP_ID", nullable = true, 
+      foreignKey = @ForeignKey(name = "FACILITIES_PRICE_MAP_FK"))
+  private FacilityPriceMapEntity priceMap;
   // @formatter:on
 
   /**
@@ -273,6 +282,25 @@ public class FacilityEntity extends BaseUuidEntity {
     if (tags != null) {
       tags.remove(type);
     }
+  }
+
+  /**
+   * Get the price map.
+   * 
+   * @return the price map, or {@literal null} if not available
+   */
+  public FacilityPriceMapEntity getPriceMap() {
+    return priceMap;
+  }
+
+  /**
+   * SEt the price map.
+   * 
+   * @param priceMap
+   *        the price map to set
+   */
+  public void setPriceMap(FacilityPriceMapEntity priceMap) {
+    this.priceMap = priceMap;
   }
 
 }
