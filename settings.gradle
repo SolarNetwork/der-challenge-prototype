@@ -1,0 +1,17 @@
+rootProject.name = "esi"
+
+include "api"
+include "common"
+include "common-cli"
+include "exchange-registry"
+include "exchange-registry-cli"
+include "exchange"
+include "facility-sim-cli"
+
+project(':api').name = "esi-api"
+project(':common').name = "esi-common"
+project(':common-cli').name = "esi-common-cli"
+project(':exchange-registry').name = "esi-exchange-registry"
+project(':exchange-registry-cli').name = "esi-exchange-registry-cli"
+project(':exchange').name = "esi-exchange"
+project(':facility-sim-cli').name = "esi-facility-sim-cli"

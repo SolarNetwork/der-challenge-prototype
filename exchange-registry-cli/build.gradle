@@ -1,0 +1,64 @@
+buildscript {
+ 	dependencies {
+		classpath "org.springframework.boot:spring-boot-gradle-plugin:2.1.5.RELEASE"
+	}
+}
+
+plugins {
+    id 'checkstyle'
+    id 'java'
+    id 'eclipse'
+    id 'org.springframework.boot' version '2.1.5.RELEASE'
+}
+
+apply plugin: 'checkstyle'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+description = 'ESI: Operator Registry CLI'
+version = '0.1.0'
+archivesBaseName = 'esi-cli-exchange-registry'
+
+checkstyle {
+	toolVersion = "${checkstyleVersion}"
+	configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+}
+	
+dependencies {
+	implementation project(':esi-api')
+	
+	// gRPC
+	implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+
+	// Spring
+	implementation 'org.springframework.boot:spring-boot-starter'
+	
+	// Utils
+	implementation 'org.fusesource.jansi:jansi:1.18'
+	
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+eclipse {
+	project {
+		natures 'net.sf.eclipsecs.core.CheckstyleNature'
+		buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+	}
+}
+
+/*
+jar {
+	enabled = true
+	manifest {
+		attributes 'Implementation-Version': version
+	}
+}
+*/
+
+bootJar {
+	// enable IF jar enabled above: classifier = 'app'
+	manifest {
+		attributes 'Implementation-Version': version
+   	}
+}

@@ -1,0 +1,69 @@
+// Copyright 2019 SolarNetwork Foundation.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package solarnetwork.esi.domain;
+
+option cc_enable_arenas = true;
+option java_multiple_files = true;
+option java_outer_classname = "PriceMapProto";
+option java_package = "net.solarnetwork.esi.domain";
+option objc_class_prefix = "ESI";
+
+import "google/protobuf/duration.proto";
+import "solarnetwork/esi/domain/der_route.proto";
+import "solarnetwork/esi/domain/duration_range.proto";
+import "solarnetwork/esi/domain/power_components.proto";
+import "solarnetwork/esi/domain/price_components.proto";
+
+/**
+ * Defines a single physical capability (or a agregated set of similar
+ * capabilities) that can be offered in the energy market.
+ */
+message PriceMap {
+
+  // The routing info.
+  //
+  // The MessageSignature of the route must include: the following:
+  //
+  // * `exchange_uid` UTF-8 bytes
+  // * `facility_uid` UTF-8 bytes
+  // * `power_components.real_power` big-endian encoded bytes
+  // * `power_components.reactive_power` big-endian encoded bytes
+  // * `duration.seconds` big-endian encoded bytes
+  // * `duration.nanos` big-endian encoded bytes
+  // * `response_time.min.seconds` big-endian encoded bytes
+  // * `response_time.min.nanos` big-endian encoded bytes
+  // * `response_time.max.seconds` big-endian encoded bytes
+  // * `response_time.max.nanos` big-endian encoded bytes
+  // * `price_components.currency_code` UTF-8 bytes
+  // * `price_components.units` big-endian encoded bytes
+  // * `price_components.nanos` big-endian encoded bytes
+  DerRoute route = 1;
+
+  // The power components in the offer.
+  PowerComponents power_components = 2;
+
+  // The time duration offered by this price map.
+  google.protobuf.Duration duration = 3;
+
+  // The expected minimum/maximum response time to start/finish executing power changes.
+  DurationRange response_time = 4;
+
+  // The power price on offer.
+  PriceComponents price = 5;
+
+}

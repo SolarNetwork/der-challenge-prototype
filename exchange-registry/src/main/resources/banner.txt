@@ -1,0 +1,1 @@
+ :: ESI Simple Facility Exchange Registry :: (${application.version})

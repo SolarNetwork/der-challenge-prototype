@@ -1,0 +1,27 @@
+{
+  "key": "simple-oper-reg-form",
+  "languageCode": "mi",
+  "settings": [{
+    "type": "INFO",
+    "key": "intro",
+    "caption": "Hei rēhitatanga me te Ratonga Mahi Whakamaroki, me whakarato koe i te Kaiwhakahaere Hononga Whaimana Hononga, Tau Tau Kiritaki, me te ingoa o te kaipupuri o te kaute, e whakaatuhia ana i runga i to tau korero tawhito. Mena kaore koe e mohio ki tetahi mea, me waea atu koe ki te 555-123-1234 mo te awhina."
+  },{
+    "type": "TEXT",
+    "key": "uici",
+    "label": "UICI",
+    "caption": "Ko to Hononga Tautuhinga Hononga Kaiwhakamahi.",
+    "placeholder": "123-1234-1234"
+  },{
+    "type": "TEXT",
+    "key": "cust-id",
+    "label": "Customer #",
+    "caption": "To Tau Tau Kiritaki.",
+    "placeholder": "ABC123456789"
+  },{
+    "type": "TEXT",
+    "key": "cust-surname",
+    "label": "Surname",
+    "caption": "Ko te ingoa o te kaipupuri o te kaute.",
+    "placeholder": "Smith-Doe"
+  }]
+}

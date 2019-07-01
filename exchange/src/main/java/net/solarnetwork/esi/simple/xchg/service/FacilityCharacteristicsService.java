@@ -1,0 +1,104 @@
+/* ========================================================================
+ * Copyright 2019 SolarNetwork Foundation
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * ========================================================================
+ */
+
+package net.solarnetwork.esi.simple.xchg.service;
+
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+
+import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
+import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
+import net.solarnetwork.esi.domain.DerProgramType;
+import net.solarnetwork.esi.domain.PriceMapOrBuilder;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
+
+/**
+ * API for supporting facility characteristics.
+ * 
+ * @author matt
+ * @version 1.0
+ */
+public interface FacilityCharacteristicsService {
+
+  /**
+   * Get the current resource characteristics for a specific facility.
+   * 
+   * @param facilityUid
+   *        the UID of the facility to get the characteristics for
+   * @return the current resource characteristics, or {@literal null} if not available
+   */
+  FacilityResourceCharacteristicsEntity resourceCharacteristics(String facilityUid);
+
+  /**
+   * Save resource characteristics.
+   * 
+   * @param characteristics
+   *        the characteristics to save
+   * @return the persisted characteristics
+   */
+  FacilityResourceCharacteristicsEntity saveResourceCharacteristics(
+      DerCharacteristicsOrBuilder characteristics);
+
+  /**
+   * Get the set of currently active DER program types.
+   * 
+   * @param facilityUid
+   *        the UID of the facility to get the characteristics for
+   * @return the types
+   */
+  @Nonnull
+  Set<DerProgramType> activeProgramTypes(String facilityUid);
+
+  /**
+   * Save the set of active DER program types.
+   * 
+   * <p>
+   * This method completely replaces the set of active program types with the values in the given
+   * set.
+   * </p>
+   * 
+   * @param programSet
+   *        the set of programs to save as active
+   */
+  void saveActiveProgramTypes(DerProgramSetOrBuilder programSet);
+
+  /**
+   * Get the current price map for a specific facility.
+   * 
+   * @param facilityUid
+   *        the UID of the facility to get the price map for
+   * @return the types
+   */
+  @Nonnull
+  FacilityPriceMapEntity priceMap(String facilityUid);
+
+  /**
+   * Save the price map for a facility.
+   * 
+   * <p>
+   * This method completely replaces price map details for the specified facility with the given
+   * price map.
+   * </p>
+   * 
+   * @param priceMap
+   *        the price map to save
+   */
+  void savePriceMap(PriceMapOrBuilder priceMap);
+
+}

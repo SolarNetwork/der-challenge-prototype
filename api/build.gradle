@@ -1,0 +1,67 @@
+buildscript {
+  repositories {
+    mavenCentral()
+  }
+  dependencies {
+    classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.8'
+  }
+}
+
+plugins {
+    id 'checkstyle'
+    id 'java-library'
+    id 'eclipse'
+}
+
+apply plugin: 'com.google.protobuf'
+
+description = 'ESI: API'
+version = '0.1.0'
+archivesBaseName = 'esi-api'
+
+checkstyle {
+	toolVersion = "${checkstyleVersion}"
+	configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+}
+	
+dependencies {
+	api "io.grpc:grpc-protobuf:${grpcVersion}"
+	api "io.grpc:grpc-stub:${grpcVersion}"
+}
+
+eclipse {
+	project {
+		natures 'net.sf.eclipsecs.core.CheckstyleNature'
+		buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+	}
+}
+
+jar.manifest {
+    attributes('Implementation-Version': version)
+}
+
+protobuf {
+  protoc {
+    artifact = "com.google.protobuf:protoc:${protocVersion}"
+  }
+  plugins {
+    grpc {
+      artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+    }
+  }
+  generateProtoTasks {
+    all()*.plugins {
+      grpc {}
+    }
+  }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
+

@@ -1,0 +1,3 @@
+name,uid,uri
+Monopoly Utility,monopoly-utility,dns:///localhost:7443
+Foo Utility,foo-utility,dns://1.1.1.1/foo.example.com:443

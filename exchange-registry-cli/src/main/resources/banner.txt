@@ -1,0 +1,1 @@
+ :: ESI Facility Exchange Registry CLI :: (${application.version})

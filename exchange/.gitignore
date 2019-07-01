@@ -1,0 +1,8 @@
+/esi-exchange/
+/*.csv
+/*.dat
+/*.json
+/*.log
+/*.properties
+/*.ser
+/*.yml
