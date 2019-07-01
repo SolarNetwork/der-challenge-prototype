@@ -219,6 +219,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
     return (result != null ? result.copy() : null);
   }
 
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
   public void savePriceMap(PriceMapOrBuilder priceMap) {
     DerRouteOrBuilder route = priceMap.getRouteOrBuilder();
