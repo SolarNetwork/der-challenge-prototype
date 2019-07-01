@@ -54,7 +54,7 @@ import net.solarnetwork.esi.util.CryptoUtils;
  */
 @Entity
 @Table(name = "FACILITIES", indexes = { @Index(name = "FAC_UID_IDX", columnList = "FAC_UID") })
-public class FacilityEntity extends BaseUuidEntity {
+public class FacilityEntity extends BaseUuidEntity implements FacilityInfo {
 
   private static final long serialVersionUID = -4777273455189387417L;
 
@@ -147,6 +147,7 @@ public class FacilityEntity extends BaseUuidEntity {
    * 
    * @return the UICI
    */
+  @Override
   public String getUici() {
     return uici;
   }
@@ -166,6 +167,7 @@ public class FacilityEntity extends BaseUuidEntity {
    * 
    * @return the customer ID
    */
+  @Override
   public String getCustomerId() {
     return customerId;
   }
@@ -185,6 +187,7 @@ public class FacilityEntity extends BaseUuidEntity {
    * 
    * @return the facility UID
    */
+  @Override
   public String getFacilityUid() {
     return facilityUid;
   }

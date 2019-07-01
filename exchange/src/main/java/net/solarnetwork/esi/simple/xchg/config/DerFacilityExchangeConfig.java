@@ -83,7 +83,7 @@ public class DerFacilityExchangeConfig {
   private String keyStoreIv = "not.an.initialization.vector";
 
   // CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINE
-  @Value("${xchg.registrationFormPath:classpath:/net/solarnetwork/esi/oper/impl/default-registration-form.json}")
+  @Value("${xchg.registrationFormPath:classpath:/net/solarnetwork/esi/simple/xchg/impl/default-registration-form.json}")
   private Resource registrationFormResource = new ClassPathResource(
       "default-registration-form.json", SimpleDerFacilityExchange.class);
 

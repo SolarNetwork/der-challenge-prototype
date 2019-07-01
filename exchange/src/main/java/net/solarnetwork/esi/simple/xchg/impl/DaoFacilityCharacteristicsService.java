@@ -31,6 +31,8 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +44,7 @@ import net.solarnetwork.esi.domain.PriceMapCharacteristicsOrBuilder;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
@@ -79,6 +82,14 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
     this.exchangeUid = exchangeUid;
     this.exchangeKeyPair = exchangeKeyPair;
     this.cryptoHelper = cryptoHelper;
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @SuppressWarnings({ "rawtypes", "unchecked" })
+  @Override
+  public Iterable<FacilityInfo> listFacilities() {
+    Iterable<FacilityEntity> result = facilityDao.findAll(Sort.by(Direction.ASC, "customerId"));
+    return (Iterable) result;
   }
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)

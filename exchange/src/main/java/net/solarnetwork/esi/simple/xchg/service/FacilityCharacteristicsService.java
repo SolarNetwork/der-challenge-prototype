@@ -25,6 +25,7 @@ import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.PriceMapCharacteristicsOrBuilder;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
 
@@ -35,6 +36,17 @@ import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEn
  * @version 1.0
  */
 public interface FacilityCharacteristicsService {
+
+  /**
+   * Get a listing of all available facilities.
+   * 
+   * <p>
+   * The facilities will be ordered by {@code customerId}, ascending.
+   * </p>
+   * 
+   * @return the facilities
+   */
+  Iterable<FacilityInfo> listFacilities();
 
   /**
    * Get the current resource characteristics for a specific facility.
