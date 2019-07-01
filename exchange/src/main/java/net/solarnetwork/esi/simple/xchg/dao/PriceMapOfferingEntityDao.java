@@ -21,15 +21,15 @@ import java.util.UUID;
 
 import org.springframework.data.repository.PagingAndSortingRepository;
 
-import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEntity;
 
 /**
- * DAO API for facility price map entities.
+ * DAO API for price map offering entities.
  * 
  * @author matt
  * @version 1.0
  */
-public interface FacilityPriceMapDao
-    extends PagingAndSortingRepository<PriceMapEntity, UUID> {
+public interface PriceMapOfferingEntityDao
+    extends PagingAndSortingRepository<PriceMapOfferingEntity, UUID> {
 
 }
