@@ -50,8 +50,9 @@ public class PriceMapOfferingEntity extends BaseUuidEntity {
   private static final long serialVersionUID = 4008724231000362116L;
 
   // @formatter:off
-  @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(name = "PRICE_MAP_ID", nullable = true, 
+  @OneToOne(optional = false, fetch = FetchType.LAZY, cascade = CascadeType.ALL,
+      orphanRemoval = true)
+  @JoinColumn(name = "PRICE_MAP_ID", nullable = false, 
       foreignKey = @ForeignKey(name = "FACILITY_PRICE_MAP_OFFERS_PRICE_MAP_FK"))
   private PriceMapEntity priceMap;
   // @formatter:on

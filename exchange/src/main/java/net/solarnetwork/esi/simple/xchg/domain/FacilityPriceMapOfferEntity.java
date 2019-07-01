@@ -70,7 +70,8 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity {
   private boolean confirmed;
 
   // @formatter:off
-  @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+  @OneToOne(optional = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL,
+      orphanRemoval = true)
   @JoinColumn(name = "PRICE_MAP_ID", nullable = true, 
       foreignKey = @ForeignKey(name = "FACILITY_PRICE_MAP_OFFERS_PRICE_MAP_FK"))
   private PriceMapEntity priceMap;
