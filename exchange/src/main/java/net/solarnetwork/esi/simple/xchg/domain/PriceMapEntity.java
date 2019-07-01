@@ -28,10 +28,6 @@ import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
-import javax.persistence.ForeignKey;
-import javax.persistence.JoinColumn;
-import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 import net.solarnetwork.esi.domain.PriceMapOrBuilder;
@@ -50,15 +46,10 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  * @version 1.0
  */
 @Entity
-@Table(name = "FACILITY_PRICE_MAPS")
-public class FacilityPriceMapEntity extends BaseUuidEntity implements SignableMessage {
+@Table(name = "PRICE_MAPS")
+public class PriceMapEntity extends BaseUuidEntity implements SignableMessage {
 
-  private static final long serialVersionUID = -7032351611607258401L;
-
-  // CHECKSTYLE IGNORE LineLength FOR NEXT 4 LINES
-  @ManyToOne(optional = false, fetch = FetchType.LAZY)
-  @JoinColumn(name = "FACILITY_ID", nullable = false, foreignKey = @ForeignKey(name = "FACILITY_PRICE_MAPS_FACILITY_FK"))
-  private FacilityEntity facility;
+  private static final long serialVersionUID = -711555275497807999L;
 
   @Embedded
   private PriceMapEmbed priceMap;
@@ -66,7 +57,7 @@ public class FacilityPriceMapEntity extends BaseUuidEntity implements SignableMe
   /**
    * Default constructor.
    */
-  public FacilityPriceMapEntity() {
+  public PriceMapEntity() {
     super();
   }
 
@@ -76,7 +67,7 @@ public class FacilityPriceMapEntity extends BaseUuidEntity implements SignableMe
    * @param created
    *        the creation date
    */
-  public FacilityPriceMapEntity(Instant created) {
+  public PriceMapEntity(Instant created) {
     super(created);
   }
 
@@ -88,21 +79,8 @@ public class FacilityPriceMapEntity extends BaseUuidEntity implements SignableMe
    * @param id
    *        the ID
    */
-  public FacilityPriceMapEntity(Instant created, UUID id) {
+  public PriceMapEntity(Instant created, UUID id) {
     super(created, id);
-  }
-
-  /**
-   * Construct with values.
-   * 
-   * @param created
-   *        the creation date
-   * @param facility
-   *        the facility
-   */
-  public FacilityPriceMapEntity(Instant created, FacilityEntity facility) {
-    super(created);
-    setFacility(facility);
   }
 
   /**
@@ -112,8 +90,8 @@ public class FacilityPriceMapEntity extends BaseUuidEntity implements SignableMe
    *        the message to copy the properties from
    * @return the new entity
    */
-  public static FacilityPriceMapEntity entityForMessage(PriceMapOrBuilder message) {
-    FacilityPriceMapEntity entity = new FacilityPriceMapEntity(Instant.now());
+  public static PriceMapEntity entityForMessage(PriceMapOrBuilder message) {
+    PriceMapEntity entity = new PriceMapEntity(Instant.now());
     entity.populateFromMessage(message);
     return entity;
   }
@@ -158,8 +136,8 @@ public class FacilityPriceMapEntity extends BaseUuidEntity implements SignableMe
    * 
    * @return the copy
    */
-  public FacilityPriceMapEntity copy() {
-    FacilityPriceMapEntity c = new FacilityPriceMapEntity(getCreated(), getFacility());
+  public PriceMapEntity copy() {
+    PriceMapEntity c = new PriceMapEntity(getCreated());
     c.setModified(getModified());
     PriceMapEmbed pm = getPriceMap();
     if (pm != null) {
@@ -178,25 +156,6 @@ public class FacilityPriceMapEntity extends BaseUuidEntity implements SignableMe
   public void addSignatureMessageBytes(ByteBuffer buf) {
     PriceMapEmbed e = (priceMap != null ? priceMap : new PriceMapEmbed());
     e.addSignatureMessageBytes(buf);
-  }
-
-  /**
-   * Get the associated facility.
-   * 
-   * @return the facility the facility
-   */
-  public FacilityEntity getFacility() {
-    return facility;
-  }
-
-  /**
-   * Set the associated facility.
-   * 
-   * @param facility
-   *        the facility to set
-   */
-  public void setFacility(FacilityEntity facility) {
-    this.facility = facility;
   }
 
   /**

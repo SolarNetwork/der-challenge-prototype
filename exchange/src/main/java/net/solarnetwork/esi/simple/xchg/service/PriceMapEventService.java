@@ -15,21 +15,16 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.xchg.dao;
-
-import java.util.UUID;
-
-import org.springframework.data.repository.PagingAndSortingRepository;
-
-import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
+package net.solarnetwork.esi.simple.xchg.service;
 
 /**
- * DAO API for facility price map entities.
+ * API for functions related to price map-based events.
  * 
  * @author matt
  * @version 1.0
  */
-public interface FacilityPriceMapDao
-    extends PagingAndSortingRepository<PriceMapEntity, UUID> {
+public interface PriceMapEventService {
+
+  // TODO
 
 }

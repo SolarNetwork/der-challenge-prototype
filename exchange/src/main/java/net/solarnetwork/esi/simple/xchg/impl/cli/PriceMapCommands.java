@@ -33,7 +33,7 @@ import net.solarnetwork.esi.cli.ShellUtils;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
-import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 
 /**
@@ -73,10 +73,10 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
       return;
     }
     try {
-      FacilityPriceMapEntity priceMap = characteristicsService.priceMap(facilityUid);
+      FacilityInfo info = characteristicsService.facilityInfo(facilityUid);
+      PriceMapEntity priceMap = characteristicsService.priceMap(facilityUid);
       shell.print(ShellUtils.getBold(messageSource.getMessage("priceMap.title",
-          new Object[] { facilityUid, priceMap.getFacility().getCustomerId() },
-          Locale.getDefault())));
+          new Object[] { facilityUid, info.getCustomerId() }, Locale.getDefault())));
       showPriceMap(priceMap);
     } catch (IllegalArgumentException e) {
       shell.printError(messageSource.getMessage("list.facility.missing",
@@ -115,7 +115,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
     }
   }
 
-  private void showPriceMap(FacilityPriceMapEntity priceMap) {
+  private void showPriceMap(PriceMapEntity priceMap) {
     String fmt = "%-25s : %.3f %s";
     PowerComponentsEmbed p = priceMap.getPowerComponents();
     shell.print(String.format(fmt,

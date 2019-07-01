@@ -93,7 +93,7 @@ public class FacilityEntity extends BaseUuidEntity implements FacilityInfo {
   @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
   @JoinColumn(name = "PRICE_MAP_ID", nullable = true, 
       foreignKey = @ForeignKey(name = "FACILITIES_PRICE_MAP_FK"))
-  private FacilityPriceMapEntity priceMap;
+  private PriceMapEntity priceMap;
   // @formatter:on
 
   /**
@@ -292,7 +292,7 @@ public class FacilityEntity extends BaseUuidEntity implements FacilityInfo {
    * 
    * @return the price map, or {@literal null} if not available
    */
-  public FacilityPriceMapEntity getPriceMap() {
+  public PriceMapEntity getPriceMap() {
     return priceMap;
   }
 
@@ -302,7 +302,7 @@ public class FacilityEntity extends BaseUuidEntity implements FacilityInfo {
    * @param priceMap
    *        the price map to set
    */
-  public void setPriceMap(FacilityPriceMapEntity priceMap) {
+  public void setPriceMap(PriceMapEntity priceMap) {
     this.priceMap = priceMap;
   }
 

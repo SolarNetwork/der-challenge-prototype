@@ -26,8 +26,8 @@ import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.PriceMapCharacteristicsOrBuilder;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
-import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 
 /**
  * API for supporting facility characteristics.
@@ -47,6 +47,16 @@ public interface FacilityCharacteristicsService {
    * @return the facilities
    */
   Iterable<FacilityInfo> listFacilities();
+
+  /**
+   * Get a info on a single facility.
+   * 
+   * @return the facility info
+   * @throws IllegalArgumentException
+   *         if no facility exists for {@code facilityUid}
+   */
+  @Nonnull
+  FacilityInfo facilityInfo(String facilityUid);
 
   /**
    * Get the current resource characteristics for a specific facility.
@@ -96,9 +106,11 @@ public interface FacilityCharacteristicsService {
    * @param facilityUid
    *        the UID of the facility to get the price map for
    * @return the types
+   * @throws IllegalArgumentException
+   *         if no facility exists for {@code facilityUid}
    */
   @Nonnull
-  FacilityPriceMapEntity priceMap(String facilityUid);
+  PriceMapEntity priceMap(String facilityUid);
 
   /**
    * Save the price map characteristics for a facility.

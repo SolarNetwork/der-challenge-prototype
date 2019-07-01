@@ -67,8 +67,8 @@ import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
-import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityCharacteristicsService;
 import net.solarnetwork.esi.util.CryptoUtils;
 
@@ -348,13 +348,13 @@ public class DaoFacilityCharacteristicsServiceTests {
   public void priceMapForFacility() {
     // given
     FacilityEntity facility = new FacilityEntity(Instant.now());
-    FacilityPriceMapEntity priceMap = new FacilityPriceMapEntity(Instant.now(), facility);
+    PriceMapEntity priceMap = new PriceMapEntity(Instant.now());
     facility.setPriceMap(priceMap);
 
     given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
 
     // when
-    FacilityPriceMapEntity result = service.priceMap(facilityUid);
+    PriceMapEntity result = service.priceMap(facilityUid);
 
     // then
     assertThat("Result available", result, equalTo(priceMap));
@@ -369,7 +369,7 @@ public class DaoFacilityCharacteristicsServiceTests {
     given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
 
     // when
-    FacilityPriceMapEntity result = service.priceMap(facilityUid);
+    PriceMapEntity result = service.priceMap(facilityUid);
 
     // then
     assertThat("Result not available", result, nullValue());
@@ -432,7 +432,7 @@ public class DaoFacilityCharacteristicsServiceTests {
                 facilityKeyPair, exchangeKeyPair.getPublic(), asList(
                     exchangeUid,
                     facilityUid,
-                    FacilityPriceMapEntity.entityForMessage(
+                    PriceMapEntity.entityForMessage(
                         priceMapBuilder.getPriceMapOrBuilder())))
                 )
             .build())
@@ -443,7 +443,7 @@ public class DaoFacilityCharacteristicsServiceTests {
     // then
     assertThat("Facility persisted", facilityCaptor.getValue(), sameInstance(facility));
 
-    FacilityPriceMapEntity entity = facilityCaptor.getValue().getPriceMap();
+    PriceMapEntity entity = facilityCaptor.getValue().getPriceMap();
     assertThat("Facility persisted with price map", entity, notNullValue());
 
     assertThat("Power components", entity.getPowerComponents(),
