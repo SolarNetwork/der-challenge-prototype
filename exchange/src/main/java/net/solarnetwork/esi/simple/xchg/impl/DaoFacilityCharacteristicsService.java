@@ -85,11 +85,9 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
   }
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
-  @SuppressWarnings({ "rawtypes", "unchecked" })
   @Override
   public Iterable<FacilityInfo> listFacilities() {
-    Iterable<FacilityEntity> result = facilityDao.findAll(Sort.by(Direction.ASC, "customerId"));
-    return (Iterable) result;
+    return facilityDao.findAllInfoBy(Sort.by(Direction.ASC, "customerId"));
   }
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)

@@ -17,9 +17,12 @@
 
 package net.solarnetwork.esi.simple.xchg.dao.test;
 
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -27,7 +30,10 @@ import static org.hamcrest.Matchers.sameInstance;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Currency;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -39,6 +45,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactory;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -54,6 +62,7 @@ import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.test.SpringTestSupport;
 
@@ -198,5 +207,52 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
     assertThat("Price components", entity.getPriceComponents().scaledExactly(2),
         equalTo(lastPriceMap.getPriceComponents().scaledExactly(2)));
     assertThat("Response time", entity.getResponseTime(), equalTo(lastPriceMap.getResponseTime()));
+  }
+
+  @Test
+  public void findAllInfoEmpty() {
+    Iterable<FacilityInfo> infos = dao.findAllInfoBy(Sort.by(Direction.ASC, "customerId"));
+    assertThat("Result available", infos, notNullValue());
+    List<FacilityInfo> infoList = stream(infos.spliterator(), false).collect(toList());
+    assertThat("Result count", infoList, hasSize(0));
+  }
+
+  @Test
+  public void findAllInfoSingle() {
+    insert();
+    Iterable<FacilityInfo> infos = dao.findAllInfoBy(Sort.by(Direction.ASC, "customerId"));
+    assertThat("Result available", infos, notNullValue());
+    List<FacilityInfo> infoList = stream(infos.spliterator(), false).collect(toList());
+    assertThat("Result count", infoList, hasSize(1));
+    assertThat("Customer ID", infoList.get(0).getCustomerId(), equalTo(last.getCustomerId()));
+    assertThat("Faciilty", infoList.get(0).getFacilityUid(), equalTo(last.getFacilityUid()));
+    assertThat("UICI", infoList.get(0).getUici(), equalTo(last.getUici()));
+  }
+
+  @Test
+  public void findAllInfoMulti() {
+    List<FacilityEntity> data = new ArrayList<>(3);
+    for (int i = 0; i < 3; i++) {
+      FacilityEntity obj = new FacilityEntity(Instant.now());
+      obj.setCustomerId("CUST_" + (3 - i)); // insert in reverse order
+      obj.setUici(TEST_UICI + "_" + (3 - 1));
+      obj.setFacilityUid(TEST_UID + "_" + (3 - i));
+      obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
+      obj.setFacilityPublicKey(TEST_KEY);
+      data.add(dao.save(obj));
+    }
+    Iterable<FacilityInfo> infos = dao.findAllInfoBy(Sort.by(Direction.ASC, "customerId"));
+    assertThat("Result available", infos, notNullValue());
+    List<FacilityInfo> infoList = stream(infos.spliterator(), false).collect(toList());
+    assertThat("Result count", infoList, hasSize(3));
+    // verify sorted by customer ID
+    for (ListIterator<FacilityInfo> itr = infoList.listIterator(); itr.hasNext();) {
+      FacilityInfo info = itr.next();
+      int i = 3 - itr.previousIndex() - 1;
+      assertThat("Customer ID " + itr.nextIndex(), info.getCustomerId(),
+          equalTo(data.get(i).getCustomerId()));
+      assertThat("UID ", info.getFacilityUid(), equalTo(data.get(i).getFacilityUid()));
+      assertThat("UID", info.getUici(), equalTo(data.get(i).getUici()));
+    }
   }
 }
