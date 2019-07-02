@@ -32,6 +32,7 @@ import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
+import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
 
@@ -65,7 +66,7 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
   @ShellMethod("Show the current facility price map settings.")
   public void priceMapShow() {
     PriceMapEntity priceMap = characteristicsService.priceMap();
-    showPriceMap(priceMap);
+    showPriceMap(priceMap.priceMap());
   }
 
   /**
@@ -73,15 +74,12 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
    */
   @ShellMethod("Configure the facility price map settings.")
   public void priceMapEdit() {
-    PriceMapEntity priceMap = characteristicsService.priceMap();
+    PriceMapEntity entity = characteristicsService.priceMap();
+    PriceMapEmbed priceMap = entity.priceMap();
 
     BigDecimal n;
 
-    PowerComponentsEmbed p = priceMap.getPowerComponents();
-    if (p == null) {
-      p = new PowerComponentsEmbed(0L, 0L);
-    }
-
+    PowerComponentsEmbed p = priceMap.powerComponents();
     n = readNumber("priceMap.power.real", "kW", scaled(p.getRealPower(), -3), 0L,
         Long.MAX_VALUE / 1000);
     p.setRealPower(scaled(n, 3).longValue());
@@ -89,16 +87,12 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
     n = readNumber("priceMap.power.reactive", "kVAR", scaled(p.getReactivePower(), -3), 0L,
         Long.MAX_VALUE / 1000);
     p.setReactivePower(scaled(n, 3).longValue());
-    priceMap.setPowerComponents(p);
 
-    n = readNumber("priceMap.duration", "s", scaled(priceMap.getDuration().toMillis(), -3), 0L,
+    n = readNumber("priceMap.duration", "s", scaled(priceMap.duration().toMillis(), -3), 0L,
         Long.MAX_VALUE / 1000);
     priceMap.setDuration(Duration.ofMillis(scaled(n, 3).longValue()));
 
-    DurationRangeEmbed responseTime = priceMap.getResponseTime();
-    if (responseTime == null) {
-      responseTime = new DurationRangeEmbed(Duration.ofMillis(0), Duration.ofMillis(0));
-    }
+    DurationRangeEmbed responseTime = priceMap.responseTime();
     Number min = readNumber("priceMap.responseTime.min", "s",
         scaled(responseTime.getMin().toMillis(), -3), 0L, Integer.MAX_VALUE);
     responseTime.setMin(Duration.ofMillis(scaled(min, 3).longValue()));
@@ -108,11 +102,7 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
     responseTime.setMax(Duration.ofMillis(scaled(n, 3).longValue()));
     priceMap.setResponseTime(responseTime);
 
-    PriceComponentsEmbed pr = priceMap.getPriceComponents();
-    if (pr == null) {
-      pr = new PriceComponentsEmbed(Currency.getInstance("USD"), null, null);
-    }
-
+    PriceComponentsEmbed pr = priceMap.priceComponents();
     String s = readString("priceMap.price.currency", "3-character code",
         pr.getCurrency().getCurrencyCode());
     pr.setCurrency(Currency.getInstance(s));
@@ -124,18 +114,17 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
     n = readNumber("priceMap.price.apparent", pr.getCurrency().getCurrencyCode() + "/kVAh",
         scaled(pr.getApparentEnergyPrice(), -3), 0L, Long.MAX_VALUE / 1000);
     pr.setApparentEnergyPrice(scaled(n, 3));
-    priceMap.setPowerComponents(p);
 
     shell.print(messageSource.getMessage("edit.confirm.title", null, Locale.getDefault()));
     showPriceMap(priceMap);
     if (shell.confirm(messageSource.getMessage("edit.confirm.ask", null, Locale.getDefault()))) {
-      characteristicsService.savePriceMap(priceMap);
+      characteristicsService.savePriceMap(entity);
       shell
           .printSuccess(messageSource.getMessage("priceMap.edit.saved", null, Locale.getDefault()));
     }
   }
 
-  private void showPriceMap(PriceMapEntity priceMap) {
+  private void showPriceMap(PriceMapEmbed priceMap) {
     String fmt = "%-25s : %.3f %s";
     PowerComponentsEmbed p = priceMap.getPowerComponents();
     shell.print(String.format(fmt,
