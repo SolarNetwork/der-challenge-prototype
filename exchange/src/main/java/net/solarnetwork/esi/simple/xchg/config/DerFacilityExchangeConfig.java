@@ -45,13 +45,17 @@ import com.google.protobuf.util.JsonFormat;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.grpc.SimpleChannelProvider;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityPriceMapOfferEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
+import net.solarnetwork.esi.simple.xchg.dao.PriceMapOfferingEntityDao;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityRegistrationService;
+import net.solarnetwork.esi.simple.xchg.impl.DaoPriceMapOfferingService;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
+import net.solarnetwork.esi.simple.xchg.service.PriceMapOfferingService;
 import net.solarnetwork.esi.util.CryptoHelper;
 import net.solarnetwork.esi.util.CryptoUtils;
 
@@ -97,7 +101,13 @@ public class DerFacilityExchangeConfig {
   public FacilityEntityDao facilityDao;
 
   @Autowired
+  public FacilityPriceMapOfferEntityDao priceMapOfferDao;
+
+  @Autowired
   public FacilityResourceCharacteristicsEntityDao resourceCharacteristicsDao;
+
+  @Autowired
+  public PriceMapOfferingEntityDao offeringDao;
 
   @Qualifier("exchange-uid")
   @Bean
@@ -218,6 +228,21 @@ public class DerFacilityExchangeConfig {
         exchangeKeyPair(), cryptoHelper());
     s.setFacilityDao(facilityDao);
     s.setResourceCharacteristicsDao(resourceCharacteristicsDao);
+    return s;
+  }
+
+  /**
+   * Create the {@link PriceMapOfferingService}.
+   * 
+   * @return the service
+   */
+  @Bean
+  public PriceMapOfferingService priceMapOfferingService() {
+    DaoPriceMapOfferingService s = new DaoPriceMapOfferingService(exchangeUid(), exchangeKeyPair(),
+        cryptoHelper());
+    s.setFacilityDao(facilityDao);
+    s.setOfferingDao(offeringDao);
+    s.setPriceMapOfferDao(priceMapOfferDao);
     return s;
   }
 

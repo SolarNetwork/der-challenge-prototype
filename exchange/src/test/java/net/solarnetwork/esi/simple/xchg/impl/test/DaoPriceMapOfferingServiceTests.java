@@ -220,6 +220,9 @@ public class DaoPriceMapOfferingServiceTests {
     assertThat("Offer ID", offer.getId(), equalTo(offerIdCaptor.getValue()));
     assertThat("Offer facility", offer.getFacility(), sameInstance(facility));
     assertThat("Offer offering", offer.getOffering(), sameInstance(offering));
+    assertThat("Offer is proposed", offer.isProposed(), equalTo(true));
+    assertThat("Offer is accepted", offer.isAccepted(), equalTo(true));
+    assertThat("Offer is not confirmed", offer.isConfirmed(), equalTo(false));
     assertThat("No counter-offer price map available", offer.getPriceMap(), nullValue());
   }
 
@@ -314,6 +317,9 @@ public class DaoPriceMapOfferingServiceTests {
     assertThat("Offer facility", offer.getFacility(), sameInstance(facility));
     assertThat("Offer offering", offer.getOffering(), sameInstance(offering));
     assertThat("Offer price map available", offer.getPriceMap(), notNullValue());
+    assertThat("Offer is proposed", offer.isProposed(), equalTo(true));
+    assertThat("Offer is accepted", offer.isAccepted(), equalTo(true));
+    assertThat("Offer is not confirmed", offer.isConfirmed(), equalTo(false));
 
     PriceMapEmbed counterPriceMap = priceMap.copy();
     counterPriceMap.getPriceComponents().setRealEnergyPrice(new BigDecimal("999.89"));
