@@ -144,6 +144,7 @@ public class PriceMapOfferingEntity extends BaseUuidEntity implements SignableMe
    * 
    * @return the optional price map details
    */
+  @Nonnull
   public Optional<PriceMapEntity> priceMapOpt() {
     return Optional.ofNullable(getPriceMap());
   }
