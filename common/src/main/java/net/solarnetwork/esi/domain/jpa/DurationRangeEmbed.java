@@ -21,6 +21,7 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Objects;
 
+import javax.annotation.Nonnull;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -121,6 +122,18 @@ public class DurationRangeEmbed implements SignableMessage {
   }
 
   /**
+   * Get the minimum duration, never {@literal null}.
+   */
+  @Nonnull
+  public Duration min() {
+    Duration d = getMin();
+    if (d == null) {
+      d = Duration.ZERO;
+    }
+    return d;
+  }
+
+  /**
    * Get the maximum duration.
    * 
    * @return the maximum duration
@@ -137,6 +150,18 @@ public class DurationRangeEmbed implements SignableMessage {
    */
   public void setMax(Duration max) {
     this.max = max;
+  }
+
+  /**
+   * Get the maximum duration, never {@literal null}.
+   */
+  @Nonnull
+  public Duration max() {
+    Duration d = getMax();
+    if (d == null) {
+      d = Duration.ZERO;
+    }
+    return d;
   }
 
 }

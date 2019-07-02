@@ -17,8 +17,11 @@
 
 package net.solarnetwork.esi.domain.jpa;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Currency;
+import java.util.Locale;
 import java.util.Objects;
 
 import javax.annotation.Nonnull;
@@ -147,13 +150,17 @@ public class PriceMapEmbed implements SignableMessage {
   /**
    * Get the power component details, creating a new one if it doesn't already exist.
    * 
+   * <p>
+   * If a new power component is created, its values will be initialized to zero.
+   * </p>
+   * 
    * @return the power component details
    */
   @Nonnull
   public PowerComponentsEmbed powerComponents() {
     PowerComponentsEmbed e = getPowerComponents();
     if (e == null) {
-      e = new PowerComponentsEmbed();
+      e = new PowerComponentsEmbed(0L, 0L);
       setPowerComponents(e);
     }
     return e;
@@ -176,6 +183,18 @@ public class PriceMapEmbed implements SignableMessage {
    */
   public void setDuration(Duration duration) {
     this.duration = duration;
+  }
+
+  /**
+   * Get the duration, never {@literal null}.
+   */
+  @Nonnull
+  public Duration duration() {
+    Duration d = getDuration();
+    if (d == null) {
+      d = Duration.ZERO;
+    }
+    return d;
   }
 
   /**
@@ -234,13 +253,19 @@ public class PriceMapEmbed implements SignableMessage {
   /**
    * Get the price component details, creating a new one if it doesn't already exist.
    * 
+   * <p>
+   * If a new instance is created, it will be initialized with the currency for the default locale
+   * and zero-values for all prices.
+   * </p>
+   * 
    * @return the price component details
    */
   @Nonnull
   public PriceComponentsEmbed priceComponents() {
     PriceComponentsEmbed e = getPriceComponents();
     if (e == null) {
-      e = new PriceComponentsEmbed();
+      e = new PriceComponentsEmbed(Currency.getInstance(Locale.getDefault()), BigDecimal.ZERO,
+          BigDecimal.ZERO);
       setPriceComponents(e);
     }
     return e;
