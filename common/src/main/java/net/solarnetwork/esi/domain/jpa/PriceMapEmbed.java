@@ -19,6 +19,7 @@ package net.solarnetwork.esi.domain.jpa;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.util.Objects;
 
 import javax.annotation.Nonnull;
 import javax.persistence.AttributeOverride;
@@ -99,6 +100,29 @@ public class PriceMapEmbed implements SignableMessage {
     PriceComponentsEmbed price = priceComponents != null ? priceComponents
         : new PriceComponentsEmbed();
     price.addSignatureMessageBytes(buf);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(duration, powerComponents, priceComponents, responseTime);
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof PriceMapEmbed)) {
+      return false;
+    }
+    PriceMapEmbed other = (PriceMapEmbed) obj;
+    return Objects.equals(duration, other.duration)
+        && Objects.equals(powerComponents, other.powerComponents)
+        && Objects.equals(priceComponents, other.priceComponents)
+        && Objects.equals(responseTime, other.responseTime);
   }
 
   /**
