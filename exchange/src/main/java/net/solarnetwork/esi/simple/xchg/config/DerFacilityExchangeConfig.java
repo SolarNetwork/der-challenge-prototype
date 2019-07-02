@@ -34,6 +34,7 @@ import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
@@ -108,6 +109,9 @@ public class DerFacilityExchangeConfig {
 
   @Autowired
   public PriceMapOfferingEntityDao offeringDao;
+
+  @Autowired
+  private ApplicationEventPublisher eventPublisher;
 
   @Qualifier("exchange-uid")
   @Bean
@@ -243,6 +247,7 @@ public class DerFacilityExchangeConfig {
     s.setFacilityDao(facilityDao);
     s.setOfferingDao(offeringDao);
     s.setPriceMapOfferDao(priceMapOfferDao);
+    s.setEventPublisher(eventPublisher);
     return s;
   }
 

@@ -17,23 +17,32 @@
 
 package net.solarnetwork.esi.simple.xchg.impl.cli;
 
+import static net.solarnetwork.esi.cli.ShellUtils.SHELL_MAX_COLS;
+import static net.solarnetwork.esi.cli.ShellUtils.getBold;
+import static net.solarnetwork.esi.cli.ShellUtils.wall;
+import static net.solarnetwork.esi.cli.ShellUtils.wrap;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
+import com.github.fonimus.ssh.shell.PromptColor;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
-import net.solarnetwork.esi.cli.ShellUtils;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapOfferEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEvent.FacilityPriceMapOfferCompleted;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 
 /**
@@ -75,13 +84,39 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
     try {
       FacilityInfo info = characteristicsService.facilityInfo(facilityUid);
       PriceMapEntity priceMap = characteristicsService.priceMap(facilityUid);
-      shell.print(ShellUtils.getBold(messageSource.getMessage("priceMap.title",
+      shell.print(getBold(messageSource.getMessage("priceMap.title",
           new Object[] { facilityUid, info.getCustomerId() }, Locale.getDefault())));
       showPriceMap(priceMap);
     } catch (IllegalArgumentException e) {
       shell.printError(messageSource.getMessage("list.facility.missing",
           new Object[] { facilityUid }, Locale.getDefault()));
     }
+  }
+
+  /**
+   * Handle a price map offer completed event.
+   * 
+   * <p>
+   * This will print a status message to the shell.
+   * </p>
+   * 
+   * @param event
+   *        the event
+   */
+  @Async
+  @EventListener
+  public void handleFacilityPriceMapOfferCompletedEvent(FacilityPriceMapOfferCompleted event) {
+    FacilityPriceMapOfferEntity offer = event.getOffer();
+    String armor = messageSource.getMessage("event.armor", null, Locale.getDefault());
+    String msg = String.format("\n%s\n%s\n%s\n", armor,
+        wrap(messageSource.getMessage(
+            event.isSuccess() ? "offer.event.completed.accepted" : "offer.event.completed.declined",
+            new Object[] { offer.getId(), offer.getFacility().getFacilityUid() },
+            Locale.getDefault()), SHELL_MAX_COLS),
+        armor);
+
+    // broadcast message to all available registered terminals
+    wall(shell.getColored(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED));
   }
 
   private String promptForFacilityUidFromList() {

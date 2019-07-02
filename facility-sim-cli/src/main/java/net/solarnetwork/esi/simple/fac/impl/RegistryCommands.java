@@ -22,7 +22,6 @@ import static net.solarnetwork.esi.cli.ShellUtils.getBoldColored;
 import static net.solarnetwork.esi.cli.ShellUtils.getFaint;
 import static net.solarnetwork.esi.cli.ShellUtils.wall;
 import static net.solarnetwork.esi.cli.ShellUtils.wrap;
-import static net.solarnetwork.esi.simple.fac.impl.ShellConstants.SHELL_MAX_COLS;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +38,7 @@ import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
 import net.solarnetwork.esi.cli.BaseShellSupport;
+import net.solarnetwork.esi.cli.ShellUtils;
 import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.Form;
@@ -163,7 +163,7 @@ public class RegistryCommands extends BaseShellSupport {
             messageSource.getMessage(
                 event.isSuccess() ? "reg.event.completed.success" : "reg.event.completed.error",
                 new Object[] { reg.getId(), reg.getExchangeEndpointUri() }, Locale.getDefault()),
-            SHELL_MAX_COLS),
+            ShellUtils.SHELL_MAX_COLS),
         armor);
 
     // broadcast message to all available registered terminals
@@ -226,7 +226,7 @@ public class RegistryCommands extends BaseShellSupport {
             shell.printSuccess(wrap(
                 messageSource.getMessage("reg.success",
                     new Object[] { exchange.getName(), reg.getId() }, Locale.getDefault()),
-                SHELL_MAX_COLS));
+                ShellUtils.SHELL_MAX_COLS));
             shell.print("");
           } catch (IllegalArgumentException e) {
             // there was some error submitting the form; allow the user the chance to re-try
@@ -235,7 +235,7 @@ public class RegistryCommands extends BaseShellSupport {
                 messageSource.getMessage("reg.form.tryAgain", null, Locale.getDefault()))) {
               shell.printError(
                   wrap(messageSource.getMessage("reg.error.tryAgain", null, Locale.getDefault()),
-                      SHELL_MAX_COLS));
+                      ShellUtils.SHELL_MAX_COLS));
               shell.print("");
             } else {
               keepGoing = false;
@@ -283,7 +283,7 @@ public class RegistryCommands extends BaseShellSupport {
   }
 
   private void showFieldInfo(FormSetting field) {
-    shell.printInfo(wrap(field.getCaption(), SHELL_MAX_COLS));
+    shell.printInfo(wrap(field.getCaption(), ShellUtils.SHELL_MAX_COLS));
     shell.print("");
   }
 

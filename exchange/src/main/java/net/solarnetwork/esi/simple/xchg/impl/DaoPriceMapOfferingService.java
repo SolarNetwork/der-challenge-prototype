@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,6 +67,7 @@ import net.solarnetwork.esi.simple.xchg.dao.PriceMapOfferingEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapOfferEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEntity;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEvent.FacilityPriceMapOfferCompleted;
 import net.solarnetwork.esi.simple.xchg.service.PriceMapOfferingService;
 import net.solarnetwork.esi.util.CryptoHelper;
 
@@ -86,6 +88,7 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
   private PriceMapOfferingEntityDao offeringDao;
   private TransactionTemplate txTemplate;
   private Executor taskExecutor;
+  private ApplicationEventPublisher eventPublisher;
 
   private static final Logger log = LoggerFactory.getLogger(DaoPriceMapOfferingService.class);
 
@@ -240,6 +243,9 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
             entity = handlePriceMapOfferResponse(offeringId, offerId, r);
           }
           qpmo.future.complete(entity);
+          if (eventPublisher != null) {
+            eventPublisher.publishEvent(new FacilityPriceMapOfferCompleted(entity));
+          }
         } catch (RuntimeException e) {
           qpmo.future.completeExceptionally(e);
         }
@@ -345,6 +351,16 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
    */
   public void setPriceMapOfferDao(FacilityPriceMapOfferEntityDao priceMapOfferDao) {
     this.priceMapOfferDao = priceMapOfferDao;
+  }
+
+  /**
+   * Set an event publisher to use.
+   * 
+   * @param eventPublisher
+   *        the event publisher to set
+   */
+  public void setEventPublisher(ApplicationEventPublisher eventPublisher) {
+    this.eventPublisher = eventPublisher;
   }
 
 }

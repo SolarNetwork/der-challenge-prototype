@@ -32,6 +32,9 @@ import com.github.fonimus.ssh.shell.SshContext;
  */
 public final class ShellUtils {
 
+  /** A default maximum width of shell output, i.e. for wrapping. */
+  public static final int SHELL_MAX_COLS = 80;
+
   /**
    * Color a bold message.
    *
