@@ -39,8 +39,12 @@ import net.solarnetwork.esi.domain.PriceMapOfferResponse;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusRequest;
 import net.solarnetwork.esi.domain.PriceParameters;
+import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
+import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.service.DerFacilityServiceGrpc.DerFacilityServiceImplBase;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferEventEntity;
 import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
+import net.solarnetwork.esi.simple.fac.service.PriceMapService;
 
 /**
  * Simple gRPC implementation of a DER facility service.
@@ -53,6 +57,9 @@ public class SimpleDerFacilityService extends DerFacilityServiceImplBase {
 
   @Autowired
   private ExchangeRegistrationService registrationService;
+
+  @Autowired
+  private PriceMapService priceMapService;
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
@@ -73,8 +80,30 @@ public class SimpleDerFacilityService extends DerFacilityServiceImplBase {
   @Override
   public void proposePriceMapOffer(PriceMapOffer request,
       StreamObserver<PriceMapOfferResponse> responseObserver) {
-    // TODO Auto-generated method stub
-    super.proposePriceMapOffer(request, responseObserver);
+    try {
+      PriceMapOfferEventEntity event = priceMapService.proposePriceMapOffer(request);
+      PriceMapOfferResponse.Builder response = PriceMapOfferResponse.newBuilder()
+          .setOfferId(request.getOfferId());
+      if (!event.isAccepted()) {
+        response.setAccept(false);
+      } else {
+        // do we have a (different) counter-offer?
+        PriceMapEmbed eventPriceMap = event.getPriceMap().getPriceMap();
+        PriceMapEmbed offerPriceMap = ProtobufUtils
+            .priceMapEmbedValue(request.getPriceMapOrBuilder());
+        if (eventPriceMap.equals(offerPriceMap)) {
+          response.setAccept(true);
+        } else {
+          // return wit counter-offer
+          response.setCounterOffer(ProtobufUtils.priceMapForPriceMapEmbed(eventPriceMap));
+        }
+      }
+      responseObserver.onNext(response.build());
+      responseObserver.onCompleted();
+    } catch (IllegalArgumentException e) {
+      responseObserver.onError(
+          Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
+    }
   }
 
   @Override
