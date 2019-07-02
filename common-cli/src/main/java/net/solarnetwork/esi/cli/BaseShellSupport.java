@@ -139,6 +139,7 @@ public abstract class BaseShellSupport extends BaseMessageSourceSupport {
       if (val == null || val.trim().isEmpty()) {
         return currValue;
       }
+      return val;
     }
   }
 
