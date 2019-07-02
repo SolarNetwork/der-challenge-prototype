@@ -93,7 +93,6 @@ public class DaoFacilityCharacteristicsServiceTests {
 
   @Before
   public void setUp() throws Exception {
-
     exchangeUid = UUID.randomUUID().toString();
     exchangeKeyPair = STANDARD_HELPER.generateKeyPair();
     facilityUid = UUID.randomUUID().toString();

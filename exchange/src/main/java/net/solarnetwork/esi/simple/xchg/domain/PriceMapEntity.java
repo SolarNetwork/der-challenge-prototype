@@ -20,8 +20,6 @@ package net.solarnetwork.esi.simple.xchg.domain;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Currency;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -84,6 +82,19 @@ public class PriceMapEntity extends BaseUuidEntity implements SignableMessage {
   }
 
   /**
+   * Construct with creation date and ID.
+   * 
+   * @param created
+   *        the creation date
+   * @param priceMap
+   *        the price map details
+   */
+  public PriceMapEntity(Instant created, PriceMapEmbed priceMap) {
+    this(created);
+    setPriceMap(priceMap);
+  }
+
+  /**
    * Create a price map entity out of a source message.
    * 
    * @param message
@@ -92,39 +103,8 @@ public class PriceMapEntity extends BaseUuidEntity implements SignableMessage {
    */
   public static PriceMapEntity entityForMessage(PriceMapOrBuilder message) {
     PriceMapEntity entity = new PriceMapEntity(Instant.now());
-    entity.populateFromMessage(message);
+    entity.setPriceMap(ProtobufUtils.priceMapEmbedValue(message));
     return entity;
-  }
-
-  /**
-   * Update the properties of this object from equivalent properties in a source message.
-   * 
-   * @param message
-   *        the message to copy the properties from
-   */
-  public void populateFromMessage(PriceMapOrBuilder message) {
-    setPowerComponents(new PowerComponentsEmbed(message.getPowerComponents().getRealPower(),
-        message.getPowerComponents().getReactivePower()));
-    setDuration(ProtobufUtils.durationValue(message.getDuration()));
-    setResponseTime(
-        new DurationRangeEmbed(ProtobufUtils.durationValue(message.getResponseTime().getMin()),
-            ProtobufUtils.durationValue(message.getResponseTime().getMax())));
-
-    Currency currency = null;
-    try {
-      currency = Currency.getInstance(message.getPrice().getRealEnergyPrice().getCurrencyCode());
-    } catch (IllegalArgumentException e) {
-      try {
-        currency = Currency
-            .getInstance(message.getPrice().getApparentEnergyPrice().getCurrencyCode());
-      } catch (IllegalArgumentException e2) {
-        currency = Currency.getInstance(Locale.getDefault());
-      }
-    }
-
-    setPriceComponents(new PriceComponentsEmbed(currency,
-        ProtobufUtils.decimalValue(message.getPrice().getRealEnergyPrice()),
-        ProtobufUtils.decimalValue(message.getPrice().getApparentEnergyPrice())));
   }
 
   /**

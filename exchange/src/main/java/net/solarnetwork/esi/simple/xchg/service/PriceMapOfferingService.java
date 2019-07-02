@@ -20,8 +20,12 @@ package net.solarnetwork.esi.simple.xchg.service;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Future;
+
+import org.springframework.scheduling.annotation.Async;
 
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapOfferEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEntity;
 
 /**
@@ -56,8 +60,10 @@ public interface PriceMapOfferingService {
    *        the ID of the {@link PriceMapOfferingEntity} to create offers to facilities from
    * @param facilityUids
    *        the UIDs of the facilities to make the offers for
-   * @return the updated offering entity
+   * @return the offer results
    */
-  PriceMapOfferingEntity makeOfferToFacilities(UUID offeringId, Set<String> facilityUids);
+  @Async
+  Future<Iterable<FacilityPriceMapOfferEntity>> makeOfferToFacilities(UUID offeringId,
+      Set<String> facilityUids);
 
 }

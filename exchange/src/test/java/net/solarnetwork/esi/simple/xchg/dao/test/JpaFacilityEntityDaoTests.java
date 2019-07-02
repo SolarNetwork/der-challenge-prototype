@@ -17,7 +17,9 @@
 
 package net.solarnetwork.esi.simple.xchg.dao.test;
 
+import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -32,8 +34,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Currency;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -254,5 +258,26 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
       assertThat("UID ", info.getFacilityUid(), equalTo(data.get(i).getFacilityUid()));
       assertThat("UID", info.getUici(), equalTo(data.get(i).getUici()));
     }
+  }
+
+  @Test
+  public void findByFacilityUids() {
+    List<FacilityEntity> data = new ArrayList<>(3);
+    for (int i = 0; i < 3; i++) {
+      FacilityEntity obj = new FacilityEntity(Instant.now());
+      obj.setCustomerId("CUST_" + i);
+      obj.setUici(TEST_UICI + i);
+      obj.setFacilityUid(TEST_UID + i);
+      obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
+      obj.setFacilityPublicKey(TEST_KEY);
+      data.add(dao.save(obj));
+    }
+    Set<String> queryUids = new HashSet<>(asList(TEST_UID + "1", TEST_UID + "2"));
+    Iterable<FacilityEntity> facilities = dao.findAllByFacilityUidIn(queryUids);
+    assertThat("Result available", facilities, notNullValue());
+    Set<String> uids = stream(facilities.spliterator(), false).map(FacilityEntity::getFacilityUid)
+        .collect(toSet());
+    assertThat("Result UIDs", uids, equalTo(queryUids));
+
   }
 }

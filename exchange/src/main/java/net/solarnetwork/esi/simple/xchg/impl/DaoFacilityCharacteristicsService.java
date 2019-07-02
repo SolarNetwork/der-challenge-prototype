@@ -18,6 +18,7 @@
 package net.solarnetwork.esi.simple.xchg.impl;
 
 import static java.util.Arrays.asList;
+import static net.solarnetwork.esi.domain.support.ProtobufUtils.priceMapEmbedValue;
 import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 
 import java.nio.ByteBuffer;
@@ -272,7 +273,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
       pm = new PriceMapEntity(Instant.now());
       facility.setPriceMap(pm);
     }
-    pm.populateFromMessage(priceMapCharacteristics.getPriceMapOrBuilder());
+    pm.setPriceMap(priceMapEmbedValue(priceMapCharacteristics.getPriceMapOrBuilder()));
 
     log.info("Saving facility {} price map: {}", facilityUid, pm);
     facilityDao.save(facility);

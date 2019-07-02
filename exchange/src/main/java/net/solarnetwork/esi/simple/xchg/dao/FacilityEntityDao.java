@@ -44,6 +44,15 @@ public interface FacilityEntityDao extends PagingAndSortingRepository<FacilityEn
   Iterable<FacilityInfo> findAllInfoBy(Sort sort);
 
   /**
+   * Find a set of facilities by their UIDs.
+   *
+   * @param facilityUids
+   *        the UIDs of the facilities to find
+   * @return the matching results
+   */
+  Iterable<FacilityEntity> findAllByFacilityUidIn(Iterable<String> facilityUids);
+
+  /**
    * Find a facility by its UID.
    * 
    * @param facilityUid

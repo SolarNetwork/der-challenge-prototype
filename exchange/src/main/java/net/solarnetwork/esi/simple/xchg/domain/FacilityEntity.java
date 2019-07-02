@@ -17,6 +17,7 @@
 
 package net.solarnetwork.esi.simple.xchg.domain;
 
+import java.net.URI;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.util.HashSet;
@@ -219,6 +220,15 @@ public class FacilityEntity extends BaseUuidEntity implements FacilityInfo {
    */
   public void setFacilityEndpointUri(String facilityEndpointUri) {
     this.facilityEndpointUri = facilityEndpointUri;
+  }
+
+  /**
+   * Get a URI from the facility endpoint URI value.
+   * 
+   * @return the URI
+   */
+  public URI facilityUri() {
+    return URI.create(getFacilityEndpointUri());
   }
 
   /**

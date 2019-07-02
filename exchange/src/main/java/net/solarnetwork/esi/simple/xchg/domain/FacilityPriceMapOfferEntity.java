@@ -61,14 +61,6 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity {
   private PriceMapOfferingEntity offering;
   // @on
 
-  @Basic
-  @Column(name = "IS_ACCEPTED", nullable = false, insertable = true, updatable = true)
-  private boolean accepted;
-
-  @Basic
-  @Column(name = "IS_CONFIRMED", nullable = false, insertable = true, updatable = true)
-  private boolean confirmed;
-
   // @formatter:off
   @OneToOne(optional = true, fetch = FetchType.LAZY, cascade = CascadeType.ALL,
       orphanRemoval = true)
@@ -76,6 +68,18 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity {
       foreignKey = @ForeignKey(name = "FACILITY_PRICE_MAP_OFFERS_PRICE_MAP_FK"))
   private PriceMapEntity priceMap;
   // @formatter:on
+
+  @Basic
+  @Column(name = "IS_PROPOSED", nullable = false, insertable = true, updatable = true)
+  private boolean proposed;
+
+  @Basic
+  @Column(name = "IS_ACCEPTED", nullable = false, insertable = true, updatable = true)
+  private boolean accepted;
+
+  @Basic
+  @Column(name = "IS_CONFIRMED", nullable = false, insertable = true, updatable = true)
+  private boolean confirmed;
 
   /**
    * Default constructor.
@@ -198,6 +202,25 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity {
       setPriceMap(pm);
     }
     return pm;
+  }
+
+  /**
+   * Get the proposed flag.
+   * 
+   * @return {@literal true} if the facility has proposed the offer
+   */
+  public boolean isProposed() {
+    return proposed;
+  }
+
+  /**
+   * Set the proposed flag.
+   * 
+   * @param proposed
+   *        the proposed to set
+   */
+  public void setProposed(boolean proposed) {
+    this.proposed = proposed;
   }
 
   /**
