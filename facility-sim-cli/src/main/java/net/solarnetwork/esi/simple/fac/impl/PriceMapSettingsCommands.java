@@ -18,6 +18,7 @@
 package net.solarnetwork.esi.simple.fac.impl;
 
 import static java.util.Comparator.comparing;
+import static net.solarnetwork.esi.util.NumberUtils.scaled;
 
 import java.math.BigDecimal;
 import java.time.Duration;

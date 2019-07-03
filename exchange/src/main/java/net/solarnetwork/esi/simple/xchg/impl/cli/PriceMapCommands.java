@@ -22,6 +22,7 @@ import static net.solarnetwork.esi.cli.ShellUtils.SHELL_MAX_COLS;
 import static net.solarnetwork.esi.cli.ShellUtils.getBold;
 import static net.solarnetwork.esi.cli.ShellUtils.wall;
 import static net.solarnetwork.esi.cli.ShellUtils.wrap;
+import static net.solarnetwork.esi.util.NumberUtils.scaled;
 
 import java.math.BigDecimal;
 import java.time.Duration;

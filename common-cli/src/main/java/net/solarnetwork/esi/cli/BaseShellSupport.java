@@ -66,30 +66,6 @@ public abstract class BaseShellSupport extends BaseMessageSourceSupport {
   }
 
   /**
-   * Scale a number by a power of 10.
-   * 
-   * @param num
-   *        the number to scale
-   * @param scale
-   *        the power of 10 to scale by; a negative value shifts the decimal point left this many
-   *        places; a positive value shifts the decimcal point right this many places
-   * @return the scaled value
-   */
-  public static BigDecimal scaled(Number num, int scale) {
-    if (num == null) {
-      return null;
-    }
-    BigDecimal n = (num instanceof BigDecimal ? (BigDecimal) num : new BigDecimal(num.toString()));
-    if (scale == 0) {
-      return n;
-    } else if (scale < 0) {
-      return n.movePointLeft(-scale);
-    } else {
-      return n.movePointRight(scale);
-    }
-  }
-
-  /**
    * Prompt the shell to read a number value.
    * 
    * @param propName
