@@ -179,7 +179,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
                     facilityService.getKeyPair(), exchange.publicKey(), asList(
                         exchange.getId(),
                         facilityService.getUid(),
-                        characteristics.toSignatureBytes()))
+                        characteristics))
                     )
                 .build())
             .build());

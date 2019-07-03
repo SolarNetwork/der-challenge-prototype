@@ -154,7 +154,7 @@ public class DaoFacilityCharacteristicsServiceTests {
                 asList(
                     exchangeUid, 
                     facilityUid,
-                    characteristics.toSignatureBytes()));
+                    characteristics));
             // @formatter:on
             assertThat("Load power max", value.getLoadPowerMax(),
                 equalTo(characteristics.getLoadPowerMax()));

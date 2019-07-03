@@ -31,6 +31,7 @@ import javax.persistence.Table;
 
 import net.solarnetwork.esi.domain.jpa.BaseLongEntity;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * Resource characterisitcs entity.
@@ -40,7 +41,7 @@ import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
  */
 @Entity
 @Table(name = "RESOURCE_CHARS")
-public class ResourceCharacteristicsEntity extends BaseLongEntity {
+public class ResourceCharacteristicsEntity extends BaseLongEntity implements SignableMessage {
 
   private static final long serialVersionUID = 3836713957221189845L;
 
@@ -99,29 +100,21 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
     super(created, id);
   }
 
-  /**
-   * Encode this entity as a byte array suitable for using as message signature data.
-   * 
-   * @return the bytes
-   */
-  @Nonnull
-  public byte[] toSignatureBytes() {
+  @Override
+  public int signatureMessageBytesSize() {
+    return Long.BYTES * 3 + Float.BYTES * 2 + responseTime().signatureMessageBytesSize();
+  }
+
+  @Override
+  public void addSignatureMessageBytes(ByteBuffer buf) {
     // @formatter:off
-    ByteBuffer bb = ByteBuffer.allocate(64)
-        .putLong(getLoadPowerMax())
+    buf.putLong(getLoadPowerMax())
         .putFloat(getLoadPowerFactor())
         .putLong(getSupplyPowerMax())
         .putFloat(getSupplyPowerFactor())
-        .putLong(getStorageEnergyCapacity())
-        .putLong(getResponseTime().getMin().getSeconds())
-        .putLong(getResponseTime().getMin().getNano())
-        .putLong(getResponseTime().getMax().getSeconds())
-        .putLong(getResponseTime().getMax().getNano());
+        .putLong(getStorageEnergyCapacity());
     // @formatter:on
-    bb.flip();
-    byte[] bytes = new byte[bb.limit()];
-    bb.get(bytes);
-    return bytes;
+    responseTime().addSignatureMessageBytes(buf);
   }
 
   /**
@@ -238,6 +231,21 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    */
   public void setResponseTime(DurationRangeEmbed responseTime) {
     this.responseTime = responseTime;
+  }
+
+  /**
+   * Get the response time details, creating a new one if it doesn't already exist.
+   * 
+   * @return the response time details
+   */
+  @Nonnull
+  public DurationRangeEmbed responseTime() {
+    DurationRangeEmbed e = getResponseTime();
+    if (e == null) {
+      e = new DurationRangeEmbed();
+      setResponseTime(e);
+    }
+    return e;
   }
 
 }

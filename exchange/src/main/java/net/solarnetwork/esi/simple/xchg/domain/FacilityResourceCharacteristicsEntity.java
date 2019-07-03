@@ -18,10 +18,10 @@
 package net.solarnetwork.esi.simple.xchg.domain;
 
 import java.nio.ByteBuffer;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
 import javax.persistence.AttributeOverride;
 import javax.persistence.AttributeOverrides;
 import javax.persistence.Basic;
@@ -38,6 +38,7 @@ import javax.persistence.Table;
 import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.domain.jpa.BaseEntity;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -149,16 +150,14 @@ public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID>
     setSupplyPowerMax(message.getSupplyPowerMax());
     setSupplyPowerFactor(message.getSupplyPowerFactor());
     setStorageEnergyCapacity(message.getStorageEnergyCapacity());
-    setResponseTime(new DurationRangeEmbed(
-        Duration.ofSeconds(message.getResponseTime().getMin().getSeconds(),
-            message.getResponseTime().getMin().getNanos()),
-        Duration.ofSeconds(message.getResponseTime().getMax().getSeconds(),
-            message.getResponseTime().getMax().getNanos())));
+    setResponseTime(
+        new DurationRangeEmbed(ProtobufUtils.durationValue(message.getResponseTime().getMin()),
+            ProtobufUtils.durationValue(message.getResponseTime().getMax())));
   }
 
   @Override
   public int signatureMessageBytesSize() {
-    return Long.BYTES * 7 + Float.BYTES * 2;
+    return Long.BYTES * 3 + Float.BYTES * 2 + responseTime().signatureMessageBytesSize();
   }
 
   @Override
@@ -170,9 +169,7 @@ public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID>
         .putFloat(getSupplyPowerFactor())
         .putLong(getStorageEnergyCapacity());
     // @formatter:on
-    DurationRangeEmbed d = responseTime != null ? responseTime
-        : new DurationRangeEmbed(Duration.ZERO, Duration.ZERO);
-    d.addSignatureMessageBytes(bb);
+    responseTime().addSignatureMessageBytes(bb);
   }
 
   @Override
@@ -294,6 +291,21 @@ public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID>
    */
   public void setResponseTime(DurationRangeEmbed responseTime) {
     this.responseTime = responseTime;
+  }
+
+  /**
+   * Get the response time details, creating a new one if it doesn't already exist.
+   * 
+   * @return the response time details
+   */
+  @Nonnull
+  public DurationRangeEmbed responseTime() {
+    DurationRangeEmbed e = getResponseTime();
+    if (e == null) {
+      e = new DurationRangeEmbed();
+      setResponseTime(e);
+    }
+    return e;
   }
 
   /**
