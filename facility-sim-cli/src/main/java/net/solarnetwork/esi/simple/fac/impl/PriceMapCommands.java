@@ -34,7 +34,7 @@ import net.solarnetwork.esi.simple.fac.service.PriceMapService;
  * @version 1.0
  */
 @SshShellComponent
-@ShellCommandGroup("Price maps")
+@ShellCommandGroup("Price map events")
 public class PriceMapCommands extends BaseShellSupport {
 
   private final PriceMapService priceMapService;

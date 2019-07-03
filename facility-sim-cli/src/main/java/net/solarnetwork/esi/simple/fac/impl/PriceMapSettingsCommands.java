@@ -69,8 +69,8 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
   /**
    * List the current facility price map settings.
    */
-  @ShellMethod("Show the current facility price map settings.")
-  public void priceMapsShow() {
+  @ShellMethod("List the current facility price map settings.")
+  public void priceMapList() {
     Iterable<PriceMapEntity> priceMaps = characteristicsService.priceMaps();
     List<PriceMapEntity> sorted = StreamSupport.stream(priceMaps.spliterator(), false)
         .sorted(comparing(PriceMapEntity::getDuration).thenComparing(PriceMapEntity::getId))
@@ -124,6 +124,23 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
         }
         return;
       }
+    }
+  }
+
+  /**
+   * Delete a price map.
+   */
+  @ShellMethod("Delete a price map.")
+  public void priceMapDelete() {
+    Long priceMapId = promptForPriceMapIdFromList();
+    if (priceMapId == null) {
+      return;
+    }
+    if (shell.confirm(
+        messageSource.getMessage("priceMap.delete.confirm.ask", null, Locale.getDefault()))) {
+      characteristicsService.deletePriceMap(priceMapId);
+      shell.printSuccess(
+          messageSource.getMessage("priceMap.delete.deleted", null, Locale.getDefault()));
     }
   }
 
@@ -207,8 +224,8 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
     List<PriceMapEntity> sorted = StreamSupport.stream(priceMaps.spliterator(), false)
         .sorted(comparing(PriceMapEntity::getDuration).thenComparing(PriceMapEntity::getId))
         .collect(Collectors.toList());
-    return promptForNumberedObjectListItem(sorted, "priceMap.list", "id",
-        new String[] { "id", "duration" }, (k, v) -> {
+    return promptForNumberedObjectListItem(sorted, "priceMap.list", "id", new String[] { "info" },
+        (k, v) -> {
           showPriceMap(v.priceMap());
           shell.print("");
         });

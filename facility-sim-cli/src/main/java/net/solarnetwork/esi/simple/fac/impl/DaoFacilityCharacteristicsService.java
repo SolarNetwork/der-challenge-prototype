@@ -267,8 +267,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
         facilityService.setEnabledProgramTypes(programs);
       } catch (TimeoutException e) {
         throw new RuntimeException(
-            "Timeout waiting to publish resource characteristics to exchange " + exchange.getId(),
-            e);
+            "Timeout waiting to publish active programs to exchange " + exchange.getId(), e);
       } catch (StatusRuntimeException e) {
         if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
           throw new IllegalArgumentException(e.getStatus().getDescription());
@@ -343,11 +342,10 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
         // @formatter:on
         in.onCompleted();
         out.nab(1, TimeUnit.MINUTES);
-        log.info("Successfully published price map to exchange {}", exchange.getId());
+        log.info("Successfully published price map list to exchange {}", exchange.getId());
       } catch (TimeoutException e) {
         throw new RuntimeException(
-            "Timeout waiting to publish resource characteristics to exchange " + exchange.getId(),
-            e);
+            "Timeout waiting to publish price map list to exchange " + exchange.getId(), e);
       } catch (StatusRuntimeException e) {
         if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
           throw new IllegalArgumentException(e.getStatus().getDescription());
