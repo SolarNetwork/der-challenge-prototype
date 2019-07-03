@@ -36,6 +36,7 @@ import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Currency;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -260,7 +261,7 @@ public class DaoFacilityCharacteristicsServiceTests {
   }
 
   @Test
-  public void providePriceMap() throws IOException {
+  public void savePriceMap() throws IOException {
     // given
     String exchangeServerName = InProcessServerBuilder.generateName();
     URI exchangeUri = URI.create("//" + exchangeServerName);
@@ -273,6 +274,8 @@ public class DaoFacilityCharacteristicsServiceTests {
         new DurationRangeEmbed(Duration.ofMillis(2456L), Duration.ofMillis(4567L)));
     priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
         new BigDecimal("123.12345"), new BigDecimal("234.23456")));
+
+    given(facilityService.getPriceMaps()).willReturn(Collections.singleton(priceMap));
 
     DerFacilityExchangeImplBase exchangeService = new DerFacilityExchangeImplBase() {
 
@@ -291,7 +294,7 @@ public class DaoFacilityCharacteristicsServiceTests {
                     facilityUid,
                     priceMap));
             // @formatter:on
-            PriceMap pm = value.getPriceMap();
+            PriceMap pm = value.getPriceMap(0);
             assertThat("Real power", pm.getPowerComponents().getRealPower(),
                 equalTo(priceMap.getPowerComponents().getRealPower()));
             assertThat("Reactive power", pm.getPowerComponents().getReactivePower(),

@@ -224,7 +224,7 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
       public void onNext(PriceMapCharacteristics value) {
         log.info("Received facility price map submission: {}", value);
         try {
-          facilityCharacteristicsService.savePriceMap(value);
+          facilityCharacteristicsService.savePriceMaps(value);
         } catch (IllegalArgumentException e) {
           error = true;
           responseObserver.onError(

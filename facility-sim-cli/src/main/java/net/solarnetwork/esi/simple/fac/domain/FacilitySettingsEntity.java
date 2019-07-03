@@ -29,7 +29,8 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ForeignKey;
 import javax.persistence.JoinColumn;
-import javax.persistence.OneToOne;
+import javax.persistence.JoinTable;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
@@ -63,10 +64,15 @@ public class FacilitySettingsEntity extends BaseLongEntity {
   // @formatter:on
 
   // @formatter:off
-  @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-  @JoinColumn(name = "PRICE_MAP_ID", nullable = true, 
-      foreignKey = @ForeignKey(name = "FAC_SETTINGS_PRICE_MAP_FK"))
-  private PriceMapEntity priceMap;
+  @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+  @JoinTable(name = "FACILITY_PRICE_MAPS",
+      joinColumns = @JoinColumn(name = "FAC_SETTING_ID", referencedColumnName = "ID",
+          foreignKey = @ForeignKey(name = "FACILITY_PRICE_MAPS_FAC_SETTING_FK")),
+      inverseJoinColumns = @JoinColumn(name = "PRICE_MAP_ID", referencedColumnName = "ID",
+          foreignKey = @ForeignKey(name = "FACILITY_PRICE_MAPS_PRICE_MAP_FK")),
+      uniqueConstraints = @UniqueConstraint(name = "FACILITY_PRICE_MAPS_PRICE_MAP_UNQ",
+          columnNames = "PRICE_MAP_ID"))
+  private Set<PriceMapEntity> priceMaps;
   // @formatter:on
 
   /**
@@ -148,20 +154,59 @@ public class FacilitySettingsEntity extends BaseLongEntity {
   /**
    * Get the price map.
    * 
-   * @return the price map, or {@literal null} if not available
+   * @return the price maps, or {@literal null} if not available
    */
-  public PriceMapEntity getPriceMap() {
-    return priceMap;
+  public Set<PriceMapEntity> getPriceMaps() {
+    return priceMaps;
   }
 
   /**
    * SEt the price map.
    * 
-   * @param priceMap
-   *        the price map to set
+   * @param priceMaps
+   *        the price maps to set
    */
-  public void setPriceMap(PriceMapEntity priceMap) {
-    this.priceMap = priceMap;
+  public void setPriceMaps(Set<PriceMapEntity> priceMaps) {
+    this.priceMaps = priceMaps;
+  }
+
+  /**
+   * Add a price map.
+   * 
+   * @param priceMap
+   *        the price map to add
+   */
+  public void addPriceMap(PriceMapEntity priceMap) {
+    Set<PriceMapEntity> set = getPriceMaps();
+    if (set == null) {
+      set = new HashSet<>(4);
+      setPriceMaps(set);
+    }
+    set.add(priceMap);
+  }
+
+  /**
+   * Remove a price map.
+   * 
+   * @param priceMap
+   *        the price map to remove
+   */
+  public void removePriceMap(PriceMapEntity priceMap) {
+    Set<PriceMapEntity> set = getPriceMaps();
+    if (set != null) {
+      set.remove(priceMap);
+    }
+  }
+
+  /**
+   * Remove all price maps from this facility.
+   */
+  public void clearPriceMaps() {
+    Set<PriceMapEntity> set = getPriceMaps();
+    if (set == null || set.isEmpty()) {
+      return;
+    }
+    set.clear();
   }
 
 }

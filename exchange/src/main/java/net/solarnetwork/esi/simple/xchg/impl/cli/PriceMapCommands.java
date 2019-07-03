@@ -111,7 +111,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
    *        available facilities to choose from will be shown
    */
   @ShellMethod("Show the price map characteristics for a facility.")
-  public void priceMapShow(
+  public void priceMapsShow(
       @ShellOption(value = { "--facility", "-f" }, defaultValue = "") String facilityUid) {
     if (facilityUid == null || facilityUid.trim().isEmpty()) {
       facilityUid = promptForFacilityUidFromList();
@@ -121,10 +121,16 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
     }
     try {
       FacilityInfo info = characteristicsService.facilityInfo(facilityUid);
-      PriceMapEntity priceMap = characteristicsService.priceMap(facilityUid);
-      shell.print(getBold(messageSource.getMessage("priceMap.title",
+      shell.print(getBold(messageSource.getMessage("priceMap.list.title",
           new Object[] { facilityUid, info.getCustomerId() }, Locale.getDefault())));
-      showPriceMap(priceMap.priceMap());
+      Iterable<PriceMapEntity> priceMaps = characteristicsService.priceMaps(facilityUid);
+      int idx = 1;
+      for (PriceMapEntity priceMap : priceMaps) {
+        shell.print(getBold(messageSource.getMessage("priceMap.list.item",
+            new Object[] { idx, priceMap.getId() }, Locale.getDefault())));
+        showPriceMap(priceMap.priceMap());
+        shell.print("");
+      }
     } catch (IllegalArgumentException e) {
       shell.printError(messageSource.getMessage("list.facility.missing",
           new Object[] { facilityUid }, Locale.getDefault()));
@@ -392,7 +398,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
   }
 
   private void showPriceMap(PriceMapEmbed priceMap) {
-    PowerComponentsEmbed p = priceMap.getPowerComponents();
+    PowerComponentsEmbed p = priceMap.powerComponents();
     shell.print(String.format(PRICE_MAP_PROP_FORMAT,
         messageSource.getMessage("priceMap.power.real", null, Locale.getDefault()),
         p.getRealPower() / 1000.0, "kW"));
@@ -401,15 +407,15 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
         p.getReactivePower() / 1000.0, "kVAR"));
     shell.print(String.format(PRICE_MAP_PROP_FORMAT,
         messageSource.getMessage("priceMap.duration", null, Locale.getDefault()),
-        scaled(priceMap.getDuration().toMillis(), -3), "s"));
+        scaled(priceMap.duration().toMillis(), -3), "s"));
     shell.print(String.format(PRICE_MAP_PROP_FORMAT,
         messageSource.getMessage("priceMap.responseTime.min", null, Locale.getDefault()),
-        scaled(priceMap.getResponseTime().getMin().toMillis(), -3), "s"));
+        scaled(priceMap.responseTime().min().toMillis(), -3), "s"));
     shell.print(String.format(PRICE_MAP_PROP_FORMAT,
         messageSource.getMessage("priceMap.responseTime.max", null, Locale.getDefault()),
-        scaled(priceMap.getResponseTime().getMax().toMillis(), -3), "s"));
+        scaled(priceMap.responseTime().max().toMillis(), -3), "s"));
 
-    PriceComponentsEmbed pr = priceMap.getPriceComponents();
+    PriceComponentsEmbed pr = priceMap.priceComponents();
     shell.print(String.format(PRICE_MAP_PROP_FORMAT,
         messageSource.getMessage("priceMap.price.real", null, Locale.getDefault()),
         scaled(pr.getRealEnergyPrice(), -3), pr.getCurrency().getCurrencyCode() + "/kWh"));

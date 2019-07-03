@@ -36,6 +36,9 @@ message PriceMapCharacteristics {
   //
   // * `exchange_uid` UTF-8 bytes
   // * `facility_uid` UTF-8 bytes
+  // 
+  // Then for each `price_map` the following data must be included.
+  // 
   // * `price_map.power_components.real_power` big-endian encoded bytes
   // * `price_map.power_components.reactive_power` big-endian encoded bytes
   // * `price_map.duration.seconds` big-endian encoded bytes
@@ -49,7 +52,7 @@ message PriceMapCharacteristics {
   // * `price_map.price_components.nanos` big-endian encoded bytes
   DerRoute route = 1;
 
-  // The price map on offer.
-  PriceMap price_map = 2;
+  // The price maps on offer.
+  repeated PriceMap price_map = 2;
 
 }

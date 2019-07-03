@@ -116,6 +116,11 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
     assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "PRICE_MAPS"), equalTo(expected));
   }
 
+  private void assertFacilityPriceMapJoinTableRowCountEqualTo(final int expected) {
+    assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "FACILITY_PRICE_MAPS"),
+        equalTo(expected));
+  }
+
   @Test
   public void insert() {
     FacilityEntity obj = new FacilityEntity(Instant.now());
@@ -190,11 +195,12 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
         new BigDecimal("9.99"), new BigDecimal("99.99")));
 
     FacilityEntity entity = dao.findById(last.getId()).get();
-    entity.setPriceMap(priceMap);
+    entity.addPriceMap(priceMap);
     entity = dao.save(entity);
     em.flush();
     assertFacilityPriceMapRowCountEqualTo(1);
-    lastPriceMap = entity.getPriceMap();
+    assertFacilityPriceMapJoinTableRowCountEqualTo(1);
+    lastPriceMap = entity.getPriceMaps().iterator().next();
   }
 
   @Test
@@ -202,7 +208,7 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
     addPriceMap();
     em.clear();
     FacilityEntity facility = dao.findById(last.getId()).get();
-    PriceMapEntity entity = facility.getPriceMap();
+    PriceMapEntity entity = facility.getPriceMaps().iterator().next();
     assertThat("Created", entity.getCreated(), equalTo(lastPriceMap.getCreated()));
     assertThat("Modified", entity.getModified(), equalTo(lastPriceMap.getModified()));
     assertThat("Duration", entity.getDuration(), equalTo(lastPriceMap.getDuration()));

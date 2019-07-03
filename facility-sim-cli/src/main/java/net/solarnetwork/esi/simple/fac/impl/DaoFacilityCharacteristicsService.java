@@ -24,7 +24,9 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -45,9 +47,6 @@ import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.DurationRange;
-import net.solarnetwork.esi.domain.PowerComponents;
-import net.solarnetwork.esi.domain.PriceComponents;
-import net.solarnetwork.esi.domain.PriceMap;
 import net.solarnetwork.esi.domain.PriceMapCharacteristics;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
@@ -284,17 +283,35 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
   @Override
-  public PriceMapEntity priceMap() {
-    return facilityService.getPriceMap();
+  public Iterable<PriceMapEntity> priceMaps() {
+    return facilityService.getPriceMaps();
   }
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
   public void savePriceMap(PriceMapEntity priceMap) {
+    facilityService.savePriceMap(priceMap);
+    postPriceMapsToExchange();
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public void deletePriceMap(Long priceMapId) {
+    facilityService.deletePriceMap(priceMapId);
+    postPriceMapsToExchange();
+  }
+
+  private void postPriceMapsToExchange() {
     ExchangeEntity exchange = facilityService.getExchange();
-    if (exchange == null) {
-      facilityService.savePriceMap(priceMap);
-    } else {
+    if (exchange != null) {
+      List<Object> messageData = new ArrayList<>();
+      messageData.add(exchange.getId());
+      messageData.add(facilityService.getUid());
+      PriceMapCharacteristics.Builder pmc = PriceMapCharacteristics.newBuilder();
+      for (PriceMapEntity pme : facilityService.getPriceMaps()) {
+        messageData.add(pme);
+        pmc.addPriceMap(ProtobufUtils.priceMapForPriceMapEmbed(pme.getPriceMap()));
+      }
       ManagedChannel channel = exchangeChannelProvider
           .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
       try {
@@ -302,51 +319,17 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
         FutureStreamObserver<Empty, Iterable<Empty>> out = new QueuingStreamObserver<>(1);
         StreamObserver<PriceMapCharacteristics> in = client.providePriceMaps(out);
         // @formatter:off
-        in.onNext(PriceMapCharacteristics.newBuilder()
-            .setPriceMap(PriceMap.newBuilder()
-                .setPowerComponents(PowerComponents.newBuilder()
-                    .setRealPower(priceMap.getPowerComponents().getRealPower())
-                    .setReactivePower(priceMap.getPowerComponents().getReactivePower())
-                    .build())
-                .setDuration(com.google.protobuf.Duration.newBuilder()
-                    .setSeconds(priceMap.getDuration().getSeconds())
-                    .setNanos(priceMap.getDuration().getNano())
-                    .build())
-                .setResponseTime(DurationRange.newBuilder()
-                    .setMin(com.google.protobuf.Duration.newBuilder()
-                        .setSeconds(priceMap.getResponseTime().getMin().getSeconds())
-                        .setNanos(priceMap.getResponseTime().getMin().getNano())
-                        .build())
-                    .setMax(com.google.protobuf.Duration.newBuilder()
-                        .setSeconds(priceMap.getResponseTime().getMax().getSeconds())
-                        .setNanos(priceMap.getResponseTime().getMax().getNano())
-                        .build())
-                    .build())
-                .setPrice(PriceComponents.newBuilder()
-                    .setRealEnergyPrice(ProtobufUtils.moneyForDecimal(
-                        priceMap.getPriceComponents().getCurrency(), 
-                        priceMap.getPriceComponents().getRealEnergyPrice()))
-                    .setApparentEnergyPrice(ProtobufUtils.moneyForDecimal(
-                        priceMap.getPriceComponents().getCurrency(), 
-                        priceMap.getPriceComponents().getApparentEnergyPrice()))
-                    .build())
-                .build())
-            .setRoute(DerRoute.newBuilder()
+        in.onNext(pmc.setRoute(DerRoute.newBuilder()
                 .setExchangeUid(exchange.getId())
                 .setFacilityUid(facilityService.getUid())
                 .setSignature(generateMessageSignature(facilityService.getCryptoHelper(), 
-                    facilityService.getKeyPair(), exchange.publicKey(), asList(
-                        exchange.getId(),
-                        facilityService.getUid(),
-                        priceMap))
-                    )
+                    facilityService.getKeyPair(), exchange.publicKey(), messageData))
                 .build())
             .build());
         // @formatter:on
         in.onCompleted();
         out.nab(1, TimeUnit.MINUTES);
         log.info("Successfully published price map to exchange {}", exchange.getId());
-        facilityService.savePriceMap(priceMap);
       } catch (TimeoutException e) {
         throw new RuntimeException(
             "Timeout waiting to publish resource characteristics to exchange " + exchange.getId(),

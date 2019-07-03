@@ -101,7 +101,7 @@ public interface FacilityCharacteristicsService {
   void saveActiveProgramTypes(DerProgramSetOrBuilder programSet);
 
   /**
-   * Get the current price map for a specific facility.
+   * Get the current price maps for a specific facility.
    * 
    * @param facilityUid
    *        the UID of the facility to get the price map for
@@ -110,7 +110,7 @@ public interface FacilityCharacteristicsService {
    *         if no facility exists for {@code facilityUid}
    */
   @Nonnull
-  PriceMapEntity priceMap(String facilityUid);
+  Iterable<PriceMapEntity> priceMaps(String facilityUid);
 
   /**
    * Save the price map characteristics for a facility.
@@ -123,6 +123,6 @@ public interface FacilityCharacteristicsService {
    * @param priceMapCharacteristcis
    *        the price map characteristics to save
    */
-  void savePriceMap(PriceMapCharacteristicsOrBuilder priceMapCharacteristcis);
+  void savePriceMaps(PriceMapCharacteristicsOrBuilder priceMapCharacteristcis);
 
 }

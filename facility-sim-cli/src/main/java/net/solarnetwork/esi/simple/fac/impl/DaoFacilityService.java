@@ -17,13 +17,12 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
-import java.math.BigDecimal;
+import static java.util.stream.Collectors.toSet;
+
 import java.net.URI;
 import java.security.KeyPair;
-import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.Currency;
 import java.util.Iterator;
 import java.util.Set;
 
@@ -32,9 +31,6 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
-import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
-import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.FacilitySettingsEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
@@ -161,21 +157,11 @@ public class DaoFacilityService implements FacilityService {
   // propagation is REQUIRED for lazy JPA init of settings.priceMap
   @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
   @Override
-  public PriceMapEntity getPriceMap() {
+  public Iterable<PriceMapEntity> getPriceMaps() {
     FacilitySettingsEntity settings = settings();
-    PriceMapEntity priceMap = settings != null ? settings.getPriceMap() : null;
-    if (priceMap != null) {
-      priceMap = priceMap.copy();
-    } else {
-      priceMap = new PriceMapEntity(Instant.now());
-      priceMap.setDuration(Duration.ofSeconds(0));
-      priceMap.setPowerComponents(new PowerComponentsEmbed(0L, 0L));
-      priceMap.setPriceComponents(
-          new PriceComponentsEmbed(Currency.getInstance("USD"), BigDecimal.ZERO, BigDecimal.ZERO));
-      priceMap
-          .setResponseTime(new DurationRangeEmbed(Duration.ofSeconds(0L), Duration.ofSeconds(0L)));
-    }
-    return priceMap;
+    Set<PriceMapEntity> priceMaps = settings != null ? settings.getPriceMaps()
+        : Collections.emptySet();
+    return priceMaps.stream().map(PriceMapEntity::copy).collect(toSet());
   }
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
@@ -185,24 +171,22 @@ public class DaoFacilityService implements FacilityService {
     if (settings == null) {
       settings = new FacilitySettingsEntity(Instant.now());
     }
-    PriceMapEntity pm = settings.getPriceMap();
-    if (pm == null) {
-      settings.setPriceMap(priceMap);
-    } else {
-      if (priceMap.getDuration() != null) {
-        pm.setDuration(priceMap.getDuration());
-      }
-      if (priceMap.getPowerComponents() != null) {
-        pm.setPowerComponents(priceMap.getPowerComponents());
-      }
-      if (priceMap.getPriceComponents() != null) {
-        pm.setPriceComponents(priceMap.getPriceComponents());
-      }
-      if (priceMap.getResponseTime() != null) {
-        pm.setResponseTime(priceMap.getResponseTime());
+    settings.addPriceMap(priceMap);
+    settingsDao.save(settings);
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public void deletePriceMap(Long priceMapId) {
+    FacilitySettingsEntity settings = settings();
+    if (settings != null && settings.getPriceMaps() != null) {
+      PriceMapEntity priceMap = settings.getPriceMaps().stream()
+          .filter(e -> priceMapId.equals(e.getId())).findAny().orElse(null);
+      if (priceMap != null) {
+        settings.removePriceMap(priceMap);
+        settingsDao.save(settings);
       }
     }
-    settingsDao.save(settings);
   }
 
 }

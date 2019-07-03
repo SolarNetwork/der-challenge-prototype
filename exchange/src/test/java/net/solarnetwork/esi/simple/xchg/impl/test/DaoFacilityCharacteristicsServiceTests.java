@@ -18,11 +18,14 @@
 package net.solarnetwork.esi.simple.xchg.impl.test;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 import static net.solarnetwork.esi.simple.xchg.test.TestUtils.invocationArg;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -344,34 +347,37 @@ public class DaoFacilityCharacteristicsServiceTests {
   }
 
   @Test
-  public void priceMapForFacility() {
+  public void priceMapsForFacility() {
     // given
     FacilityEntity facility = new FacilityEntity(Instant.now());
     PriceMapEntity priceMap = new PriceMapEntity(Instant.now());
-    facility.setPriceMap(priceMap);
+    facility.addPriceMap(priceMap);
 
     given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
 
     // when
-    PriceMapEntity result = service.priceMap(facilityUid);
+    Iterable<PriceMapEntity> result = service.priceMaps(facilityUid);
+    List<PriceMapEntity> list = stream(result.spliterator(), false).collect(toList());
 
     // then
-    assertThat("Result available", result, equalTo(priceMap));
-    assertThat("Result is copy", result, not(sameInstance(priceMap)));
+    assertThat("Result available", list, hasSize(1));
+    assertThat("Result is price map", list.get(0), equalTo(priceMap));
+    assertThat("Result is copy", list.get(0), not(sameInstance(priceMap)));
   }
 
   @Test
-  public void priceMapForFacilityNotFound() {
+  public void priceMapsForFacilityNotFound() {
     // given
     FacilityEntity facility = new FacilityEntity(Instant.now());
 
     given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
 
     // when
-    PriceMapEntity result = service.priceMap(facilityUid);
+    Iterable<PriceMapEntity> result = service.priceMaps(facilityUid);
+    List<PriceMapEntity> list = stream(result.spliterator(), false).collect(toList());
 
     // then
-    assertThat("Result not available", result, nullValue());
+    assertThat("Result empty", list, hasSize(0));
   }
 
   @Test
@@ -390,7 +396,7 @@ public class DaoFacilityCharacteristicsServiceTests {
     // when
     // @formatter:off
     PriceMapCharacteristics.Builder priceMapBuilder = PriceMapCharacteristics.newBuilder()
-        .setPriceMap(PriceMap.newBuilder()
+        .addPriceMap(PriceMap.newBuilder()
             .setPowerComponents(PowerComponents.newBuilder()
                 .setRealPower(1L)
                 .setReactivePower(2L)
@@ -431,18 +437,17 @@ public class DaoFacilityCharacteristicsServiceTests {
                 facilityKeyPair, exchangeKeyPair.getPublic(), asList(
                     exchangeUid,
                     facilityUid,
-                    PriceMapEntity.entityForMessage(
-                        priceMapBuilder.getPriceMapOrBuilder())))
+                    PriceMapEntity.entityForMessage(priceMapBuilder.getPriceMap(0))))
                 )
             .build())
         .build();
     // @formatter:on
-    service.savePriceMap(priceMapMessage);
+    service.savePriceMaps(priceMapMessage);
 
     // then
     assertThat("Facility persisted", facilityCaptor.getValue(), sameInstance(facility));
 
-    PriceMapEntity entity = facilityCaptor.getValue().getPriceMap();
+    PriceMapEntity entity = facilityCaptor.getValue().getPriceMaps().iterator().next();
     assertThat("Facility persisted with price map", entity, notNullValue());
 
     assertThat("Power components", entity.getPowerComponents(),

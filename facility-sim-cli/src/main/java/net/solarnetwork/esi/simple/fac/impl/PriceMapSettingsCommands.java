@@ -64,9 +64,14 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
    * List the current facility price map settings.
    */
   @ShellMethod("Show the current facility price map settings.")
-  public void priceMapShow() {
-    PriceMapEntity priceMap = characteristicsService.priceMap();
-    showPriceMap(priceMap.priceMap());
+  public void priceMapsShow() {
+    Iterable<PriceMapEntity> priceMaps = characteristicsService.priceMaps();
+    int idx = 0;
+    for (PriceMapEntity priceMap : priceMaps) {
+      // FIXME: add list item header
+      showPriceMap(priceMap.priceMap());
+      shell.print("");
+    }
   }
 
   /**
@@ -74,7 +79,8 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
    */
   @ShellMethod("Configure the facility price map settings.")
   public void priceMapEdit() {
-    PriceMapEntity entity = characteristicsService.priceMap();
+    // FIXME: pick price map from list
+    PriceMapEntity entity = null;//characteristicsService.priceMap();
     PriceMapEmbed priceMap = entity.priceMap();
 
     BigDecimal n;
