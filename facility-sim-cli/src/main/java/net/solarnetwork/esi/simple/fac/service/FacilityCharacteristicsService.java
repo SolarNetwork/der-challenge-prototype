@@ -82,6 +82,18 @@ public interface FacilityCharacteristicsService {
   Iterable<PriceMapEntity> priceMaps();
 
   /**
+   * Get a price map by ID.
+   * 
+   * @param priceMapId
+   *        the ID of the price map to get
+   * @return the price map
+   * @throws IllegalArgumentException
+   *         if the price map is not found
+   */
+  @Nonnull
+  PriceMapEntity priceMap(Long priceMapId);
+
+  /**
    * Save a facility price map settings.
    * 
    * @param priceMap

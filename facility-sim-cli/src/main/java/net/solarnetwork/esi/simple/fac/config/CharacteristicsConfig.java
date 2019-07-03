@@ -22,10 +22,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import net.solarnetwork.esi.grpc.ChannelProvider;
+import net.solarnetwork.esi.simple.fac.dao.PriceMapEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.fac.impl.DaoFacilityCharacteristicsService;
+import net.solarnetwork.esi.simple.fac.impl.DaoPriceMapService;
 import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
+import net.solarnetwork.esi.simple.fac.service.PriceMapService;
 
 /**
  * Configuration related to resources and characteristics.
@@ -38,6 +41,9 @@ public class CharacteristicsConfig {
 
   @Autowired
   private FacilityService facilityService;
+
+  @Autowired
+  private PriceMapEntityDao priceMapDao;
 
   @Autowired
   private ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
@@ -53,8 +59,14 @@ public class CharacteristicsConfig {
   @Bean
   public FacilityCharacteristicsService characteristicsService() {
     DaoFacilityCharacteristicsService s = new DaoFacilityCharacteristicsService(facilityService,
-        resourceCharacteristicsDao);
+        priceMapDao, resourceCharacteristicsDao);
     s.setExchangeChannelProvider(exchangeChannelProvider);
+    return s;
+  }
+
+  @Bean
+  public PriceMapService priceMapService() {
+    DaoPriceMapService s = new DaoPriceMapService();
     return s;
   }
 

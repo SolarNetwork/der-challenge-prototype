@@ -63,6 +63,7 @@ import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.grpc.InProcessChannelProvider;
 import net.solarnetwork.esi.grpc.StaticInProcessChannelProvider;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
+import net.solarnetwork.esi.simple.fac.dao.PriceMapEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
@@ -88,6 +89,7 @@ public class DaoFacilityCharacteristicsServiceTests {
   private KeyPair facilityKeyPair;
   private String exchangeUid;
   private KeyPair exchangeKeyPair;
+  private PriceMapEntityDao priceMapDao;
   private ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
   private DaoFacilityCharacteristicsService service;
   private ExchangeEntity exchangeEntity;
@@ -100,8 +102,10 @@ public class DaoFacilityCharacteristicsServiceTests {
     facilityService = mock(FacilityService.class);
     exchangeUid = UUID.randomUUID().toString();
     exchangeKeyPair = CryptoUtils.STANDARD_HELPER.generateKeyPair();
+    priceMapDao = mock(PriceMapEntityDao.class);
     resourceCharacteristicsDao = mock(ResourceCharacteristicsEntityDao.class);
-    service = new DaoFacilityCharacteristicsService(facilityService, resourceCharacteristicsDao);
+    service = new DaoFacilityCharacteristicsService(facilityService, priceMapDao,
+        resourceCharacteristicsDao);
     service.setExchangeChannelProvider(new InProcessChannelProvider(true));
     exchangeEntity = new ExchangeEntity(Instant.now());
     exchangeEntity.setId(exchangeUid);

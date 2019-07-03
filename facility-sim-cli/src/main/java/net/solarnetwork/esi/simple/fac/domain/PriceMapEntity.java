@@ -20,6 +20,7 @@ package net.solarnetwork.esi.simple.fac.domain;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Optional;
 
 import javax.annotation.Nonnull;
@@ -88,13 +89,36 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    * @return the copy
    */
   public PriceMapEntity copy() {
-    PriceMapEntity c = new PriceMapEntity(getCreated());
+    PriceMapEntity c = new PriceMapEntity(getCreated(), getId());
     c.setModified(getModified());
     PriceMapEmbed pm = getPriceMap();
     if (pm != null) {
       c.setPriceMap(pm.copy());
     }
     return c;
+  }
+
+  /**
+   * Get a brief informational string out of the main aspects of this price map.
+   * 
+   * @param locale
+   *        the desired locale
+   * @return the string
+   */
+  @Nonnull
+  public String toInfoString(Locale locale) {
+    return priceMap().toInfoString(locale);
+  }
+
+  /**
+   * Get the info string in the default locale.
+   * 
+   * @return the info string
+   * @see #toInfoString(Locale)
+   */
+  @Nonnull
+  public String getInfo() {
+    return priceMap().getInfo();
   }
 
   @Override

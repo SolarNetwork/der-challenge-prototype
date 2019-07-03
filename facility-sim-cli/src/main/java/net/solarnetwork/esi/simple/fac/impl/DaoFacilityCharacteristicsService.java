@@ -55,6 +55,7 @@ import net.solarnetwork.esi.grpc.FutureStreamObserver;
 import net.solarnetwork.esi.grpc.QueuingStreamObserver;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeStub;
+import net.solarnetwork.esi.simple.fac.dao.PriceMapEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
@@ -71,6 +72,7 @@ import net.solarnetwork.esi.simple.fac.service.FacilityService;
 public class DaoFacilityCharacteristicsService implements FacilityCharacteristicsService {
 
   private final FacilityService facilityService;
+  private final PriceMapEntityDao priceMapDao;
   private final ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
   private ChannelProvider exchangeChannelProvider;
 
@@ -80,13 +82,18 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
   /**
    * Constructor.
    * 
+   * @param facilityService
+   *        the facility service
+   * @param priceMapDao
+   *        the price map DAO
    * @param resourceCharacteristicsDao
    *        the resource characteristics DAO
    */
   public DaoFacilityCharacteristicsService(FacilityService facilityService,
-      ResourceCharacteristicsEntityDao resourceCharacteristicsDao) {
+      PriceMapEntityDao priceMapDao, ResourceCharacteristicsEntityDao resourceCharacteristicsDao) {
     super();
     this.facilityService = facilityService;
+    this.priceMapDao = priceMapDao;
     this.resourceCharacteristicsDao = resourceCharacteristicsDao;
   }
 
@@ -285,6 +292,13 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
   @Override
   public Iterable<PriceMapEntity> priceMaps() {
     return facilityService.getPriceMaps();
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public PriceMapEntity priceMap(Long priceMapId) {
+    return priceMapDao.findById(priceMapId).orElseThrow(
+        () -> new IllegalArgumentException("Price map " + priceMapId + " not available."));
   }
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
