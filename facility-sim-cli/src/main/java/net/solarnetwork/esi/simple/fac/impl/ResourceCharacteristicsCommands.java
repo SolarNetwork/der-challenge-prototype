@@ -28,6 +28,7 @@ import org.springframework.shell.standard.ShellMethod;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
+import net.solarnetwork.esi.domain.jpa.ResourceCharacteristicsEmbed;
 import net.solarnetwork.esi.simple.fac.domain.ResourceCharacteristicsEntity;
 import net.solarnetwork.esi.simple.fac.service.FacilityCharacteristicsService;
 
@@ -62,7 +63,7 @@ public class ResourceCharacteristicsCommands extends BaseFacilityCharacteristics
   public void resourceShow() {
     ResourceCharacteristicsEntity characteristics = characteristicsService
         .resourceCharacteristics();
-    showResourceCharacteristics(characteristics);
+    showResourceCharacteristics(characteristics.characteristics());
   }
 
   /**
@@ -104,36 +105,36 @@ public class ResourceCharacteristicsCommands extends BaseFacilityCharacteristics
     characteristics.getResponseTime().setMax(Duration.ofMillis(scaled(n, 3).longValue()));
 
     shell.print(messageSource.getMessage("edit.confirm.title", null, Locale.getDefault()));
-    showResourceCharacteristics(characteristics);
+    showResourceCharacteristics(characteristics.characteristics());
     if (shell.confirm(messageSource.getMessage("edit.confirm.ask", null, Locale.getDefault()))) {
       characteristicsService.saveResourceCharacteristics(characteristics);
       shell.printSuccess(messageSource.getMessage("rsrc.edit.saved", null, Locale.getDefault()));
     }
   }
 
-  private void showResourceCharacteristics(ResourceCharacteristicsEntity characteristics) {
+  private void showResourceCharacteristics(ResourceCharacteristicsEmbed characteristics) {
     String fmt = "%-25s : %.3f %s";
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.loadPowerMax", null, Locale.getDefault()),
-        characteristics.getLoadPowerMax() / 1000.0, "kW"));
+        scaled(characteristics.loadPowerMax(), -3), "kW"));
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.loadPowerFactor", null, Locale.getDefault()),
-        characteristics.getLoadPowerFactor(), ""));
+        characteristics.loadPowerFactor(), ""));
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.supplyPowerMax", null, Locale.getDefault()),
-        characteristics.getSupplyPowerMax() / 1000.0, "kW"));
+        scaled(characteristics.supplyPowerMax(), -3), "kW"));
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.supplyPowerFactor", null, Locale.getDefault()),
-        characteristics.getSupplyPowerFactor(), ""));
+        characteristics.supplyPowerFactor(), ""));
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.storageEnergyCapacity", null, Locale.getDefault()),
-        characteristics.getStorageEnergyCapacity() / 1000.0, "kWh"));
+        scaled(characteristics.storageEnergyCapacity(), -3), "kWh"));
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.responseTime.min", null, Locale.getDefault()),
-        scaled(characteristics.getResponseTime().getMin().toMillis(), -3), "s"));
+        scaled(characteristics.responseTime().min().toMillis(), -3), "s"));
     shell.print(String.format(fmt,
         messageSource.getMessage("rsrc.char.responseTime.max", null, Locale.getDefault()),
-        scaled(characteristics.getResponseTime().getMax().toMillis(), -3), "s"));
+        scaled(characteristics.responseTime().max().toMillis(), -3), "s"));
     shell.print("");
   }
 

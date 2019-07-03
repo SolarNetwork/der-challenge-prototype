@@ -157,6 +157,7 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
    * 
    * @return the optional price map details
    */
+  @Nonnull
   public Optional<PriceMapEmbed> priceMapOpt() {
     return Optional.ofNullable(getPriceMap());
   }
