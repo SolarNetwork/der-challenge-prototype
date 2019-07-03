@@ -268,8 +268,8 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
       pr.setCurrency(Currency.getInstance(s));
 
       n = readNumber("priceMap.price.apparent", pr.getCurrency().getCurrencyCode() + "/kVAh",
-          scaled(pr.getApparentEnergyPrice(), -3), 0L, Long.MAX_VALUE / 1000);
-      pr.setApparentEnergyPrice(scaled(n, 3));
+          scaled(pr.getApparentEnergyPrice(), 3), 0L, Long.MAX_VALUE / 1000);
+      pr.setApparentEnergyPrice(scaled(n, -3));
 
       shell.print(
           messageSource.getMessage("priceMap.edit.confirm.title", null, Locale.getDefault()));
@@ -414,6 +414,6 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
     PriceComponentsEmbed pr = priceMap.priceComponents();
     shell.print(String.format(PRICE_MAP_PROP_FORMAT,
         messageSource.getMessage("priceMap.price.apparent", null, Locale.getDefault()),
-        scaled(pr.apparentEnergyPrice(), -3), pr.currency().getCurrencyCode() + "/kVAh"));
+        scaled(pr.apparentEnergyPrice(), 3), pr.currency().getCurrencyCode() + "/kVAh"));
   }
 }
