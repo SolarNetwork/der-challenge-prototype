@@ -259,7 +259,7 @@ public abstract class BaseShellSupport extends BaseMessageSourceSupport {
       } catch (NumberFormatException e) {
         shell.printError(
             messageSource.getMessage("answer.error.enterNumber", null, Locale.getDefault()));
-      } catch (ArrayIndexOutOfBoundsException e) {
+      } catch (IndexOutOfBoundsException e) {
         shell.printError(messageSource.getMessage("answer.error.numOutOfRange",
             new Object[] { 1, ids.size() }, Locale.getDefault()));
       }
