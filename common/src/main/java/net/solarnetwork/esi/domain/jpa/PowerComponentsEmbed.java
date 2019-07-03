@@ -90,6 +90,17 @@ public class PowerComponentsEmbed implements SignableMessage {
     return "PowerComponents{realPower=" + realPower + ", reactivePower=" + reactivePower + "}";
   }
 
+  /**
+   * Derive a simple apparent power value from the configured real and reactive power values.
+   * 
+   * @return the apparent power
+   */
+  public double derivedApparentPower() {
+    double p = realPower != null ? realPower.doubleValue() : 0.0;
+    double q = reactivePower != null ? reactivePower.doubleValue() : 0.0;
+    return Math.sqrt(p * p + q * q);
+  }
+
   @Override
   public int signatureMessageBytesSize() {
     return Long.BYTES * 2;

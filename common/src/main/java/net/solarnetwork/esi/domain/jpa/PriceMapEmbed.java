@@ -135,6 +135,61 @@ public class PriceMapEmbed implements SignableMessage {
   }
 
   /**
+   * Calculate the theoretical cost represented by this price map as the apparent power multiplied
+   * by the duration (in hours) multiplied by the apparent energy price.
+   * 
+   * @return the apparent energy cost, in the configured currency units per volt-amp-hours (VAh)
+   */
+  @Nonnull
+  public BigDecimal calculatedApparentEnergyCost() {
+    BigDecimal vahPrice = priceComponents().apparentEnergyPrice();
+    if (vahPrice.equals(BigDecimal.ZERO)) {
+      return vahPrice;
+    }
+    PowerComponentsEmbed p = powerComponents();
+    double va = p.derivedApparentPower();
+    double vah = va * durationHours();
+    return vahPrice.multiply(new BigDecimal(String.valueOf(vah)));
+  }
+
+  /**
+   * Get the fractional hours represented by the configured duration.
+   * 
+   * @return the duration, as fractional hours
+   */
+  public double durationHours() {
+    return duration().toMillis() / (1000.0 * 60.0 * 60.0);
+  }
+
+  /**
+   * Get a brief informational string out of the main aspects of this price map.
+   * 
+   * @return the string
+   */
+  @Nonnull
+  public String toInfoString(Locale locale) {
+    PowerComponentsEmbed p = powerComponents();
+    PriceComponentsEmbed pr = priceComponents();
+    double hours = durationHours();
+    Currency c = pr.currency();
+    BigDecimal cost = calculatedApparentEnergyCost();
+    return String.format(locale, "%,.3f kVA ~ %,.3fh @ %s%,.2f/kVAh = %3$s%,.2f",
+        p.derivedApparentPower() / 1000.0, hours, c.getSymbol(locale),
+        pr.apparentEnergyPrice().movePointRight(3), cost);
+  }
+
+  /**
+   * Get the info string in the default locale.
+   * 
+   * @return the info string
+   * @see #toInfoString(Locale)
+   */
+  @Nonnull
+  public String getInfo() {
+    return toInfoString(Locale.getDefault());
+  }
+
+  /**
    * Get the power components.
    * 
    * @return the power components

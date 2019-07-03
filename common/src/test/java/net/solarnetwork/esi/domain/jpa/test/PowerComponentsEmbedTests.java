@@ -17,6 +17,7 @@
 
 package net.solarnetwork.esi.domain.jpa.test;
 
+import static org.hamcrest.Matchers.closeTo;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
 
@@ -66,4 +67,17 @@ public class PowerComponentsEmbedTests {
         equalTo(ByteString.copyFrom((ByteBuffer) bb.flip())));
   }
 
+  @Test
+  public void apparentPowerNoPowerValues() {
+    PowerComponentsEmbed p = new PowerComponentsEmbed();
+    assertThat("Apparent power computes to zero", p.derivedApparentPower(), equalTo(0.0));
+  }
+
+  @Test
+  public void apparentPower() {
+    PowerComponentsEmbed p = new PowerComponentsEmbed(12345L, 23456L);
+    double expected = 26506.281538533465; // Math.sqrt(12345L * 12345L + 23456L * 23456L);
+    assertThat("Apparent power computes to zero", p.derivedApparentPower(),
+        closeTo(expected, 0.00001));
+  }
 }
