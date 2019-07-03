@@ -143,8 +143,8 @@ public class DaoPriceMapOfferingServiceTests {
     priceMap.setDuration(Duration.ofMillis(3456L));
     priceMap.setResponseTime(
         new DurationRangeEmbed(Duration.ofMillis(4567L), Duration.ofMillis(5678L)));
-    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
-        new BigDecimal("7.89"), new BigDecimal("9.87")));
+    priceMap.setPriceComponents(
+        new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("9.87")));
     UUID offeringId = UUID.randomUUID();
     PriceMapOfferingEntity offering = new PriceMapOfferingEntity(Instant.now(), offeringId);
     offering.setPriceMap(new PriceMapEntity(Instant.now(), priceMap));
@@ -234,8 +234,8 @@ public class DaoPriceMapOfferingServiceTests {
     priceMap.setDuration(Duration.ofMillis(3456L));
     priceMap.setResponseTime(
         new DurationRangeEmbed(Duration.ofMillis(4567L), Duration.ofMillis(5678L)));
-    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
-        new BigDecimal("7.89"), new BigDecimal("9.87")));
+    priceMap.setPriceComponents(
+        new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("9.87")));
     UUID offeringId = UUID.randomUUID();
     PriceMapOfferingEntity offering = new PriceMapOfferingEntity(Instant.now(), offeringId);
     offering.setPriceMap(new PriceMapEntity(Instant.now(), priceMap));
@@ -280,7 +280,7 @@ public class DaoPriceMapOfferingServiceTests {
             Arrays.asList(exchangeUid, facilityUid, offering));
 
         PriceMap.Builder counterOffer = request.getPriceMap().toBuilder();
-        counterOffer.getPriceBuilder().getRealEnergyPriceBuilder().setUnits(999);
+        counterOffer.getPriceBuilder().getApparentEnergyPriceBuilder().setUnits(999);
 
         // @formatter:off
         responseObserver.onNext(PriceMapOfferResponse.newBuilder()
@@ -322,7 +322,7 @@ public class DaoPriceMapOfferingServiceTests {
     assertThat("Offer is not confirmed", offer.isConfirmed(), equalTo(false));
 
     PriceMapEmbed counterPriceMap = priceMap.copy();
-    counterPriceMap.getPriceComponents().setRealEnergyPrice(new BigDecimal("999.89"));
+    counterPriceMap.getPriceComponents().setApparentEnergyPrice(new BigDecimal("999.87"));
     assertThat("Counter-offer price map is extortion", offer.getPriceMap().getPriceMap(),
         equalTo(counterPriceMap));
   }

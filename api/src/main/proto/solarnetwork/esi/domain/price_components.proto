@@ -28,10 +28,7 @@ import "google/type/money.proto";
 // Defines a price in terms of power characteristics.
 message PriceComponents {
 
-  // The price per watt hours (Wh).
-  google.type.Money real_energy_price = 1;
-
   // The price per volt-amp hours (VAh).
-  google.type.Money apparent_energy_price = 2;
+  google.type.Money apparent_energy_price = 1;
 
 }

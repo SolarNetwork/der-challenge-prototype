@@ -86,6 +86,11 @@ public class PowerComponentsEmbed implements SignableMessage {
   }
 
   @Override
+  public String toString() {
+    return "PowerComponents{realPower=" + realPower + ", reactivePower=" + reactivePower + "}";
+  }
+
+  @Override
   public int signatureMessageBytesSize() {
     return Long.BYTES * 2;
   }

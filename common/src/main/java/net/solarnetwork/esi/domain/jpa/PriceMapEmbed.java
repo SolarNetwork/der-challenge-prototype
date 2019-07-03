@@ -128,6 +128,12 @@ public class PriceMapEmbed implements SignableMessage {
         && Objects.equals(responseTime, other.responseTime);
   }
 
+  @Override
+  public String toString() {
+    return "PriceMap{powerComponents=" + powerComponents + ", duration=" + duration
+        + ", responseTime=" + responseTime + ", priceComponents=" + priceComponents + "}";
+  }
+
   /**
    * Get the power components.
    * 
@@ -264,8 +270,7 @@ public class PriceMapEmbed implements SignableMessage {
   public PriceComponentsEmbed priceComponents() {
     PriceComponentsEmbed e = getPriceComponents();
     if (e == null) {
-      e = new PriceComponentsEmbed(Currency.getInstance(Locale.getDefault()), BigDecimal.ZERO,
-          BigDecimal.ZERO);
+      e = new PriceComponentsEmbed(Currency.getInstance(Locale.getDefault()), BigDecimal.ZERO);
       setPriceComponents(e);
     }
     return e;

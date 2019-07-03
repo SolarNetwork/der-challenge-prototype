@@ -175,8 +175,6 @@ public final class ProtobufUtils {
               .setMax(durationForDuration(value.responseTime().getMax()))
               .build())
           .setPrice(PriceComponents.newBuilder()
-              .setRealEnergyPrice(moneyForDecimal(value.priceComponents().getCurrency(),
-                  value.priceComponents().getRealEnergyPrice()))
               .setApparentEnergyPrice(moneyForDecimal(value.priceComponents().getCurrency(),
                   value.priceComponents().getApparentEnergyPrice()))
               .build());
@@ -207,18 +205,13 @@ public final class ProtobufUtils {
 
     Currency currency = null;
     try {
-      currency = Currency.getInstance(priceMap.getPrice().getRealEnergyPrice().getCurrencyCode());
+      currency = Currency
+          .getInstance(priceMap.getPrice().getApparentEnergyPrice().getCurrencyCode());
     } catch (IllegalArgumentException e) {
-      try {
-        currency = Currency
-            .getInstance(priceMap.getPrice().getApparentEnergyPrice().getCurrencyCode());
-      } catch (IllegalArgumentException e2) {
-        currency = Currency.getInstance(Locale.getDefault());
-      }
+      currency = Currency.getInstance(Locale.getDefault());
     }
 
     result.setPriceComponents(new PriceComponentsEmbed(currency,
-        ProtobufUtils.decimalValue(priceMap.getPrice().getRealEnergyPrice()),
         ProtobufUtils.decimalValue(priceMap.getPrice().getApparentEnergyPrice())));
 
     return result;

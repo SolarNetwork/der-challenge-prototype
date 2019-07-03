@@ -191,8 +191,8 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
     priceMap.setDuration(Duration.ofMillis(123456L));
     priceMap.setResponseTime(
         new DurationRangeEmbed(Duration.ofMillis(234567L), Duration.ofMillis(345678L)));
-    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
-        new BigDecimal("9.99"), new BigDecimal("99.99")));
+    priceMap.setPriceComponents(
+        new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("99.99")));
 
     FacilityEntity entity = dao.findById(last.getId()).get();
     entity.addPriceMap(priceMap);

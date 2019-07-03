@@ -92,6 +92,11 @@ public class DurationRangeEmbed implements SignableMessage {
   }
 
   @Override
+  public String toString() {
+    return "DurationRange{min=" + min + ", max=" + max + "}";
+  }
+
+  @Override
   public int signatureMessageBytesSize() {
     return SignableMessage.durationSignatureMessageSize() * 2;
   }

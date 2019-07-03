@@ -21,8 +21,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.ByteBuffer;
 import java.util.Currency;
+import java.util.Locale;
 import java.util.Objects;
 
+import javax.annotation.Nonnull;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
@@ -52,10 +54,6 @@ public class PriceComponentsEmbed implements SignableMessage {
   private Currency currency;
 
   @Basic
-  @Column(name = "PRICE_ENERGY_REAL", nullable = true, insertable = true, updatable = true, precision = 18, scale = 9)
-  private BigDecimal realEnergyPrice;
-
-  @Basic
   @Column(name = "PRICE_ENERGY_APPARENT", nullable = true, insertable = true, updatable = true, precision = 18, scale = 9)
   private BigDecimal apparentEnergyPrice;
 
@@ -71,22 +69,18 @@ public class PriceComponentsEmbed implements SignableMessage {
    * 
    * @param currency
    *        the currency
-   * @param realEnergyPrice
-   *        the real energy price, in units per watt hour (Wh)
    * @param apparentEnergyPrice
    *        the apparent energy price, in units per volt-amp hour (VAh)
    */
-  public PriceComponentsEmbed(Currency currency, BigDecimal realEnergyPrice,
-      BigDecimal apparentEnergyPrice) {
+  public PriceComponentsEmbed(Currency currency, BigDecimal apparentEnergyPrice) {
     super();
     this.currency = currency;
-    this.realEnergyPrice = realEnergyPrice;
     this.apparentEnergyPrice = apparentEnergyPrice;
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(apparentEnergyPrice, currency, realEnergyPrice);
+    return Objects.hash(apparentEnergyPrice, currency);
   }
 
   @Override
@@ -102,14 +96,13 @@ public class PriceComponentsEmbed implements SignableMessage {
     }
     PriceComponentsEmbed other = (PriceComponentsEmbed) obj;
     return Objects.equals(apparentEnergyPrice, other.apparentEnergyPrice)
-        && Objects.equals(currency, other.currency)
-        && Objects.equals(realEnergyPrice, other.realEnergyPrice);
+        && Objects.equals(currency, other.currency);
   }
 
   @Override
   public String toString() {
-    return "PriceComponentsEmbed{currency=" + currency + ", realEnergyPrice=" + realEnergyPrice
-        + ", apparentEnergyPrice=" + apparentEnergyPrice + "}";
+    return "PriceComponents{currency=" + currency + ", apparentEnergyPrice=" + apparentEnergyPrice
+        + "}";
   }
 
   @Override
@@ -118,13 +111,12 @@ public class PriceComponentsEmbed implements SignableMessage {
     if (currency != null) {
       ccLength += currency.getCurrencyCode().getBytes(UTF8).length;
     }
-    return (ccLength * 2 + Long.BYTES * 2 + Integer.BYTES * 2);
+    return (ccLength * 2 + Long.BYTES + Integer.BYTES);
   }
 
   @Override
   public void addSignatureMessageBytes(ByteBuffer buf) {
     byte[] cc = currency != null ? currency.getCurrencyCode().getBytes(UTF8) : null;
-    addPrice(buf, cc, realEnergyPrice);
     addPrice(buf, cc, apparentEnergyPrice);
   }
 
@@ -147,7 +139,6 @@ public class PriceComponentsEmbed implements SignableMessage {
    */
   public PriceComponentsEmbed scaled(int scale, RoundingMode roundingMode) {
     return new PriceComponentsEmbed(currency,
-        realEnergyPrice != null ? realEnergyPrice.setScale(scale, roundingMode) : null,
         apparentEnergyPrice != null ? apparentEnergyPrice.setScale(scale, roundingMode) : null);
   }
 
@@ -196,23 +187,18 @@ public class PriceComponentsEmbed implements SignableMessage {
   }
 
   /**
-   * Get the real energy price.
+   * Get a non-null currency value.
    * 
-   * @return the real energy price, in units per watt hour (Wh), or {@literal null} if no price
-   *         available
-   */
-  public BigDecimal getRealEnergyPrice() {
-    return realEnergyPrice;
-  }
-
-  /**
-   * Set the real energy price.
+   * <p>
+   * If the currency is not set, this will return the default currency for the default locale.
+   * </p>
    * 
-   * @param realEnergyPrice
-   *        the price to set, in units per watt hour (Wh)
+   * @return the currency, or a default
    */
-  public void setRealEnergyPrice(BigDecimal realEnergyPrice) {
-    this.realEnergyPrice = realEnergyPrice;
+  @Nonnull
+  public Currency currency() {
+    Currency c = getCurrency();
+    return (c != null ? c : Currency.getInstance(Locale.getDefault()));
   }
 
   /**
@@ -233,6 +219,21 @@ public class PriceComponentsEmbed implements SignableMessage {
    */
   public void setApparentEnergyPrice(BigDecimal apparentEnergyPrice) {
     this.apparentEnergyPrice = apparentEnergyPrice;
+  }
+
+  /**
+   * Get a non-null apparent energy price.
+   * 
+   * <p>
+   * If the apparent energy price is not set, {@literal 0} will be returned.
+   * </p>
+   * 
+   * @return the apparent energy price, or {@literal 0}
+   */
+  @Nonnull
+  public BigDecimal apparentEnergyPrice() {
+    BigDecimal d = getApparentEnergyPrice();
+    return (d != null ? d : BigDecimal.ZERO);
   }
 
 }

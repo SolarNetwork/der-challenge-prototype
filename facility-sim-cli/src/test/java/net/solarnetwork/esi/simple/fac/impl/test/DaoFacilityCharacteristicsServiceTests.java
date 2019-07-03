@@ -272,8 +272,8 @@ public class DaoFacilityCharacteristicsServiceTests {
     priceMap.setDuration(Duration.ofMillis(12345L));
     priceMap.setResponseTime(
         new DurationRangeEmbed(Duration.ofMillis(2456L), Duration.ofMillis(4567L)));
-    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
-        new BigDecimal("123.12345"), new BigDecimal("234.23456")));
+    priceMap.setPriceComponents(
+        new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("234.23456")));
 
     given(facilityService.getPriceMaps()).willReturn(Collections.singleton(priceMap));
 
@@ -311,15 +311,8 @@ public class DaoFacilityCharacteristicsServiceTests {
                 equalTo(priceMap.getResponseTime().getMax().getSeconds()));
             assertThat("Response time max nanos", pm.getResponseTime().getMax().getNanos(),
                 equalTo(priceMap.getResponseTime().getMax().getNano()));
-            assertThat("Real energy price currency code",
-                pm.getPrice().getRealEnergyPrice().getCurrencyCode(),
-                equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
-            assertThat("Real energy price",
-                pm.getPrice().getRealEnergyPrice().getUnits() + "."
-                    + pm.getPrice().getRealEnergyPrice().getNanos(),
-                equalTo(priceMap.getPriceComponents().getRealEnergyPrice().toString()));
             assertThat("Apparent energy price currency code",
-                pm.getPrice().getRealEnergyPrice().getCurrencyCode(),
+                pm.getPrice().getApparentEnergyPrice().getCurrencyCode(),
                 equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
             assertThat("Apparent energy price",
                 pm.getPrice().getApparentEnergyPrice().getUnits() + "."

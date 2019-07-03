@@ -113,10 +113,6 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
         pr.getCurrency().getCurrencyCode());
     pr.setCurrency(Currency.getInstance(s));
 
-    n = readNumber("priceMap.price.real", pr.getCurrency().getCurrencyCode() + "/kWh",
-        scaled(pr.getRealEnergyPrice(), -3), 0L, Long.MAX_VALUE / 1000);
-    pr.setRealEnergyPrice(scaled(n, 3));
-
     n = readNumber("priceMap.price.apparent", pr.getCurrency().getCurrencyCode() + "/kVAh",
         scaled(pr.getApparentEnergyPrice(), -3), 0L, Long.MAX_VALUE / 1000);
     pr.setApparentEnergyPrice(scaled(n, 3));
@@ -151,11 +147,8 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
 
     PriceComponentsEmbed pr = priceMap.getPriceComponents();
     shell.print(String.format(fmt,
-        messageSource.getMessage("priceMap.price.real", null, Locale.getDefault()),
-        scaled(pr.getRealEnergyPrice(), -3), pr.getCurrency().getCurrencyCode() + "/kWh"));
-    shell.print(String.format(fmt,
         messageSource.getMessage("priceMap.price.apparent", null, Locale.getDefault()),
-        scaled(pr.getApparentEnergyPrice(), -3), pr.getCurrency().getCurrencyCode() + "/kVAh"));
+        scaled(pr.apparentEnergyPrice(), -3), pr.currency().getCurrencyCode() + "/kVAh"));
     shell.print("");
   }
 

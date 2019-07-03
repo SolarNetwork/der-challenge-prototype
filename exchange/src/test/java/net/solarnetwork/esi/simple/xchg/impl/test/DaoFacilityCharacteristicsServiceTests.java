@@ -416,11 +416,6 @@ public class DaoFacilityCharacteristicsServiceTests {
                     .build())
                 .build())
             .setPrice(PriceComponents.newBuilder()
-                .setRealEnergyPrice(Money.newBuilder()
-                    .setCurrencyCode("USD")
-                    .setUnits(9L)
-                    .setNanos(99)
-                    .build())
                 .setApparentEnergyPrice(Money.newBuilder()
                     .setCurrencyCode("USD")
                     .setUnits(99L)
@@ -457,8 +452,8 @@ public class DaoFacilityCharacteristicsServiceTests {
         equalTo(new DurationRangeEmbed(Duration.ofSeconds(234L, 567000000),
             Duration.ofSeconds(345L, 678000000))));
     assertThat("Price components", entity.getPriceComponents().scaledExactly(2),
-        equalTo(new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("9.99"),
-            new BigDecimal("99.88")).scaledExactly(2)));
+        equalTo(new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("99.88"))
+            .scaledExactly(2)));
   }
 
 }

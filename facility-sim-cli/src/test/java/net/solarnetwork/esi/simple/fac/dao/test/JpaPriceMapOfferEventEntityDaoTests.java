@@ -107,8 +107,8 @@ public class JpaPriceMapOfferEventEntityDaoTests extends SpringTestSupport {
     PriceMapEntity priceMap = new PriceMapEntity(Instant.now());
     priceMap.setDuration(Duration.ofHours(1));
     priceMap.setPowerComponents(new PowerComponentsEmbed(1L, 2L));
-    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
-        new BigDecimal("1.23"), new BigDecimal("2.34")));
+    priceMap.setPriceComponents(
+        new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("2.34")));
     priceMap
         .setResponseTime(new DurationRangeEmbed(Duration.ofSeconds(3L), Duration.ofSeconds(4L)));
     obj.setPriceMap(priceMap);
