@@ -134,7 +134,7 @@ public class PriceComponentsEmbed implements SignableMessage, Cloning<PriceCompo
       buf.put(currencyCodeBytes);
     }
     buf.putLong(NumberUtils.wholePartToInteger(d).longValue());
-    buf.putInt(NumberUtils.fractionalPartToInteger(d, 9).intValue());
+    buf.putInt(NumberUtils.fractionalPartScaledToInteger(d, 9).intValue());
   }
 
   /**

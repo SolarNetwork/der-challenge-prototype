@@ -142,7 +142,7 @@ public class PriceComponentsEmbedTests {
     ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
         .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
         .putLong(3L)
-        .putInt(45);
+        .putInt(450000000);
     // @formatter:on
     assertThat("Result", ByteString.copyFrom(data),
         equalTo(ByteString.copyFrom((ByteBuffer) bb.flip())));
@@ -161,7 +161,7 @@ public class PriceComponentsEmbedTests {
     ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
         .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
         .putLong(-3L)
-        .putInt(-45);
+        .putInt(-450000000);
     // @formatter:on
     assertThat("Result", ByteString.copyFrom(data),
         equalTo(ByteString.copyFrom((ByteBuffer) bb.flip())));

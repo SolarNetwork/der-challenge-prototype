@@ -19,7 +19,6 @@ package net.solarnetwork.esi.domain.support;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Currency;
 import java.util.Locale;
@@ -71,8 +70,7 @@ public final class ProtobufUtils {
     Currency c = (currency != null ? currency : Currency.getInstance(Locale.getDefault()));
     BigDecimal d = (value != null ? value : BigDecimal.ZERO);
     BigInteger units = NumberUtils.wholePartToInteger(d);
-    BigInteger nanos = d.subtract(new BigDecimal(units)).movePointRight(9)
-        .setScale(0, value.signum() < 0 ? RoundingMode.CEILING : RoundingMode.FLOOR).toBigInteger();
+    BigInteger nanos = NumberUtils.fractionalPartScaledToInteger(value, 9);
     // @formatter:off
     return Money.newBuilder()
         .setCurrencyCode(c.getCurrencyCode())
