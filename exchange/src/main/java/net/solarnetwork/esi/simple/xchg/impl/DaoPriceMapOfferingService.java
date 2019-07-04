@@ -289,7 +289,7 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
 
       @Override
       public void onError(Throwable t) {
-        log.error("Error making offer to facility");
+        log.error("Error making offer to facility", t);
         super.onError(t);
       }
 
