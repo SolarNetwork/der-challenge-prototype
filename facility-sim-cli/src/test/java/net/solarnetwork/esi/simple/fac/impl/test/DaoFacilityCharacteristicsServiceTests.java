@@ -19,6 +19,7 @@ package net.solarnetwork.esi.simple.fac.impl.test;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toCollection;
+import static net.solarnetwork.esi.domain.support.ProtobufUtils.decimalValue;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -319,9 +320,8 @@ public class DaoFacilityCharacteristicsServiceTests {
                 pm.getPrice().getApparentEnergyPrice().getCurrencyCode(),
                 equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
             assertThat("Apparent energy price",
-                pm.getPrice().getApparentEnergyPrice().getUnits() + "."
-                    + pm.getPrice().getApparentEnergyPrice().getNanos(),
-                equalTo(priceMap.getPriceComponents().getApparentEnergyPrice().toString()));
+                decimalValue(pm.getPrice().getApparentEnergyPrice()),
+                equalTo(priceMap.getPriceComponents().getApparentEnergyPrice()));
           }
 
           @Override

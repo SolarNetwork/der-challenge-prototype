@@ -419,7 +419,7 @@ public class DaoFacilityCharacteristicsServiceTests {
                 .setApparentEnergyPrice(Money.newBuilder()
                     .setCurrencyCode("USD")
                     .setUnits(99L)
-                    .setNanos(88)
+                    .setNanos(880000000)
                     .build())
                 .build())
             .build());
