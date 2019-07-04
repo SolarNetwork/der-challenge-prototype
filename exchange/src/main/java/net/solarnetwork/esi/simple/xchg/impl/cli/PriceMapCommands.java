@@ -310,10 +310,14 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
     FacilityPriceMapOfferEntity offer = event.getOffer();
     offer = em.merge(offer);
     PriceMapEmbed priceMap = offer.offerPriceMap();
+    boolean countered = !priceMap.equals(offer.getOffering().priceMap().priceMap());
     String armor = messageSource.getMessage("event.armor", null, Locale.getDefault());
     String msg = String.format("\n%s\n%s\n\n%s\n%s\n", armor,
         wrap(messageSource.getMessage(
-            event.isSuccess() ? "offer.event.completed.accepted" : "offer.event.completed.declined",
+            event.isSuccess()
+                ? countered ? "offer.event.completed.acceptedWithCounterOffer"
+                    : "offer.event.completed.accepted"
+                : "offer.event.completed.declined",
             new Object[] { offer.getId(), offer.getFacility().getFacilityUid() },
             Locale.getDefault()), SHELL_MAX_COLS),
         renderPriceMap(priceMap), armor);
