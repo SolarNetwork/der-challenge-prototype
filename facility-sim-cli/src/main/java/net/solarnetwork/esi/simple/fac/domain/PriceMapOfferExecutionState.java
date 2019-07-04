@@ -28,6 +28,12 @@ public enum PriceMapOfferExecutionState {
   /** An unknown state. */
   UNKNOWN,
 
+  /** The execution was declined. */
+  DECLINED,
+
+  /** A counter-offer was proposed. */
+  COUNTERED,
+
   /** Waiting to execute the event, i.e. before the event's start date. */
   WAITING,
 

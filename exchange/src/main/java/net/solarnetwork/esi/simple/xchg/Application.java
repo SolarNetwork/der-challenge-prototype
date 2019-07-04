@@ -21,6 +21,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableAsync;
 
+import net.solarnetwork.esi.cli.CliServices;
 import net.solarnetwork.esi.simple.xchg.config.AppConfiguration;
 import net.solarnetwork.esi.simple.xchg.impl.AppServices;
 import net.solarnetwork.esi.simple.xchg.web.config.WebConfiguration;
@@ -32,7 +33,7 @@ import net.solarnetwork.esi.simple.xchg.web.config.WebConfiguration;
  * @version 1.0
  */
 @SpringBootApplication(scanBasePackageClasses = { Application.class, AppConfiguration.class,
-    AppServices.class, WebConfiguration.class })
+    AppServices.class, CliServices.class, WebConfiguration.class })
 @EnableAsync
 public class Application {
 

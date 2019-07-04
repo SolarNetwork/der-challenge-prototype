@@ -155,8 +155,12 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
 
         @Override
         public void afterCommit() {
-          for (QueuedPriceMapOffer qpmo : offers) {
-            proposeOfferToFacility(offeringId, qpmo);
+          try {
+            for (QueuedPriceMapOffer qpmo : offers) {
+              proposeOfferToFacility(offeringId, qpmo);
+            }
+          } catch (Exception e) {
+            log.error("Error proposing offer {} to facility: {}", offeringId, e.getMessage(), e);
           }
         }
 

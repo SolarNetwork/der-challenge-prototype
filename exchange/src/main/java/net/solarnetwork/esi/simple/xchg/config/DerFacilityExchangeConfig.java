@@ -40,10 +40,13 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.google.protobuf.util.JsonFormat;
 
 import net.solarnetwork.esi.domain.Form;
+import net.solarnetwork.esi.grpc.ChannelProvider;
 import net.solarnetwork.esi.grpc.SimpleChannelProvider;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityPriceMapOfferEntityDao;
@@ -112,6 +115,9 @@ public class DerFacilityExchangeConfig {
 
   @Autowired
   private ApplicationEventPublisher eventPublisher;
+
+  @Autowired
+  private PlatformTransactionManager txManager;
 
   @Qualifier("exchange-uid")
   @Bean
@@ -206,6 +212,11 @@ public class DerFacilityExchangeConfig {
     return CryptoUtils.STANDARD_HELPER;
   }
 
+  @Bean
+  public ChannelProvider facilityChannelProvider() {
+    return new SimpleChannelProvider(usePlaintext);
+  }
+
   /**
    * Create the {@link FacilityRegistrationService}.
    * 
@@ -217,7 +228,7 @@ public class DerFacilityExchangeConfig {
         exchangeKeyPair(), registrationForms(), cryptoHelper());
     s.setFacilityDao(facilityDao);
     s.setFacilityRegistrationDao(facilityRegistrationDao);
-    s.setFacilityChannelProvider(new SimpleChannelProvider(usePlaintext));
+    s.setFacilityChannelProvider(facilityChannelProvider());
     return s;
   }
 
@@ -248,6 +259,8 @@ public class DerFacilityExchangeConfig {
     s.setOfferingDao(offeringDao);
     s.setPriceMapOfferDao(priceMapOfferDao);
     s.setEventPublisher(eventPublisher);
+    s.setFacilityChannelProvider(facilityChannelProvider());
+    s.setTransactionTemplate(new TransactionTemplate(txManager));
     return s;
   }
 

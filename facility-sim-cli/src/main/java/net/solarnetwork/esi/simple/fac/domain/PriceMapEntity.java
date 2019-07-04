@@ -28,11 +28,13 @@ import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
+import net.solarnetwork.esi.domain.PriceMapOrBuilder;
 import net.solarnetwork.esi.domain.jpa.BaseLongEntity;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
+import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -96,6 +98,29 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
       c.setPriceMap(pm.copy());
     }
     return c;
+  }
+
+  /**
+   * Create a resource characteristics entity out of a source message.
+   * 
+   * @param message
+   *        the message to copy the properties from
+   * @return the new entity
+   */
+  public static PriceMapEntity entityForMessage(PriceMapOrBuilder message) {
+    PriceMapEntity entity = new PriceMapEntity(Instant.now());
+    entity.populateFromMessage(message);
+    return entity;
+  }
+
+  /**
+   * Update the properties of this object from equivalent properties in a source message.
+   * 
+   * @param message
+   *        the message to copy the properties from
+   */
+  public void populateFromMessage(PriceMapOrBuilder message) {
+    setPriceMap(ProtobufUtils.priceMapEmbedValue(message));
   }
 
   /**

@@ -130,7 +130,7 @@ public class PriceMapEntity extends BaseUuidEntity implements SignableMessage {
    * @return the copy
    */
   public PriceMapEntity copy() {
-    PriceMapEntity c = new PriceMapEntity(getCreated());
+    PriceMapEntity c = new PriceMapEntity(getCreated(), getId());
     c.setModified(getModified());
     PriceMapEmbed pm = getPriceMap();
     if (pm != null) {

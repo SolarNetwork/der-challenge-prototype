@@ -35,7 +35,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import net.solarnetwork.esi.domain.PriceMapOfferOrBuilder;
 import net.solarnetwork.esi.domain.jpa.BaseUuidEntity;
+import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -123,6 +125,31 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
     SignableMessage.addUuidSignatureMessageBytes(buf, getId());
     SignableMessage.addInstantSignatureMessageBytes(buf, startDate);
     priceMap().addSignatureMessageBytes(buf);
+  }
+
+  /**
+   * Create a resource characteristics entity out of a source message.
+   * 
+   * @param message
+   *        the message to copy the properties from
+   * @return the new entity
+   */
+  public static PriceMapOfferEventEntity entityForMessage(PriceMapOfferOrBuilder message) {
+    UUID id = ProtobufUtils.uuidValue(message.getOfferId());
+    PriceMapOfferEventEntity entity = new PriceMapOfferEventEntity(Instant.now(), id);
+    entity.populateFromMessage(message);
+    return entity;
+  }
+
+  /**
+   * Update the properties of this object from equivalent properties in a source message.
+   * 
+   * @param message
+   *        the message to copy the properties from
+   */
+  public void populateFromMessage(PriceMapOfferOrBuilder message) {
+    setStartDate(ProtobufUtils.instantValue(message.getWhen()));
+    setPriceMap(PriceMapEntity.entityForMessage(message.getPriceMap()));
   }
 
   /**
