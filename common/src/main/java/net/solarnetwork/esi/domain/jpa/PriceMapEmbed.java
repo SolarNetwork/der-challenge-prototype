@@ -91,18 +91,10 @@ public class PriceMapEmbed implements SignableMessage {
 
   @Override
   public void addSignatureMessageBytes(ByteBuffer buf) {
-    PowerComponentsEmbed power = powerComponents != null ? powerComponents
-        : new PowerComponentsEmbed();
-    power.addSignatureMessageBytes(buf);
-
+    powerComponents().addSignatureMessageBytes(buf);
     SignableMessage.addDurationSignatureMessageBytes(buf, duration);
-
-    DurationRangeEmbed rt = responseTime != null ? responseTime : new DurationRangeEmbed();
-    rt.addSignatureMessageBytes(buf);
-
-    PriceComponentsEmbed price = priceComponents != null ? priceComponents
-        : new PriceComponentsEmbed();
-    price.addSignatureMessageBytes(buf);
+    responseTime().addSignatureMessageBytes(buf);
+    priceComponents().addSignatureMessageBytes(buf);
   }
 
   @Override

@@ -322,6 +322,8 @@ public final class CryptoUtils {
    * <li>If it is a {@link SignableMessage} then {@link SignableMessage#toSignatureMessageBytes()}
    * will be returned.</li>
    * <li>If it is {@literal null} an array of length {@literal 0} will be returned.</li>
+   * <li>If it is a {@link Boolean} then a single byte {@literal 0x01} will be used for
+   * {@literal true} and {@literal 0x00} for {@literal false}.</li>
    * <li>For all other objects, {@link Object#toString()} will be used to turn it into a string, and
    * then the UTF-8 bytes of that will be returned.</li>
    * </ol>
@@ -346,6 +348,8 @@ public final class CryptoUtils {
       bytes = ((ByteArrayOutputStream) o).toByteArray();
     } else if (o instanceof SignableMessage) {
       bytes = ((SignableMessage) o).toSignatureMessageBytes();
+    } else if (o instanceof Boolean) {
+      bytes = new byte[] { ((Boolean) o).booleanValue() ? (byte) 0x01 : (byte) 0x00 };
     } else if (o != null) {
       bytes = o.toString().getBytes(STANDARD_CHARSET);
     } else {

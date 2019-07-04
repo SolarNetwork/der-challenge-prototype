@@ -229,8 +229,8 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
           .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
       try {
         DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
-        FutureStreamObserver<Empty, Iterable<Empty>> out = new QueuingStreamObserver<>(1);
-        StreamObserver<DerProgramSet> in = client.provideSupportedDerPrograms(out);
+        FutureStreamObserver<Empty, Iterable<Empty>> in = new QueuingStreamObserver<>(1);
+        StreamObserver<DerProgramSet> out = client.provideSupportedDerPrograms(in);
         DerProgramSet.Builder derProgramSetBuilder = DerProgramSet.newBuilder();
         ByteBuffer signatureData = ByteBuffer.allocate(Integer.BYTES * programs.size());
         for (String program : programs) {
@@ -259,9 +259,9 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
                 .build())
             .build();
         // @formatter:on
-        in.onNext(derProgram);
-        in.onCompleted();
-        out.nab(1, TimeUnit.MINUTES);
+        out.onNext(derProgram);
+        out.onCompleted();
+        in.nab(1, TimeUnit.MINUTES);
         log.info("Successfully published active programs {} to exchange {}", programs,
             exchange.getId());
         facilityService.setEnabledProgramTypes(programs);
@@ -329,10 +329,10 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
           .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
       try {
         DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
-        FutureStreamObserver<Empty, Iterable<Empty>> out = new QueuingStreamObserver<>(1);
-        StreamObserver<PriceMapCharacteristics> in = client.providePriceMaps(out);
+        FutureStreamObserver<Empty, Iterable<Empty>> in = new QueuingStreamObserver<>(1);
+        StreamObserver<PriceMapCharacteristics> out = client.providePriceMaps(in);
         // @formatter:off
-        in.onNext(pmc.setRoute(DerRoute.newBuilder()
+        out.onNext(pmc.setRoute(DerRoute.newBuilder()
                 .setExchangeUid(exchange.getId())
                 .setFacilityUid(facilityService.getUid())
                 .setSignature(generateMessageSignature(facilityService.getCryptoHelper(), 
@@ -340,8 +340,8 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
                 .build())
             .build());
         // @formatter:on
-        in.onCompleted();
-        out.nab(1, TimeUnit.MINUTES);
+        out.onCompleted();
+        in.nab(1, TimeUnit.MINUTES);
         log.info("Successfully published price map list to exchange {}", exchange.getId());
       } catch (TimeoutException e) {
         throw new RuntimeException(

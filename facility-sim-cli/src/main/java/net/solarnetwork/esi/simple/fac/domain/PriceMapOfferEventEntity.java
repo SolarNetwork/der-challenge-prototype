@@ -36,7 +36,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import net.solarnetwork.esi.domain.jpa.BaseUuidEntity;
-import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -63,10 +62,6 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
   @Basic
   @Column(name = "IS_ACCEPTED", nullable = false, insertable = true, updatable = true)
   private boolean accepted;
-
-  @Basic
-  @Column(name = "IS_CONFIRMED", nullable = false, insertable = true, updatable = true)
-  private boolean confirmed;
 
   @Basic
   @Column(name = "IS_SUCCESS", nullable = false, insertable = true, updatable = true)
@@ -119,19 +114,15 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
 
   @Override
   public int signatureMessageBytesSize() {
-    PriceMapEmbed pm = (priceMap != null ? priceMap.getPriceMap() : null);
-    if (pm == null) {
-      pm = new PriceMapEmbed();
-    }
-    return Long.BYTES * 2 + pm.signatureMessageBytesSize();
+    return SignableMessage.uuidSignatureMessageSize()
+        + SignableMessage.instantSignatureMessageSize() + priceMap().signatureMessageBytesSize();
   }
 
   @Override
   public void addSignatureMessageBytes(ByteBuffer buf) {
-    UUID offerId = getId();
-    SignableMessage.addUuidSignatureMessageBytes(buf, offerId);
-    PriceMapEmbed pm = (priceMap != null ? priceMap.getPriceMap() : new PriceMapEmbed());
-    pm.addSignatureMessageBytes(buf);
+    SignableMessage.addUuidSignatureMessageBytes(buf, getId());
+    SignableMessage.addInstantSignatureMessageBytes(buf, startDate);
+    priceMap().addSignatureMessageBytes(buf);
   }
 
   /**
@@ -214,25 +205,6 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
    */
   public void setAccepted(boolean accepted) {
     this.accepted = accepted;
-  }
-
-  /**
-   * Get the confirmed flag.
-   * 
-   * @return {@literal true} if the facility has confirmed the offer
-   */
-  public boolean isConfirmed() {
-    return confirmed;
-  }
-
-  /**
-   * Set the confirmed flag.
-   * 
-   * @param confirmed
-   *        the confirmed to set
-   */
-  public void setConfirmed(boolean confirmed) {
-    this.confirmed = confirmed;
   }
 
   /**

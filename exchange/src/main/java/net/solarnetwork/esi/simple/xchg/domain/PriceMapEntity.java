@@ -102,7 +102,20 @@ public class PriceMapEntity extends BaseUuidEntity implements SignableMessage {
    * @return the new entity
    */
   public static PriceMapEntity entityForMessage(PriceMapOrBuilder message) {
-    PriceMapEntity entity = new PriceMapEntity(Instant.now());
+    return entityForMessage(message, null);
+  }
+
+  /**
+   * Create a price map entity out of a source message.
+   * 
+   * @param message
+   *        the message to copy the properties from
+   * @param id
+   *        the ID to use
+   * @return the new entity
+   */
+  public static PriceMapEntity entityForMessage(PriceMapOrBuilder message, UUID id) {
+    PriceMapEntity entity = new PriceMapEntity(Instant.now(), id);
     entity.setPriceMap(ProtobufUtils.priceMapEmbedValue(message));
     return entity;
   }

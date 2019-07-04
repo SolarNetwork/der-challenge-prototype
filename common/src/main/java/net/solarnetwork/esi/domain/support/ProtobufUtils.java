@@ -18,6 +18,7 @@
 package net.solarnetwork.esi.domain.support;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Currency;
 import java.util.Locale;
 import java.util.UUID;
@@ -26,6 +27,8 @@ import javax.annotation.Nonnull;
 
 import com.google.protobuf.Duration;
 import com.google.protobuf.DurationOrBuilder;
+import com.google.protobuf.Timestamp;
+import com.google.protobuf.TimestampOrBuilder;
 import com.google.type.Money;
 import com.google.type.MoneyOrBuilder;
 
@@ -115,6 +118,35 @@ public final class ProtobufUtils {
       return java.time.Duration.ZERO;
     }
     return java.time.Duration.ofSeconds(duration.getSeconds(), duration.getNanos());
+  }
+
+  /**
+   * Derive a {@link Timestamp} from a {@link Instant}.
+   * 
+   * @param value
+   *        the value, or {@literal null} for {@link Instant#EPOCH}
+   * @return the new instant instance
+   */
+  @Nonnull
+  public static Timestamp timestampForInstant(Instant value) {
+    Instant d = (value != null ? value : Instant.EPOCH);
+    return Timestamp.newBuilder().setSeconds(d.getEpochSecond()).setNanos(d.getNano()).build();
+  }
+
+  /**
+   * Derive a {@link Instant} from a {@link Timestamp}.
+   * 
+   * @param instant
+   *        the instant to derive from
+   * @return the value; if {@code instant} is {@literal null} then {@link Instant#EPOCH} will be
+   *         returned
+   */
+  @Nonnull
+  public static Instant instantValue(TimestampOrBuilder instant) {
+    if (instant == null) {
+      return Instant.EPOCH;
+    }
+    return Instant.ofEpochSecond(instant.getSeconds(), instant.getNanos());
   }
 
   /**

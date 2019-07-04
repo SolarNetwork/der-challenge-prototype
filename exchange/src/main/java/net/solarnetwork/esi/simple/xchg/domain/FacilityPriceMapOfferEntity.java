@@ -17,6 +17,7 @@
 
 package net.solarnetwork.esi.simple.xchg.domain;
 
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
@@ -34,6 +35,8 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import net.solarnetwork.esi.domain.jpa.BaseUuidEntity;
+import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * A price map offer entity for a specific facility.
@@ -43,7 +46,7 @@ import net.solarnetwork.esi.domain.jpa.BaseUuidEntity;
  */
 @Entity
 @Table(name = "FACILITY_PRICE_MAP_OFFERS")
-public class FacilityPriceMapOfferEntity extends BaseUuidEntity {
+public class FacilityPriceMapOfferEntity extends BaseUuidEntity implements SignableMessage {
 
   private static final long serialVersionUID = 5090046078033013977L;
 
@@ -121,6 +124,36 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity {
   public FacilityPriceMapOfferEntity(Instant created, FacilityEntity facility) {
     super(created);
     setFacility(facility);
+  }
+
+  private PriceMapEmbed priceMapToSign() {
+    // the price map we sign comes from this entity, if available, or else
+    // the one provided by the parent offering
+    PriceMapEntity pm = getPriceMap();
+    PriceMapOfferingEntity off = getOffering();
+    if (pm != null) {
+      return pm.priceMap();
+    } else if (off != null) {
+      return off.priceMap().priceMap();
+    } else {
+      return new PriceMapEmbed();
+    }
+  }
+
+  @Override
+  public int signatureMessageBytesSize() {
+    PriceMapEmbed pm = priceMapToSign();
+    return SignableMessage.uuidSignatureMessageSize()
+        + SignableMessage.instantSignatureMessageSize() + pm.signatureMessageBytesSize();
+  }
+
+  @Override
+  public void addSignatureMessageBytes(ByteBuffer buf) {
+    SignableMessage.addUuidSignatureMessageBytes(buf, getId());
+    SignableMessage.addInstantSignatureMessageBytes(buf, offering.getStartDate());
+
+    PriceMapEmbed pm = priceMapToSign();
+    pm.addSignatureMessageBytes(buf);
   }
 
   /**

@@ -20,6 +20,7 @@ package net.solarnetwork.esi.domain.support;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 
 import javax.annotation.Nonnull;
@@ -96,6 +97,43 @@ public interface SignableMessage {
   static void addDurationSignatureMessageBytes(@Nonnull ByteBuffer buf, Duration duration) {
     Duration d = duration != null ? duration : Duration.ZERO;
     buf.putLong(d.getSeconds()).putInt(d.getNano());
+  }
+
+  /**
+   * Get the size, in bytes, needed to encode an {@link Instant} in the
+   * {@link #addInstantSignatureMessageBytes(ByteBuffer, Instant)} method.
+   * 
+   * @return the size in bytes
+   */
+  static int instantSignatureMessageSize() {
+    return Long.BYTES + Integer.BYTES;
+  }
+
+  /**
+   * Add an {@link Instant} to a signature message.
+   * 
+   * <p>
+   * This puts a long (seconds) and an int (nanos) into the buffer.
+   * </p>
+   * 
+   * @param buf
+   *        the signature message to add the duration to
+   * @param instant
+   *        the instant to add; if {@literal null} then zero values will be put into the buffer
+   */
+  static void addInstantSignatureMessageBytes(@Nonnull ByteBuffer buf, Instant instant) {
+    Instant d = instant != null ? instant : Instant.EPOCH;
+    buf.putLong(d.getEpochSecond()).putInt(d.getNano());
+  }
+
+  /**
+   * Get the size, in bytes, needed to encode a {@link UUID} in the
+   * {@link #addUuidSignatureMessageBytes(ByteBuffer, UUID)} method.
+   * 
+   * @return the size in bytes
+   */
+  static int uuidSignatureMessageSize() {
+    return Long.BYTES * 2;
   }
 
   /**

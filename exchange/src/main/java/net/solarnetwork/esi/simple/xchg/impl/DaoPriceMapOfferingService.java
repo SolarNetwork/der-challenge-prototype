@@ -28,8 +28,10 @@ import java.security.KeyPair;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
@@ -47,11 +49,8 @@ import org.springframework.transaction.support.TransactionSynchronizationAdapter
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import com.google.common.util.concurrent.FutureCallback;
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-
 import io.grpc.ManagedChannel;
+import io.grpc.stub.StreamObserver;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.PriceMapOffer;
 import net.solarnetwork.esi.domain.PriceMapOfferResponse;
@@ -59,11 +58,14 @@ import net.solarnetwork.esi.domain.PriceMapOfferResponseOrBuilder;
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.grpc.ChannelProvider;
+import net.solarnetwork.esi.grpc.CompletableStreamObserver;
+import net.solarnetwork.esi.grpc.FutureStreamObserver;
 import net.solarnetwork.esi.service.DerFacilityServiceGrpc;
-import net.solarnetwork.esi.service.DerFacilityServiceGrpc.DerFacilityServiceFutureStub;
+import net.solarnetwork.esi.service.DerFacilityServiceGrpc.DerFacilityServiceStub;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityPriceMapOfferEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.PriceMapOfferingEntityDao;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapOfferEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEntity;
@@ -140,26 +142,7 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
     // generate a list of offers to send to the facilities in this offering for async processing
     List<QueuedPriceMapOffer> offers = new ArrayList<>(facilityUids.size());
     facilityDao.findAllByFacilityUidIn(facilityUids).forEach(facility -> {
-      UUID offerId = UUID.randomUUID();
-      FacilityPriceMapOfferEntity offer = new FacilityPriceMapOfferEntity(Instant.now(), offerId);
-      offer.setFacility(facility);
-      offering.addOffer(offer);
-      offer = priceMapOfferDao.save(offer);
-
-      // @formatter:off
-      PriceMapOffer pmo = PriceMapOffer.newBuilder()
-          .setOfferId(ProtobufUtils.uuidForUuid(offerId))
-          .setPriceMap(ProtobufUtils.priceMapForPriceMapEmbed(offering.priceMap().priceMap()))
-          .setRoute(DerRoute.newBuilder()
-              .setExchangeUid(exchangeUid)
-              .setFacilityUid(facility.getFacilityUid())
-              .setSignature(generateMessageSignature(cryptoHelper, exchangeKeyPair,
-                  decodePublicKey(cryptoHelper, facility.getFacilityPublicKey()),
-                  asList(exchangeUid, facility.getFacilityUid(), offering)))
-              .build())
-          .build();
-      // @formatter:on
-
+      PriceMapOffer pmo = createOffer(offering, facility, offering.priceMap().priceMap());
       offers.add(new QueuedPriceMapOffer(facility.facilityUri(), pmo));
     });
 
@@ -199,34 +182,77 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
    */
   private static final class QueuedPriceMapOffer {
 
+    private final PriceMapOffer initialOffer;
     private final URI facilityUri;
-    private final PriceMapOffer pmo;
     private final CompletableFuture<FacilityPriceMapOfferEntity> future;
+    private final Queue<UUID> offerIds;
+
+    // our outbound offer stream, to deal with counter-offers
+    private StreamObserver<PriceMapOffer> out;
 
     private QueuedPriceMapOffer(URI facilityUri, PriceMapOffer pmo) {
       super();
       this.facilityUri = facilityUri;
-      this.pmo = pmo;
+      this.initialOffer = pmo;
       this.future = new CompletableFuture<FacilityPriceMapOfferEntity>();
+      this.offerIds = new ArrayBlockingQueue<>(64); // maximum number of counter offers essentially
+      this.offerIds.add(ProtobufUtils.uuidValue(pmo.getOfferIdOrBuilder()));
+    }
+
+    public String facilityUid() {
+      return initialOffer.getRoute().getFacilityUid();
     }
 
   }
 
-  private void proposeOfferToFacility(UUID offeringId, QueuedPriceMapOffer qpmo) {
-    final PriceMapOffer pmo = qpmo.pmo;
-    final String facilityUid = pmo.getRoute().getFacilityUid();
-    final UUID offerId = ProtobufUtils.uuidValue(pmo.getOfferId());
+  private PriceMapOffer createOffer(PriceMapOfferingEntity offering, FacilityEntity facility,
+      PriceMapEmbed priceMap) {
+    UUID offerId = UUID.randomUUID();
+    FacilityPriceMapOfferEntity offer = new FacilityPriceMapOfferEntity(Instant.now(), offerId);
+    offer.setFacility(facility);
+    offering.addOffer(offer);
+    offer = priceMapOfferDao.save(offer);
+    return buildPriceMapOffer(offer);
+  }
+
+  private PriceMapOffer buildPriceMapOffer(FacilityPriceMapOfferEntity offer) {
+    // if the offer has a price map itself, use that; otherwise use the offering's price map
+    PriceMapEmbed priceMap = (offer.getPriceMap() != null ? offer.priceMap().priceMap()
+        : offer.getOffering().priceMap().priceMap());
+    // @formatter:off
+    return PriceMapOffer.newBuilder()
+        .setOfferId(ProtobufUtils.uuidForUuid(offer.getId()))
+        .setWhen(ProtobufUtils.timestampForInstant(offer.getOffering().getStartDate()))
+        .setPriceMap(ProtobufUtils.priceMapForPriceMapEmbed(priceMap))
+        .setRoute(DerRoute.newBuilder()
+            .setExchangeUid(exchangeUid)
+            .setFacilityUid(offer.getFacility().getFacilityUid())
+            .setSignature(generateMessageSignature(cryptoHelper, exchangeKeyPair,
+                decodePublicKey(cryptoHelper, offer.getFacility().getFacilityPublicKey()),
+                asList(
+                    exchangeUid, 
+                    offer.getFacility().getFacilityUid(), 
+                    offer)))
+            .build())
+        .build();
+    // @formatter:on
+  }
+
+  private Future<FacilityPriceMapOfferEntity> proposeOfferToFacility(UUID offeringId,
+      QueuedPriceMapOffer qpmo) {
+    final String facilityUid = qpmo.facilityUid();
 
     ManagedChannel channel = facilityChannelProvider.channelForUri(qpmo.facilityUri);
-    DerFacilityServiceFutureStub client = DerFacilityServiceGrpc.newFutureStub(channel);
+    DerFacilityServiceStub client = DerFacilityServiceGrpc.newStub(channel);
 
     // CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINE
-    ListenableFuture<PriceMapOfferResponse> future = client.proposePriceMapOffer(pmo);
-    Futures.addCallback(future, new FutureCallback<PriceMapOfferResponse>() {
+    FutureStreamObserver<PriceMapOfferResponse, FacilityPriceMapOfferEntity> in = new CompletableStreamObserver<PriceMapOfferResponse, FacilityPriceMapOfferEntity>(
+        qpmo.future) {
 
       @Override
-      public void onSuccess(PriceMapOfferResponse r) {
-        log.info("Successfully proposed price map offer [{}] to facility [{}]", offerId,
+      public void onNext(PriceMapOfferResponse r) {
+        UUID offerId = qpmo.offerIds.poll();
+        log.info("Received price map offer [{}] response [{}] from facility [{}]", offerId, r,
             facilityUid);
         try {
           FacilityPriceMapOfferEntity entity = null;
@@ -242,23 +268,41 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
           } else {
             entity = handlePriceMapOfferResponse(offeringId, offerId, r);
           }
-          qpmo.future.complete(entity);
+          if (entity.isConfirmed()) {
+            getFuture().complete(entity);
+          } else {
+            // a new counter-counter offer must be passed to facility
+            qpmo.offerIds.add(entity.getId());
+            qpmo.out.onNext(buildPriceMapOffer(entity));
+          }
           if (eventPublisher != null) {
             eventPublisher.publishEvent(new FacilityPriceMapOfferCompleted(entity));
           }
         } catch (RuntimeException e) {
-          qpmo.future.completeExceptionally(e);
+          getFuture().completeExceptionally(e);
         }
-        channel.shutdown();
       }
 
       @Override
-      public void onFailure(Throwable t) {
-        log.info("Error proposing price map offering [{}] to facility [{}]: {}", offerId,
-            facilityUid, t.getMessage());
-        qpmo.future.completeExceptionally(t);
-        channel.shutdown();
+      public void onError(Throwable t) {
+        log.error("Error making offer to facility");
+        super.onError(t);
       }
+
+    };
+    StreamObserver<PriceMapOffer> out = client.proposePriceMapOffer(in);
+    qpmo.out = out;
+
+    // send the initial offer to the facility
+    out.onNext(qpmo.initialOffer);
+
+    return qpmo.future.whenCompleteAsync((e, t) -> {
+      if (t != null) {
+        out.onError(t);
+      } else {
+        out.onCompleted();
+      }
+      channel.shutdown();
     }, taskExecutor);
   }
 
@@ -271,22 +315,34 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
     FacilityPriceMapOfferEntity offer = priceMapOfferDao.findById(offerId).orElseThrow(
         () -> new IllegalArgumentException("Price map offer [" + offerId + "] not found."));
     if (response.hasCounterOffer()) {
-      PriceMapEntity tmp = PriceMapEntity.entityForMessage(response.getCounterOffer());
-      UUID counterOfferId = UUID.randomUUID();
-      PriceMapEntity counterOfferPriceMap = new PriceMapEntity(Instant.now(), counterOfferId);
-      counterOfferPriceMap.setPriceMap(tmp.getPriceMap());
-      offer.setPriceMap(counterOfferPriceMap);
-      offer.setProposed(true);
-      offer.setAccepted(true); // NOTE: we are blindly accepting any counter-offer
-      log.info("Offer [{}] to facility [{}] counter offered [{}]", offeringId, offerId,
-          counterOfferId);
+      // NOTE: we are blindly accepting any counter-offer without validating 
+
+      UUID counterCounterOfferId = UUID.randomUUID();
+      FacilityPriceMapOfferEntity counterCounterOffer = new FacilityPriceMapOfferEntity(
+          Instant.now(), counterCounterOfferId);
+      counterCounterOffer.setFacility(offer.getFacility());
+      counterCounterOffer.setProposed(true);
+      counterCounterOffer.setPriceMap(
+          PriceMapEntity.entityForMessage(response.getCounterOffer(), UUID.randomUUID()));
+
+      log.info("Offer [{}] to facility [{}] counter offered [{}]", offeringId,
+          offer.getFacility().getFacilityUid(), response.getCounterOffer());
+      counterCounterOffer = priceMapOfferDao.save(counterCounterOffer);
+
+      PriceMapOfferingEntity offering = offeringDao.findById(offeringId).orElseThrow(
+          () -> new IllegalArgumentException("Offering [" + offeringId + "] not available."));
+      offering.addOffer(counterCounterOffer);
+      offeringDao.save(offering);
+
+      return counterCounterOffer;
     } else {
       offer.setProposed(true);
       offer.setAccepted(response.getAccept());
+      offer.setConfirmed(true);
       log.info("Offer [{}] to facility [{}] {}", offerId, offer.getFacility().getFacilityUid(),
           response.getAccept() ? "accepted" : "declined");
+      return priceMapOfferDao.save(offer);
     }
-    return priceMapOfferDao.save(offer);
   }
 
   private TransactionTemplate txTemplate() {

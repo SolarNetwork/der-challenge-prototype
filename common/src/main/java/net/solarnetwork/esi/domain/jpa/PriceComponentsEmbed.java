@@ -111,7 +111,7 @@ public class PriceComponentsEmbed implements SignableMessage {
     if (currency != null) {
       ccLength += currency.getCurrencyCode().getBytes(UTF8).length;
     }
-    return (ccLength * 2 + Long.BYTES + Integer.BYTES);
+    return (ccLength + Long.BYTES + Integer.BYTES);
   }
 
   @Override

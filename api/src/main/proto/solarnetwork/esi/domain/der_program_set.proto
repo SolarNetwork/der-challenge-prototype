@@ -33,7 +33,7 @@ message DerProgramSet {
 
   // The route info.
   //
-  // The MessageSignature of the route must include: the following:
+  // The MessageSignature of the route must include the following:
   // `exchange_uid` UTF-8 bytes, `facility_uid` UTF-8 bytes, all `type.number`
   // values in message order as big-endian encoded bytes.
   DerRoute route = 1;

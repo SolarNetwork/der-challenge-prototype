@@ -31,6 +31,21 @@ import "solarnetwork/esi/domain/price_components.proto";
 /**
  * Defines a single physical capability (or a agregated set of similar
  * capabilities) that can be offered in the energy market.
+ * 
+ * When a PriceMap is included in a message signature, the following items
+ * in the following order or expected:
+ * 
+ *  * `price_map.power_components.real_power` big-endian encoded bytes
+ *  * `price_map.power_components.reactive_power` big-endian encoded bytes
+ *  * `price_map.duration.seconds` big-endian encoded bytes
+ *  * `price_map.duration.nanos` big-endian encoded bytes
+ *  * `price_map.response_time.min.seconds` big-endian encoded bytes
+ *  * `price_map.response_time.min.nanos` big-endian encoded bytes
+ *  * `price_map.response_time.max.seconds` big-endian encoded bytes
+ *  * `price_map.response_time.max.nanos` big-endian encoded bytes
+ *  * `price_map.price_components.currency_code` UTF-8 bytes
+ *  * `price_map.price_components.units` big-endian encoded bytes
+ *  * `price_map.price_components.nanos` big-endian encoded bytes
  */
 message PriceMap {
 

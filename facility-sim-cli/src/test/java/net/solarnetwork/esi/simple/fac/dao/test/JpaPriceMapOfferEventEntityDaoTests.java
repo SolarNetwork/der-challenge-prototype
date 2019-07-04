@@ -99,7 +99,6 @@ public class JpaPriceMapOfferEventEntityDaoTests extends SpringTestSupport {
     PriceMapOfferEventEntity obj = new PriceMapOfferEventEntity(Instant.now(), UUID.randomUUID());
     obj.setAccepted(true);
     obj.setCompletedSuccessfully(true);
-    obj.setConfirmed(true);
     obj.setExecutionState(PriceMapOfferExecutionState.COMPLETED);
     obj.setMessage("This is a message");
     obj.setStartDate(Instant.now().plusSeconds(300));
@@ -135,7 +134,6 @@ public class JpaPriceMapOfferEventEntityDaoTests extends SpringTestSupport {
     assertThat("Accepted", entity.isAccepted(), equalTo(last.isAccepted()));
     assertThat("Completed successfully", entity.isCompletedSuccessfully(),
         equalTo(last.isCompletedSuccessfully()));
-    assertThat("Confirmed", entity.isConfirmed(), equalTo(last.isConfirmed()));
     assertThat("Execution state", entity.getExecutionState(), equalTo(last.getExecutionState()));
     assertThat("Message", entity.getMessage(), equalTo(last.getMessage()));
     assertThat("Start date", entity.getStartDate(), equalTo(last.getStartDate()));

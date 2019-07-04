@@ -17,7 +17,6 @@
 
 package net.solarnetwork.esi.simple.xchg.domain;
 
-import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
@@ -37,8 +36,6 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
 import net.solarnetwork.esi.domain.jpa.BaseUuidEntity;
-import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
-import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * An offering of a price map, across one or more facilities.
@@ -48,7 +45,7 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  */
 @Entity
 @Table(name = "PRICE_MAP_OFFERINGS")
-public class PriceMapOfferingEntity extends BaseUuidEntity implements SignableMessage {
+public class PriceMapOfferingEntity extends BaseUuidEntity {
 
   private static final long serialVersionUID = 4008724231000362116L;
 
@@ -95,23 +92,6 @@ public class PriceMapOfferingEntity extends BaseUuidEntity implements SignableMe
    */
   public PriceMapOfferingEntity(Instant created, UUID id) {
     super(created, id);
-  }
-
-  @Override
-  public int signatureMessageBytesSize() {
-    PriceMapEmbed pm = (priceMap != null ? priceMap.getPriceMap() : null);
-    if (pm == null) {
-      pm = new PriceMapEmbed();
-    }
-    return Long.BYTES * 2 + pm.signatureMessageBytesSize();
-  }
-
-  @Override
-  public void addSignatureMessageBytes(ByteBuffer buf) {
-    UUID offerId = (priceMap != null ? priceMap.getId() : null);
-    SignableMessage.addUuidSignatureMessageBytes(buf, offerId);
-    PriceMapEmbed pm = (priceMap != null ? priceMap.getPriceMap() : new PriceMapEmbed());
-    pm.addSignatureMessageBytes(buf);
   }
 
   /**

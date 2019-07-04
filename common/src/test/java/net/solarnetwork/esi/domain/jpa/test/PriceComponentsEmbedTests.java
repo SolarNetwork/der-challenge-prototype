@@ -114,7 +114,7 @@ public class PriceComponentsEmbedTests {
     int size = p.signatureMessageBytesSize();
 
     // then
-    assertThat("Size", size, equalTo(3 * 2 + Long.BYTES + Integer.BYTES));
+    assertThat("Size", size, equalTo(3 + Long.BYTES + Integer.BYTES));
   }
 
   @Test

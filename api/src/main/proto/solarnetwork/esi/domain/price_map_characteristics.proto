@@ -23,7 +23,6 @@ option java_outer_classname = "PriceMapCharacteristicsProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
-import "google/protobuf/timestamp.proto";
 import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/price_map.proto";
 
@@ -32,24 +31,13 @@ message PriceMapCharacteristics {
 
   // The routing info.
   //
-  // The MessageSignature of the route must include: the following:
+  // The MessageSignature of the route must include the following:
   //
   // * `exchange_uid` UTF-8 bytes
   // * `facility_uid` UTF-8 bytes
   // 
-  // Then for each `price_map` the following data must be included.
-  // 
-  // * `price_map.power_components.real_power` big-endian encoded bytes
-  // * `price_map.power_components.reactive_power` big-endian encoded bytes
-  // * `price_map.duration.seconds` big-endian encoded bytes
-  // * `price_map.duration.nanos` big-endian encoded bytes
-  // * `price_map.response_time.min.seconds` big-endian encoded bytes
-  // * `price_map.response_time.min.nanos` big-endian encoded bytes
-  // * `price_map.response_time.max.seconds` big-endian encoded bytes
-  // * `price_map.response_time.max.nanos` big-endian encoded bytes
-  // * `price_map.price_components.currency_code` UTF-8 bytes
-  // * `price_map.price_components.units` big-endian encoded bytes
-  // * `price_map.price_components.nanos` big-endian encoded bytes
+  // Then for each `price_map` the properties defined in price_map.proto
+  // must be included.
   DerRoute route = 1;
 
   // The price maps on offer.
