@@ -95,7 +95,7 @@ public final class ProtobufUtils {
       return BigDecimal.ZERO;
     }
     String s = String.format("%d.%09d", money.getUnits(), Math.abs(money.getNanos()));
-    return new BigDecimal(s);
+    return new BigDecimal(s).stripTrailingZeros();
   }
 
   /**

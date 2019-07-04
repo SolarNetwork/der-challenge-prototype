@@ -99,14 +99,14 @@ public class ProtobufUtilsTests {
   public void decimalForMoney() {
     Money m = Money.newBuilder().setCurrencyCode("USD").setUnits(9).setNanos(990000000).build();
     BigDecimal value = ProtobufUtils.decimalValue(m);
-    assertThat("Result", value.setScale(2), equalTo(new BigDecimal("9.99")));
+    assertThat("Result", value, equalTo(new BigDecimal("9.99")));
   }
 
   @Test
   public void decimalForMoneyNegative() {
     Money m = Money.newBuilder().setCurrencyCode("USD").setUnits(-9).setNanos(-990000000).build();
     BigDecimal value = ProtobufUtils.decimalValue(m);
-    assertThat("Result", value.setScale(2), equalTo(new BigDecimal("-9.99")));
+    assertThat("Result", value, equalTo(new BigDecimal("-9.99")));
   }
 
   @Test
