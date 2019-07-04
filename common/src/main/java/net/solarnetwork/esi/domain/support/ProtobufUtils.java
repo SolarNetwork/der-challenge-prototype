@@ -18,6 +18,8 @@
 package net.solarnetwork.esi.domain.support;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.util.Currency;
 import java.util.Locale;
@@ -68,11 +70,14 @@ public final class ProtobufUtils {
   public static Money moneyForDecimal(Currency currency, BigDecimal value) {
     Currency c = (currency != null ? currency : Currency.getInstance(Locale.getDefault()));
     BigDecimal d = (value != null ? value : BigDecimal.ZERO);
+    BigInteger units = NumberUtils.wholePartToInteger(d);
+    BigInteger nanos = d.subtract(new BigDecimal(units)).movePointRight(9)
+        .setScale(0, value.signum() < 0 ? RoundingMode.CEILING : RoundingMode.FLOOR).toBigInteger();
     // @formatter:off
     return Money.newBuilder()
         .setCurrencyCode(c.getCurrencyCode())
-        .setUnits(NumberUtils.wholePartToInteger(d).longValue())
-        .setNanos(NumberUtils.fractionalPartToInteger(d, 9).intValue())
+        .setUnits(units.longValue())
+        .setNanos(nanos.intValue())
         .build();
     // @formatter:on
   }
@@ -89,7 +94,8 @@ public final class ProtobufUtils {
     if (money == null) {
       return BigDecimal.ZERO;
     }
-    return new BigDecimal(String.valueOf(money.getUnits()) + "." + Math.abs(money.getNanos()));
+    String s = String.format("%d.%09d", money.getUnits(), Math.abs(money.getNanos()));
+    return new BigDecimal(s);
   }
 
   /**
