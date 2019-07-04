@@ -126,9 +126,18 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity implements Signa
     setFacility(facility);
   }
 
-  private PriceMapEmbed priceMapToSign() {
-    // the price map we sign comes from this entity, if available, or else
-    // the one provided by the parent offering
+  /**
+   * Get the price map applicable to this offer.
+   * 
+   * <p>
+   * The price map we sign comes from this entity, if available, or else the one provided by the
+   * parent offering.
+   * </p>
+   * 
+   * @return the price map that applies to this offer
+   */
+  @Nonnull
+  public PriceMapEmbed offerPriceMap() {
     PriceMapEntity pm = getPriceMap();
     PriceMapOfferingEntity off = getOffering();
     if (pm != null) {
@@ -142,7 +151,7 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity implements Signa
 
   @Override
   public int signatureMessageBytesSize() {
-    PriceMapEmbed pm = priceMapToSign();
+    PriceMapEmbed pm = offerPriceMap();
     return SignableMessage.uuidSignatureMessageSize()
         + SignableMessage.instantSignatureMessageSize() + pm.signatureMessageBytesSize();
   }
@@ -152,7 +161,7 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity implements Signa
     SignableMessage.addUuidSignatureMessageBytes(buf, getId());
     SignableMessage.addInstantSignatureMessageBytes(buf, offering.getStartDate());
 
-    PriceMapEmbed pm = priceMapToSign();
+    PriceMapEmbed pm = offerPriceMap();
     pm.addSignatureMessageBytes(buf);
   }
 
