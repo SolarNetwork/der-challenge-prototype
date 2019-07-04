@@ -92,7 +92,7 @@ public class SimpleDerFacilityService extends DerFacilityServiceImplBase {
       public void onNext(PriceMapOffer offer) {
         log.info("Received price map offer: {}", offer);
         try {
-          PriceMapOfferEventEntity event = priceMapService.proposePriceMapOffer(offer);
+          PriceMapOfferEventEntity event = priceMapService.receivePriceMapOffer(offer);
           PriceMapOfferResponse.Builder response = PriceMapOfferResponse.newBuilder()
               .setOfferId(offer.getOfferId());
           if (event.getCounterOffer() != null) {

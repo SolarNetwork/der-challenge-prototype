@@ -68,7 +68,7 @@ public class DaoPriceMapService implements PriceMapService {
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
-  public PriceMapOfferEventEntity proposePriceMapOffer(PriceMapOffer offer) {
+  public PriceMapOfferEventEntity receivePriceMapOffer(PriceMapOffer offer) {
     final DerRouteOrBuilder route = offer.getRouteOrBuilder();
     if (route == null) {
       throw new IllegalArgumentException("Route missing.");

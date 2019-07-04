@@ -17,6 +17,8 @@
 
 package net.solarnetwork.esi.simple.fac.service;
 
+import javax.annotation.Nonnull;
+
 import net.solarnetwork.esi.domain.PriceMapOffer;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferEventEntity;
 
@@ -29,12 +31,14 @@ import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferEventEntity;
 public interface PriceMapService {
 
   /**
-   * Propose a price map offer.
+   * Receive a price map offer.
    * 
    * @param offer
    *        the offer
-   * @return the offer entity
+   * @return the offer entity, which informs the caller if the offer has been accepted, rejected, or
+   *         contains a counter-offer
    */
-  PriceMapOfferEventEntity proposePriceMapOffer(PriceMapOffer offer);
+  @Nonnull
+  PriceMapOfferEventEntity receivePriceMapOffer(PriceMapOffer offer);
 
 }
