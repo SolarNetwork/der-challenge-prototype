@@ -133,7 +133,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
     try {
       FacilityInfo info = characteristicsService.facilityInfo(facilityUid);
       shell.print(getBold(messageSource.getMessage("priceMap.list.title",
-          new Object[] { facilityUid, info.getCustomerId() }, Locale.getDefault())));
+          new Object[] { info.getCustomerId(), facilityUid }, Locale.getDefault())));
       Iterable<PriceMapEntity> priceMaps = characteristicsService.priceMaps(facilityUid);
       int idx = 1;
       for (PriceMapEntity priceMap : priceMaps) {
