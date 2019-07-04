@@ -329,14 +329,14 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
       counterCounterOffer.setPriceMap(
           PriceMapEntity.entityForMessage(response.getCounterOffer(), UUID.randomUUID()));
 
-      log.info("Offer [{}] to facility [{}] counter offered [{}]", offeringId,
-          offer.getFacility().getFacilityUid(), response.getCounterOffer());
-      counterCounterOffer = priceMapOfferDao.save(counterCounterOffer);
-
       PriceMapOfferingEntity offering = offeringDao.findById(offeringId).orElseThrow(
           () -> new IllegalArgumentException("Offering [" + offeringId + "] not available."));
       offering.addOffer(counterCounterOffer);
       offeringDao.save(offering);
+
+      log.info("Offer [{}] to facility [{}] counter offered [{}]", offeringId,
+          offer.getFacility().getFacilityUid(), response.getCounterOffer());
+      counterCounterOffer = priceMapOfferDao.save(counterCounterOffer);
 
       return counterCounterOffer;
     } else {

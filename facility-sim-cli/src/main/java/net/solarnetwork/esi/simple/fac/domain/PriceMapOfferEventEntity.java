@@ -37,6 +37,7 @@ import javax.persistence.Table;
 
 import net.solarnetwork.esi.domain.PriceMapOfferOrBuilder;
 import net.solarnetwork.esi.domain.jpa.BaseUuidEntity;
+import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
@@ -83,6 +84,14 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
   @JoinColumn(name = "PRICE_MAP_ID", nullable = false, 
       foreignKey = @ForeignKey(name = "PRICE_MAP_OFFER_EVENTS_PRICE_MAP_FK"))
   private PriceMapEntity priceMap;
+  // @formatter:on
+
+  // @formatter:off
+  @OneToOne(optional = true, fetch = FetchType.EAGER, cascade = CascadeType.ALL,
+      orphanRemoval = true)
+  @JoinColumn(name = "COUNTER_OFFER_ID", nullable = true, 
+      foreignKey = @ForeignKey(name = "PRICE_MAP_OFFER_EVENTS_COUNTER_OFFER_FK"))
+  private PriceMapEntity counterOffer;
   // @formatter:on
 
   /**
@@ -153,6 +162,29 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
   }
 
   /**
+   * Get the price map applicable to this offer.
+   * 
+   * <p>
+   * The price map we sign comes from {@link #getCounterOffer()}, if available, or else the one
+   * provided by the {@link #getPriceMap()}. If neither are available, a new instance is returned.
+   * </p>
+   * 
+   * @return the price map that applies to this offer
+   */
+  @Nonnull
+  public PriceMapEmbed offerPriceMap() {
+    PriceMapEntity counter = getCounterOffer();
+    PriceMapEntity pm = getPriceMap();
+    if (counter != null) {
+      return counter.priceMap();
+    } else if (pm != null) {
+      return pm.priceMap();
+    } else {
+      return new PriceMapEmbed();
+    }
+  }
+
+  /**
    * Get the price map details.
    * 
    * @return the price map details
@@ -169,6 +201,25 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
    */
   public void setPriceMap(PriceMapEntity priceMap) {
     this.priceMap = priceMap;
+  }
+
+  /**
+   * Get the price map details.
+   * 
+   * @return the counter offer details
+   */
+  public PriceMapEntity getCounterOffer() {
+    return counterOffer;
+  }
+
+  /**
+   * Set the price map details.
+   * 
+   * @param counterOffer
+   *        the counter offer details to set
+   */
+  public void setCounterOffer(PriceMapEntity counterOffer) {
+    this.counterOffer = counterOffer;
   }
 
   /**

@@ -82,6 +82,19 @@ public class PriceMapEntity extends BaseLongEntity implements SignableMessage {
   }
 
   /**
+   * Construct with values.
+   * 
+   * @param created
+   *        the creation date
+   * @param priceMap
+   *        the price map details
+   */
+  public PriceMapEntity(Instant created, PriceMapEmbed priceMap) {
+    super(created);
+    setPriceMap(priceMap);
+  }
+
+  /**
    * Create a copy of this instance.
    * 
    * <p>

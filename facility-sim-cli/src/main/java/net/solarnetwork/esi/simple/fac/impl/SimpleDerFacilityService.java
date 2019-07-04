@@ -41,7 +41,6 @@ import net.solarnetwork.esi.domain.PriceMapOfferResponse;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusRequest;
 import net.solarnetwork.esi.domain.PriceParameters;
-import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.service.DerFacilityServiceGrpc.DerFacilityServiceImplBase;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferEventEntity;
@@ -96,19 +95,11 @@ public class SimpleDerFacilityService extends DerFacilityServiceImplBase {
           PriceMapOfferEventEntity event = priceMapService.proposePriceMapOffer(offer);
           PriceMapOfferResponse.Builder response = PriceMapOfferResponse.newBuilder()
               .setOfferId(offer.getOfferId());
-          if (!event.isAccepted()) {
-            response.setAccept(false);
+          if (event.getCounterOffer() != null) {
+            response.setCounterOffer(
+                ProtobufUtils.priceMapForPriceMapEmbed(event.getCounterOffer().priceMap()));
           } else {
-            // do we have a (different) counter-offer?
-            PriceMapEmbed eventPriceMap = event.getPriceMap().getPriceMap();
-            PriceMapEmbed offerPriceMap = ProtobufUtils
-                .priceMapEmbedValue(offer.getPriceMapOrBuilder());
-            if (eventPriceMap.equals(offerPriceMap)) {
-              response.setAccept(true);
-            } else {
-              // return with counter-offer
-              response.setCounterOffer(ProtobufUtils.priceMapForPriceMapEmbed(eventPriceMap));
-            }
+            response.setAccept(event.isAccepted());
           }
           responseObserver.onNext(response.build());
           if (!response.hasCounterOffer()) {

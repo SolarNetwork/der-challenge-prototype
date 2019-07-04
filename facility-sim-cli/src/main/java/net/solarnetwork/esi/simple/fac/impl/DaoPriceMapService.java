@@ -20,6 +20,8 @@ package net.solarnetwork.esi.simple.fac.impl;
 import static java.util.Arrays.asList;
 import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 
+import java.time.Instant;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Propagation;
@@ -108,6 +110,7 @@ public class DaoPriceMapService implements PriceMapService {
       } else {
         // we've got a counter offer to propose
         event.setAccepted(false);
+        event.setCounterOffer(new PriceMapEntity(Instant.now(), match));
         event.setExecutionState(PriceMapOfferExecutionState.COUNTERED);
       }
     }
@@ -150,7 +153,7 @@ public class DaoPriceMapService implements PriceMapService {
     if (offerPriceMap.priceComponents().apparentEnergyPrice()
         .compareTo(priceMap.priceComponents().apparentEnergyPrice()) < 0) {
       // price too low
-      log.info("Price map offer {} not supported by price map {} because price too low",
+      log.info("Price map offer {} not supported by price map {} because price too low; countering",
           event.getId(), supportedPriceMap.getId());
 
       // heck, let's propose our price, and see what happens
