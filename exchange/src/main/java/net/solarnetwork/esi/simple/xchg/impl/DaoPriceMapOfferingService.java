@@ -270,13 +270,13 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
           }
           if (entity.isConfirmed()) {
             getFuture().complete(entity);
+            if (eventPublisher != null) {
+              eventPublisher.publishEvent(new FacilityPriceMapOfferCompleted(entity));
+            }
           } else {
             // a new counter-counter offer must be passed to facility
             qpmo.offerIds.add(entity.getId());
             qpmo.out.onNext(buildPriceMapOffer(entity));
-          }
-          if (eventPublisher != null) {
-            eventPublisher.publishEvent(new FacilityPriceMapOfferCompleted(entity));
           }
         } catch (RuntimeException e) {
           getFuture().completeExceptionally(e);
