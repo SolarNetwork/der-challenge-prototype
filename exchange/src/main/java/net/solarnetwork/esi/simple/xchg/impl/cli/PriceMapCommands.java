@@ -155,7 +155,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
    *        the facility UIDs to create the offer for if not provided a list of available facilities
    *        to choose from will be shown
    */
-  @ShellMethod("Create a price map offer for a set of facilities.")
+  @ShellMethod("Create a price map offer for facilities.")
   public void priceMapOfferCreate(
       @ShellOption(value = { "--facility", "-f" }, defaultValue = "") List<String> facilityUids) {
     DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
