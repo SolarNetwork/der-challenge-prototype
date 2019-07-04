@@ -26,6 +26,7 @@ import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
+import net.solarnetwork.esi.domain.support.Cloning;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -40,7 +41,7 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  * @version 1.0
  */
 @Embeddable
-public class DurationRangeEmbed implements SignableMessage {
+public class DurationRangeEmbed implements SignableMessage, Cloning<DurationRangeEmbed> {
 
   @Basic
   @Column(name = "DUR_MIN", nullable = false, insertable = true, updatable = true)
@@ -69,6 +70,11 @@ public class DurationRangeEmbed implements SignableMessage {
     super();
     this.min = min;
     this.max = max;
+  }
+
+  @Override
+  public DurationRangeEmbed copy() {
+    return new DurationRangeEmbed(getMin(), getMax());
   }
 
   @Override

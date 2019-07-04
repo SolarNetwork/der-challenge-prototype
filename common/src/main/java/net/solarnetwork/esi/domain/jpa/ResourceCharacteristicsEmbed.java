@@ -28,6 +28,7 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 
+import net.solarnetwork.esi.domain.support.Cloning;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -37,7 +38,8 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  * @version 1.0
  */
 @Embeddable
-public class ResourceCharacteristicsEmbed implements SignableMessage {
+public class ResourceCharacteristicsEmbed
+    implements SignableMessage, Cloning<ResourceCharacteristicsEmbed> {
 
   @Basic
   @Column(name = "LOAD_POWER_MAX", nullable = false, insertable = true, updatable = true)
@@ -86,6 +88,22 @@ public class ResourceCharacteristicsEmbed implements SignableMessage {
         .putLong(getStorageEnergyCapacity());
     // @formatter:on
     responseTime().addSignatureMessageBytes(buf);
+  }
+
+  @Override
+  public ResourceCharacteristicsEmbed copy() {
+    ResourceCharacteristicsEmbed c = new ResourceCharacteristicsEmbed();
+    c.setLoadPowerMax(getLoadPowerMax());
+    c.setLoadPowerFactor(getLoadPowerFactor());
+    c.setSupplyPowerMax(getSupplyPowerMax());
+    c.setSupplyPowerFactor(getSupplyPowerFactor());
+    c.setStorageEnergyCapacity(getStorageEnergyCapacity());
+
+    DurationRangeEmbed d = getResponseTime();
+    if (d != null) {
+      c.setResponseTime(d.copy());
+    }
+    return c;
   }
 
   @Override

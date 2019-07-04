@@ -32,6 +32,7 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 
+import net.solarnetwork.esi.domain.support.Cloning;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -41,7 +42,7 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  * @version 1.0
  */
 @Embeddable
-public class PriceMapEmbed implements SignableMessage {
+public class PriceMapEmbed implements SignableMessage, Cloning<PriceMapEmbed> {
 
   @Embedded
   private PowerComponentsEmbed powerComponents;
@@ -60,21 +61,27 @@ public class PriceMapEmbed implements SignableMessage {
   @Embedded
   private PriceComponentsEmbed priceComponents;
 
-  /**
-   * Create a copy of this instance.
-   * 
-   * <p>
-   * All properties are copied onto the new instance.
-   * </p>
-   * 
-   * @return the copy
-   */
+  @Override
   public PriceMapEmbed copy() {
     PriceMapEmbed c = new PriceMapEmbed();
-    c.setPowerComponents(getPowerComponents());
+
+    PowerComponentsEmbed power = getPowerComponents();
+    if (power != null) {
+      c.setPowerComponents(power.copy());
+    }
+
     c.setDuration(getDuration());
-    c.setResponseTime(getResponseTime());
-    c.setPriceComponents(getPriceComponents());
+
+    DurationRangeEmbed rt = getResponseTime();
+    if (rt != null) {
+      c.setResponseTime(rt.copy());
+    }
+
+    PriceComponentsEmbed price = getPriceComponents();
+    if (price != null) {
+      c.setPriceComponents(price.copy());
+    }
+
     return c;
   }
 

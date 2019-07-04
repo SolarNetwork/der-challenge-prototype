@@ -29,6 +29,7 @@ import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
+import net.solarnetwork.esi.domain.support.Cloning;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 import net.solarnetwork.esi.util.NumberUtils;
 
@@ -45,7 +46,7 @@ import net.solarnetwork.esi.util.NumberUtils;
  * @version 1.0
  */
 @Embeddable
-public class PriceComponentsEmbed implements SignableMessage {
+public class PriceComponentsEmbed implements SignableMessage, Cloning<PriceComponentsEmbed> {
 
   // CHECKSTYLE IGNORE LineLength FOR NEXT 12 LINES
 
@@ -76,6 +77,14 @@ public class PriceComponentsEmbed implements SignableMessage {
     super();
     this.currency = currency;
     this.apparentEnergyPrice = apparentEnergyPrice;
+  }
+
+  @Override
+  public PriceComponentsEmbed copy() {
+    PriceComponentsEmbed c = new PriceComponentsEmbed();
+    c.setCurrency(getCurrency());
+    c.setApparentEnergyPrice(getApparentEnergyPrice());
+    return c;
   }
 
   @Override

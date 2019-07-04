@@ -24,6 +24,7 @@ import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
+import net.solarnetwork.esi.domain.support.Cloning;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -33,7 +34,7 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  * @version 1.0
  */
 @Embeddable
-public class PowerComponentsEmbed implements SignableMessage {
+public class PowerComponentsEmbed implements SignableMessage, Cloning<PowerComponentsEmbed> {
 
   @Basic
   @Column(name = "POWER_REAL", nullable = true, insertable = true, updatable = true)
@@ -62,6 +63,14 @@ public class PowerComponentsEmbed implements SignableMessage {
     super();
     this.realPower = realPower;
     this.reactivePower = reactivePower;
+  }
+
+  @Override
+  public PowerComponentsEmbed copy() {
+    PowerComponentsEmbed c = new PowerComponentsEmbed();
+    c.setRealPower(getRealPower());
+    c.setReactivePower(getReactivePower());
+    return c;
   }
 
   @Override
