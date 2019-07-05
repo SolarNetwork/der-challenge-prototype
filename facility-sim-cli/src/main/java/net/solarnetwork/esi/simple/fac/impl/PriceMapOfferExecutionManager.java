@@ -17,6 +17,8 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import static java.util.Arrays.asList;
+
 import java.time.Instant;
 import java.util.HashSet;
 import java.util.NavigableSet;
@@ -55,39 +57,45 @@ public class PriceMapOfferExecutionManager {
   private static final Logger log = LoggerFactory.getLogger(PriceMapOfferExecutionManager.class);
 
   private final PriceMapOfferExecutionService offerExecutionService;
-  private final NavigableSet<PendingPriceMapExecution> pending;
+  private final NavigableSet<PriceMapExecutionScheduledEvent> pending;
   private final Lock taskLock;
   private final Condition taskCondition;
   private final Thread taskThread;
 
   @ParametersAreNonnullByDefault
-  private static final class PendingPriceMapExecution
-      implements Comparable<PendingPriceMapExecution> {
+  private static final class PriceMapExecutionScheduledEvent
+      implements Comparable<PriceMapExecutionScheduledEvent> {
 
-    private final Instant startDate;
+    private final Instant date;
     private final UUID offerId;
+    private final PriceMapOfferExecutionState newState;
 
-    private PendingPriceMapExecution(UUID offerId, Instant startDate) {
+    private PriceMapExecutionScheduledEvent(UUID offerId, Instant date,
+        PriceMapOfferExecutionState newState) {
       super();
       this.offerId = offerId;
-      this.startDate = startDate;
+      this.date = date;
+      this.newState = newState;
     }
 
     @Override
-    public int compareTo(PendingPriceMapExecution o) {
+    public int compareTo(PriceMapExecutionScheduledEvent o) {
       if (o == null) {
         return 1; // nulls first
       }
-      int result = startDate.compareTo(o.startDate);
+      int result = date.compareTo(o.date);
       if (result == 0) {
-        result = offerId.compareTo(o.offerId);
+        result = newState.compareTo(o.newState);
+        if (result == 0) {
+          result = offerId.compareTo(o.offerId);
+        }
       }
       return result;
     }
 
     @Override
     public int hashCode() {
-      return Objects.hash(offerId);
+      return Objects.hash(offerId, date, newState);
     }
 
     @Override
@@ -98,16 +106,17 @@ public class PriceMapOfferExecutionManager {
       if (obj == null) {
         return false;
       }
-      if (!(obj instanceof PendingPriceMapExecution)) {
+      if (!(obj instanceof PriceMapExecutionScheduledEvent)) {
         return false;
       }
-      PendingPriceMapExecution other = (PendingPriceMapExecution) obj;
-      return Objects.equals(offerId, other.offerId);
+      PriceMapExecutionScheduledEvent other = (PriceMapExecutionScheduledEvent) obj;
+      return Objects.equals(offerId, other.offerId) && Objects.equals(date, other.date)
+          && Objects.equals(newState, other.newState);
     }
 
     @Override
     public String toString() {
-      return "OfferExecution{" + offerId + " @ " + startDate + "}";
+      return "OfferExecution{" + offerId + " @ " + date + " ~ " + newState + "}";
     }
 
   }
@@ -143,14 +152,13 @@ public class PriceMapOfferExecutionManager {
       while (keepGoing) {
         taskLock.lock();
         try {
-          PendingPriceMapExecution next = null;
+          PriceMapExecutionScheduledEvent next = null;
           try {
             next = pending.first();
           } catch (NoSuchElementException e) {
             // ignore this
           }
-          long sleepTime = (next != null
-              ? next.startDate.toEpochMilli() - System.currentTimeMillis()
+          long sleepTime = (next != null ? next.date.toEpochMilli() - System.currentTimeMillis()
               : Integer.MAX_VALUE);
           if (sleepTime < 0) {
             sleepTime = 0;
@@ -158,25 +166,29 @@ public class PriceMapOfferExecutionManager {
           log.debug("Waiting {}ms to execute next offer task: {}", sleepTime, next);
           taskCondition.await(sleepTime, TimeUnit.MILLISECONDS);
           if (keepGoing) {
-            Set<UUID> offerIdsToExecute = new HashSet<>();
+            Set<PriceMapExecutionScheduledEvent> offersToManage = new HashSet<>();
             synchronized (pending) {
               // get all pending executions less than now, plus a small amount of padding to grap
               // executions "just about" to be ready to execute
-              NavigableSet<PendingPriceMapExecution> ready = pending
-                  .headSet(new PendingPriceMapExecution(MAX_UUID,
-                      Instant.now().plusMillis(PENDING_FUTURE_PADDING_MS)), true);
-              for (PendingPriceMapExecution task : ready) {
-                offerIdsToExecute.add(task.offerId);
+              NavigableSet<PriceMapExecutionScheduledEvent> ready = pending
+                  .headSet(new PriceMapExecutionScheduledEvent(MAX_UUID,
+                      Instant.now().plusMillis(PENDING_FUTURE_PADDING_MS),
+                      PriceMapOfferExecutionState.ABORTED), true);
+              for (PriceMapExecutionScheduledEvent task : ready) {
+                offersToManage.add(task);
               }
               ready.clear();
             }
-            if (!offerIdsToExecute.isEmpty()) {
-              log.info("Found {} offer tasks to execute: {}", offerIdsToExecute.size(),
-                  offerIdsToExecute);
-              for (UUID offerId : offerIdsToExecute) {
+            if (!offersToManage.isEmpty()) {
+              log.info("Found {} offer tasks to manage: {}", offersToManage.size(), offersToManage);
+              for (PriceMapExecutionScheduledEvent offer : offersToManage) {
                 // TODO: handle results, and re-schedule if they don't complete;
                 // must be handled by a different thread though
-                offerExecutionService.executePriceMapOfferEvent(offerId);
+                if (offer.newState == PriceMapOfferExecutionState.EXECUTING) {
+                  offerExecutionService.executePriceMapOfferEvent(offer.offerId);
+                } else {
+                  offerExecutionService.endPriceMapOfferEvent(offer.offerId, offer.newState);
+                }
               }
             }
           }
@@ -198,14 +210,19 @@ public class PriceMapOfferExecutionManager {
   @Async
   @EventListener
   @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
-  public void handlePriceMapOfferCounteredEvent(PriceMapOfferAccepted event) {
+  public void handlePriceMapOfferAccpeted(PriceMapOfferAccepted event) {
     PriceMapOfferEventEntity entity = event.getOfferEvent();
     if (!(entity.isAccepted()
         && entity.getExecutionState() == PriceMapOfferExecutionState.WAITING)) {
       return;
     }
     log.info("Scheduling execution task for offer {} @ {}", entity.getId(), entity.getStartDate());
-    pending.add(new PendingPriceMapExecution(entity.getId(), entity.getStartDate()));
+    pending.addAll(asList(
+        new PriceMapExecutionScheduledEvent(entity.getId(), entity.getStartDate(),
+            PriceMapOfferExecutionState.EXECUTING),
+        new PriceMapExecutionScheduledEvent(entity.getId(),
+            entity.getStartDate().plus(entity.offerPriceMap().duration()),
+            PriceMapOfferExecutionState.COMPLETED)));
     taskLock.lock();
     try {
       taskCondition.signal();

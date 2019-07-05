@@ -22,6 +22,8 @@ import java.util.concurrent.CompletableFuture;
 
 import org.springframework.scheduling.annotation.Async;
 
+import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferExecutionState;
+
 /**
  * API for executing price map offers.
  * 
@@ -31,13 +33,26 @@ import org.springframework.scheduling.annotation.Async;
 public interface PriceMapOfferExecutionService {
 
   /**
-   * Execute one or more offer events.
+   * Execute a price offer event.
    * 
-   * @param offerEventId
-   *        the events to execute
+   * @param offerId
+   *        the ID of the event to execute
    * @return TODO
    */
   @Async
   CompletableFuture<?> executePriceMapOfferEvent(UUID offerId);
+
+  /**
+   * Finish a price offer event.
+   * 
+   * @param offerId
+   *        the ID of the event to finish
+   * @param newState
+   *        the desired final state; should be either {@link PriceMapOfferExecutionState#COMPLETED}
+   *        or {@link PriceMapOfferExecutionState#ABORTED}
+   * @return TODO
+   */
+  @Async
+  CompletableFuture<?> endPriceMapOfferEvent(UUID offerId, PriceMapOfferExecutionState newState);
 
 }

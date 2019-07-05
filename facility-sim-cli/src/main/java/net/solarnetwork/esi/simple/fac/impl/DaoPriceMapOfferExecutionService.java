@@ -106,6 +106,27 @@ public class DaoPriceMapOfferExecutionService implements PriceMapOfferExecutionS
     return result;
   }
 
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public CompletableFuture<?> endPriceMapOfferEvent(UUID offerId,
+      PriceMapOfferExecutionState newState) {
+    log.info("Finishing execution of price map offer {}", offerId);
+    PriceMapOfferEventEntity offerEvent = offerEventDao.findById(offerId).orElseThrow(
+        () -> new IllegalArgumentException("Offer event " + offerId + " not available."));
+    // we don't actually do anything to execute, other than mark the entity as executing
+    PriceMapOfferExecutionState oldState = offerEvent.executionState();
+    if (oldState == PriceMapOfferExecutionState.EXECUTING) {
+      offerEvent.setExecutionState(newState);
+      offerEvent.setCompletedSuccessfully(newState == PriceMapOfferExecutionState.COMPLETED);
+      offerEvent = offerEventDao.save(offerEvent);
+      publishEvent(new PriceMapOfferNotification.PriceMapOfferExecutionStateChanged(offerEvent,
+          oldState, newState));
+    }
+    CompletableFuture<PriceMapOfferEventEntity> result = new CompletableFuture<>();
+    result.complete(offerEvent);
+    return result;
+  }
+
   /**
    * Handle a price map offer accepted event.
    * 

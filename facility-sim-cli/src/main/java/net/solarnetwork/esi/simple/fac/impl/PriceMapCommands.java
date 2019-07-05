@@ -139,7 +139,7 @@ public class PriceMapCommands extends BaseShellSupport {
             new Object[] { entity.getId(), oldState, newState }, Locale.getDefault()),
         ShellUtils.SHELL_MAX_COLS);
     String details = entity.toDetailedInfoString(messageSource);
-    wallBanner(msg + "\n" + details, PromptColor.GREEN);
+    wallBanner(msg + "\n" + details, PromptColor.CYAN);
   }
 
   /**
@@ -166,7 +166,7 @@ public class PriceMapCommands extends BaseShellSupport {
         new Object[] { entity.getId(), entity.getPriceMap().getInfo(), dtf.format(offerEventDate),
             entity.getCounterOffer().getPriceMap().getInfo() },
         Locale.getDefault()), ShellUtils.SHELL_MAX_COLS);
-    wallBanner(msg, PromptColor.CYAN);
+    wallBanner(msg, PromptColor.MAGENTA);
   }
 
 }
