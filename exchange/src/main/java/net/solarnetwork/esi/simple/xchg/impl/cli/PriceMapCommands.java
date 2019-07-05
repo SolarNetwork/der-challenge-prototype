@@ -313,7 +313,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
             : "offer.event.completed.declined",
         new Object[] { offer.getId(), offer.getFacility().getFacilityUid(),
             offer.getOffering().getId() },
-        Locale.getDefault()), SHELL_MAX_COLS) + "\n" + priceMap.toDetailedInfoString(messageSource);
+        Locale.getDefault()), SHELL_MAX_COLS) + "\n" + offer.toDetailedInfoString(messageSource);
 
     // broadcast message to all available registered terminals
     wallBanner(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED);
@@ -334,12 +334,11 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
   @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
   public void handlePriceMapOfferStatusChanged(PriceMapOfferStatusChanged event) {
     FacilityPriceMapOfferEntity offer = em.merge(event.getOffer());
-    PriceMapEmbed priceMap = offer.offerPriceMap();
 
     String msg = wrap(messageSource.getMessage("offer.event.statusChanged",
         new Object[] { offer.getId(), offer.getFacility().getFacilityUid(),
             offer.getOffering().getId(), event.getOldStatus(), event.getNewStatus() },
-        Locale.getDefault()), SHELL_MAX_COLS) + "\n" + priceMap.toDetailedInfoString(messageSource);
+        Locale.getDefault()), SHELL_MAX_COLS) + "\n" + offer.toDetailedInfoString(messageSource);
 
     // broadcast message to all available registered terminals
     wallBanner(msg, PromptColor.CYAN);
