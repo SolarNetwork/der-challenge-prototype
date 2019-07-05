@@ -28,11 +28,11 @@ import org.springframework.context.ApplicationEvent;
  * @version 1.0
  */
 @ParametersAreNonnullByDefault
-public abstract class ExchangeRegistrationEvent extends ApplicationEvent {
+public abstract class ExchangeRegistrationNotification extends ApplicationEvent {
 
   private static final long serialVersionUID = -7161917000677959436L;
 
-  private ExchangeRegistrationEvent(Object source) {
+  private ExchangeRegistrationNotification(Object source) {
     super(source);
   }
 
@@ -42,7 +42,7 @@ public abstract class ExchangeRegistrationEvent extends ApplicationEvent {
    * @author matt
    * @version 1.0
    */
-  public static final class ExchangeRegistrationCompleted extends ExchangeRegistrationEvent {
+  public static final class ExchangeRegistrationCompleted extends ExchangeRegistrationNotification {
 
     private static final long serialVersionUID = -4467969205173775266L;
 

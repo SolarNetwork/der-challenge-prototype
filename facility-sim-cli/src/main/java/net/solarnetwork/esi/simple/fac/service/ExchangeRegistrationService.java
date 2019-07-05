@@ -26,7 +26,7 @@ import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEntity;
-import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEvent;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationNotification.ExchangeRegistrationCompleted;
 
 /**
  * API for a facility exchange registration service.
@@ -87,8 +87,8 @@ public interface ExchangeRegistrationService {
    * Complete the exchange registration process.
    * 
    * <p>
-   * Implementations must send a {@link ExchangeRegistrationEvent.ExchangeRegistrationCompleted}
-   * event after processing the request.
+   * Implementations must publish a {@link ExchangeRegistrationCompleted} event after processing the
+   * request.
    * </p>
    * 
    * @param request

@@ -21,6 +21,8 @@ import javax.annotation.Nonnull;
 
 import net.solarnetwork.esi.domain.PriceMapOffer;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferEventEntity;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferNotification.PriceMapOfferAccepted;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferNotification.PriceMapOfferCountered;
 
 /**
  * API for managing price map events.
@@ -32,6 +34,11 @@ public interface PriceMapService {
 
   /**
    * Receive a price map offer.
+   * 
+   * <p>
+   * Implementations must publish a {@link PriceMapOfferAccepted} event after accepting the offer. A
+   * {@link PriceMapOfferCountered} event must be published after proposing a counter offer.
+   * </p>
    * 
    * @param offer
    *        the offer

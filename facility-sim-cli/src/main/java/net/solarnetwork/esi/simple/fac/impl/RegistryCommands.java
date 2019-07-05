@@ -46,7 +46,7 @@ import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.FormSetting;
 import net.solarnetwork.esi.domain.FormSetting.FormSettingType;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEntity;
-import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEvent.ExchangeRegistrationCompleted;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationNotification.ExchangeRegistrationCompleted;
 import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
 
 /**

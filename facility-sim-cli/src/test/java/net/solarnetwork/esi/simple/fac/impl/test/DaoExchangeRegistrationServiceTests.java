@@ -75,7 +75,7 @@ import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeRegistrationEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEntity;
-import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEvent.ExchangeRegistrationCompleted;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationNotification.ExchangeRegistrationCompleted;
 import net.solarnetwork.esi.simple.fac.impl.DaoExchangeRegistrationService;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
 import net.solarnetwork.esi.util.CryptoUtils;
