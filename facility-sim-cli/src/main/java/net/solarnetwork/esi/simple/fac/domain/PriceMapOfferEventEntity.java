@@ -17,8 +17,18 @@
 
 package net.solarnetwork.esi.simple.fac.domain;
 
+import static java.lang.String.format;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -34,6 +44,8 @@ import javax.persistence.ForeignKey;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+
+import org.springframework.context.MessageSource;
 
 import net.solarnetwork.esi.domain.PriceMapOfferOrBuilder;
 import net.solarnetwork.esi.domain.jpa.BaseUuidEntity;
@@ -55,6 +67,16 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
 @Entity
 @Table(name = "PRICE_MAP_OFFER_EVENTS")
 public class PriceMapOfferEventEntity extends BaseUuidEntity implements SignableMessage {
+
+  /**
+   * The info code prefix to use in {@link #toDetailedInfoString(MessageSource)}.
+   */
+  public static final String STANDARD_DETAILED_INFO_CODE_PREFIX = "offer";
+
+  /**
+   * The property format used in {@link #toDetailedInfoString(MessageSource)} for string values.
+   */
+  public static final String STANDARD_DETAILED_INFO_FORMAT_S = "%-25s : %s";
 
   private static final long serialVersionUID = -7129480554484502881L;
 
@@ -200,6 +222,68 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
       return pm.priceMap();
     } else {
       return new PriceMapEmbed();
+    }
+  }
+
+  /**
+   * Get a detailed informational string using the default locale and standard formatting.
+   * 
+   * @param messageSource
+   *        the message source
+   * @return the detail string
+   * @see #toDetailedInfoString(Locale, MessageSource, String, String)
+   */
+  public String toDetailedInfoString(MessageSource messageSource) {
+    return toDetailedInfoString(Locale.getDefault(), messageSource,
+        PriceMapEmbed.STANDARD_DETAILED_INFO_FORMAT, STANDARD_DETAILED_INFO_FORMAT_S,
+        STANDARD_DETAILED_INFO_CODE_PREFIX,
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT), ZoneId.systemDefault(),
+        PriceMapEmbed.STANDARD_DETAILED_INFO_CODE_PREFIX);
+  }
+
+  /**
+   * Get a detailed informational string.
+   * 
+   * <p>
+   * The resulting string will contain one line per property in this price map. Each property will
+   * be printed using a key/unit/value format, using {@code messageFormat} as the string format. The
+   * key unit parameters will be strings. The value will a number.
+   * </p>
+   * 
+   * @param locale
+   *        the locale to render messages with
+   * @param messageSource
+   *        the message source
+   * @param messageFormat
+   *        the detailed message property format for number values
+   * @param stringMessageFormat
+   *        the detailed message property format for string values
+   * @param codePrefix
+   *        a message source code prefix
+   * @param priceMapCodePrefix
+   *        a message source code prefix to use for price map details
+   * @return the string
+   */
+  public String toDetailedInfoString(Locale locale, MessageSource messageSource,
+      String messageFormat, String stringMessageFormat, String codePrefix, DateTimeFormatter dtf,
+      ZoneId tz, String priceMapCodePrefix) {
+    // use PrintWriter for proper line.separator support
+    try (StringWriter buf = new StringWriter(); PrintWriter out = new PrintWriter(buf)) {
+
+      out.println(format(stringMessageFormat,
+          messageSource.getMessage(codePrefix + ".startDate", null, locale),
+          dtf.format(LocalDateTime.ofInstant(getStartDate(), tz))));
+      out.println(format(stringMessageFormat,
+          messageSource.getMessage(codePrefix + ".endDate", null, locale), dtf.format(
+              LocalDateTime.ofInstant(getStartDate().plus(offerPriceMap().duration()), tz))));
+
+      out.print(offerPriceMap().toDetailedInfoString(locale, messageSource, messageFormat,
+          priceMapCodePrefix));
+      // note last line *no* println() because shell.print() does that
+      out.flush();
+      return buf.toString();
+    } catch (IOException e) {
+      throw new RuntimeException("Error rendering price map offer: " + e.getMessage(), e);
     }
   }
 
