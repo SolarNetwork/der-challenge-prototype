@@ -432,7 +432,7 @@ public class DaoFacilityCharacteristicsServiceTests {
                 facilityKeyPair, exchangeKeyPair.getPublic(), asList(
                     exchangeUid,
                     facilityUid,
-                    PriceMapEntity.entityForMessage(priceMapBuilder.getPriceMap(0))))
+                    PriceMapEntity.entityForMessage(priceMapBuilder.getPriceMap(0), null)))
                 )
             .build())
         .build();

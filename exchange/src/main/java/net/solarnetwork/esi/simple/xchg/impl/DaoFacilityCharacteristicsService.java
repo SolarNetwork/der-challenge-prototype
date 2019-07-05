@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -269,7 +270,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
     List<PriceMap> priceMapList = priceMapCharacteristics.getPriceMapList();
     if (priceMapList != null) {
       for (PriceMap priceMap : priceMapList) {
-        PriceMapEntity posted = PriceMapEntity.entityForMessage(priceMap);
+        PriceMapEntity posted = PriceMapEntity.entityForMessage(priceMap, UUID.randomUUID());
         facility.addPriceMap(posted);
         messageSignatureData.add(posted);
       }

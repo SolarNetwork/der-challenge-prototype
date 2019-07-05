@@ -41,6 +41,7 @@ import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
@@ -56,6 +57,8 @@ import net.solarnetwork.esi.domain.DerRouteOrBuilder;
 import net.solarnetwork.esi.domain.PriceMapOffer;
 import net.solarnetwork.esi.domain.PriceMapOfferResponse;
 import net.solarnetwork.esi.domain.PriceMapOfferResponseOrBuilder;
+import net.solarnetwork.esi.domain.PriceMapOfferStatus;
+import net.solarnetwork.esi.domain.PriceMapOfferStatus.Status;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusOrBuilder;
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
@@ -72,7 +75,8 @@ import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapOfferEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEntity;
-import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingNotification.FacilityPriceMapOfferCompleted;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingNotification.PriceMapOfferCompleted;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingNotification.PriceMapOfferStatusChanged;
 import net.solarnetwork.esi.simple.xchg.service.PriceMapOfferingService;
 import net.solarnetwork.esi.util.CryptoHelper;
 
@@ -214,10 +218,18 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
             signatureData));
     // @formatter:on
 
-    log.info("Saving facility {} price map offer {} status: {}", facilityUid, offerId,
-        status.getStatus());
-
-    // TODO: save state
+    PriceMapOfferStatus.Status oldStatus = entity.getStatus();
+    PriceMapOfferStatus.Status newStatus = status.getStatus();
+    if (oldStatus != newStatus) {
+      log.info("Facility {} price map offer {} status changed {} -> {}", facilityUid, offerId,
+          oldStatus, newStatus);
+      entity.setStatus(newStatus);
+      entity = priceMapOfferDao.save(entity);
+      publishEvent(new PriceMapOfferStatusChanged(entity, oldStatus, newStatus));
+    } else {
+      log.info("Facility {} price map offer {} status unchanged: {}", facilityUid, offerId,
+          oldStatus);
+    }
 
     return entity;
   }
@@ -255,6 +267,7 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
     UUID offerId = UUID.randomUUID();
     FacilityPriceMapOfferEntity offer = new FacilityPriceMapOfferEntity(Instant.now(), offerId);
     offer.setFacility(facility);
+    offer.setStatus(Status.UNKNOWN);
     offering.addOffer(offer);
     offer = priceMapOfferDao.save(offer);
     return buildPriceMapOffer(offer);
@@ -315,9 +328,7 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
           }
           if (entity.isConfirmed()) {
             getFuture().complete(entity);
-            if (eventPublisher != null) {
-              eventPublisher.publishEvent(new FacilityPriceMapOfferCompleted(entity));
-            }
+            publishEvent(new PriceMapOfferCompleted(entity));
           } else {
             // a new counter-counter offer must be passed to facility
             qpmo.offerIds.add(entity.getId());
@@ -349,6 +360,12 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
       }
       channel.shutdown();
     }, taskExecutor);
+  }
+
+  private void publishEvent(ApplicationEvent event) {
+    if (eventPublisher != null) {
+      eventPublisher.publishEvent(event);
+    }
   }
 
   private FacilityPriceMapOfferEntity handlePriceMapOfferResponse(UUID offeringId, UUID offerId,

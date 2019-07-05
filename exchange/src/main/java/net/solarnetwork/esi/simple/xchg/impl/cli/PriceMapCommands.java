@@ -71,7 +71,8 @@ import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapOfferEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEntity;
-import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingNotification.FacilityPriceMapOfferCompleted;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingNotification.PriceMapOfferCompleted;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingNotification.PriceMapOfferStatusChanged;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.service.PriceMapOfferingService;
 
@@ -300,7 +301,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
   @Async
   @EventListener
   @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
-  public void handleFacilityPriceMapOfferCompletedEvent(FacilityPriceMapOfferCompleted event) {
+  public void handlePriceMapOfferCompleted(PriceMapOfferCompleted event) {
     FacilityPriceMapOfferEntity offer = em.merge(event.getOffer());
     PriceMapEmbed priceMap = offer.offerPriceMap();
     boolean countered = !priceMap.equals(offer.getOffering().priceMap().priceMap());
@@ -316,6 +317,32 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
 
     // broadcast message to all available registered terminals
     wallBanner(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED);
+  }
+
+  /**
+   * Handle a price map offer completed event.
+   * 
+   * <p>
+   * This will print a status message to the shell.
+   * </p>
+   * 
+   * @param event
+   *        the event
+   */
+  @Async
+  @EventListener
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+  public void handlePriceMapOfferStatusChanged(PriceMapOfferStatusChanged event) {
+    FacilityPriceMapOfferEntity offer = em.merge(event.getOffer());
+    PriceMapEmbed priceMap = offer.offerPriceMap();
+
+    String msg = wrap(messageSource.getMessage("offer.event.statusChanged",
+        new Object[] { offer.getId(), offer.getFacility().getFacilityUid(),
+            offer.getOffering().getId(), event.getOldStatus(), event.getNewStatus() },
+        Locale.getDefault()), SHELL_MAX_COLS) + "\n" + priceMap.toDetailedInfoString(messageSource);
+
+    // broadcast message to all available registered terminals
+    wallBanner(msg, PromptColor.CYAN);
   }
 
   private String promptForFacilityUidFromList() {

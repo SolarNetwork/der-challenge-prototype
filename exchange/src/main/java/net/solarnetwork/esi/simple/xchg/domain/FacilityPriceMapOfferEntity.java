@@ -27,6 +27,8 @@ import javax.persistence.Basic;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.FetchType;
 import javax.persistence.ForeignKey;
 import javax.persistence.JoinColumn;
@@ -34,6 +36,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 
+import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.jpa.BaseUuidEntity;
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.domain.support.SignableMessage;
@@ -48,7 +51,7 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
 @Table(name = "FACILITY_PRICE_MAP_OFFERS")
 public class FacilityPriceMapOfferEntity extends BaseUuidEntity implements SignableMessage {
 
-  private static final long serialVersionUID = 5090046078033013977L;
+  private static final long serialVersionUID = -8102992644415632405L;
 
   // @formatter:off
   @ManyToOne(optional = false, fetch = FetchType.LAZY)
@@ -83,6 +86,10 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity implements Signa
   @Basic
   @Column(name = "IS_CONFIRMED", nullable = false, insertable = true, updatable = true)
   private boolean confirmed;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "STATUS", nullable = false, insertable = true, updatable = true, length = 16)
+  private PriceMapOfferStatus.Status status;
 
   /**
    * Default constructor.
@@ -302,6 +309,25 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity implements Signa
    */
   public void setConfirmed(boolean confirmed) {
     this.confirmed = confirmed;
+  }
+
+  /**
+   * Get the offer status.
+   * 
+   * @return the status
+   */
+  public PriceMapOfferStatus.Status getStatus() {
+    return status;
+  }
+
+  /**
+   * Set the offer status.
+   * 
+   * @param status
+   *        the status to set
+   */
+  public void setStatus(PriceMapOfferStatus.Status status) {
+    this.status = status;
   }
 
 }

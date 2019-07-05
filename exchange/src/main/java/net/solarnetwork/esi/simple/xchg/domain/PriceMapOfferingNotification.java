@@ -19,6 +19,8 @@ package net.solarnetwork.esi.simple.xchg.domain;
 
 import org.springframework.context.ApplicationEvent;
 
+import net.solarnetwork.esi.domain.PriceMapOfferStatus;
+
 /**
  * Base class for price map offering events.
  * 
@@ -71,8 +73,7 @@ public abstract class PriceMapOfferingNotification extends ApplicationEvent {
    * @author matt
    * @version 1.0
    */
-  public static final class FacilityPriceMapOfferCompleted
-      extends FacilityPriceMapOfferEntityNotification {
+  public static final class PriceMapOfferCompleted extends FacilityPriceMapOfferEntityNotification {
 
     private static final long serialVersionUID = 6016764496596236293L;
 
@@ -84,7 +85,7 @@ public abstract class PriceMapOfferingNotification extends ApplicationEvent {
      * @param entity
      *        the entity
      */
-    public FacilityPriceMapOfferCompleted(FacilityPriceMapOfferEntity entity) {
+    public PriceMapOfferCompleted(FacilityPriceMapOfferEntity entity) {
       super(entity);
       this.success = entity.isProposed() && entity.isAccepted();
     }
@@ -100,6 +101,57 @@ public abstract class PriceMapOfferingNotification extends ApplicationEvent {
      */
     public boolean isSuccess() {
       return success;
+    }
+
+  }
+
+  /**
+   * Event published when a price map offer status has changed.
+   * 
+   * @author matt
+   * @version 1.0
+   */
+  public static final class PriceMapOfferStatusChanged
+      extends FacilityPriceMapOfferEntityNotification {
+
+    private static final long serialVersionUID = 8778312137915806526L;
+
+    private final PriceMapOfferStatus.Status oldStatus;
+    private final PriceMapOfferStatus.Status newStatus;
+
+    /**
+     * Constructor.
+     * 
+     * @param entity
+     *        the entity
+     * @param oldStatus
+     *        the old status
+     * @param newStatus
+     *        the new status
+     */
+    public PriceMapOfferStatusChanged(FacilityPriceMapOfferEntity entity,
+        PriceMapOfferStatus.Status oldStatus, PriceMapOfferStatus.Status newStatus) {
+      super(entity);
+      this.oldStatus = oldStatus;
+      this.newStatus = newStatus;
+    }
+
+    /**
+     * Get the old state.
+     * 
+     * @return the old state
+     */
+    public PriceMapOfferStatus.Status getOldStatus() {
+      return oldStatus;
+    }
+
+    /**
+     * Get the new state.
+     * 
+     * @return the new state
+     */
+    public PriceMapOfferStatus.Status getNewStatus() {
+      return newStatus;
     }
 
   }
