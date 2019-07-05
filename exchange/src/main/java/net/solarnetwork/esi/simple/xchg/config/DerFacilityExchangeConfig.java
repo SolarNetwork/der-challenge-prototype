@@ -113,8 +113,7 @@ public class DerFacilityExchangeConfig {
   @Autowired
   public PriceMapOfferingEntityDao offeringDao;
 
-  @Qualifier("AFTER_COMMIT")
-  @Autowired
+  @javax.annotation.Resource(name = "afterCommitTransactionEventPublisher")
   private ApplicationEventPublisher eventPublisher;
 
   @Autowired

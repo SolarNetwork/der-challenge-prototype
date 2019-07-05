@@ -17,14 +17,32 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import static net.solarnetwork.esi.cli.ShellUtils.wrap;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
+import java.util.Locale;
+
+import javax.persistence.EntityManager;
+
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.github.fonimus.ssh.shell.PromptColor;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
 import net.solarnetwork.esi.cli.BaseShellSupport;
+import net.solarnetwork.esi.cli.ShellUtils;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferEventEntity;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferNotification.PriceMapOfferAccepted;
 import net.solarnetwork.esi.simple.fac.service.PriceMapService;
 
 /**
@@ -36,6 +54,9 @@ import net.solarnetwork.esi.simple.fac.service.PriceMapService;
 @SshShellComponent
 @ShellCommandGroup("Price map events")
 public class PriceMapCommands extends BaseShellSupport {
+
+  @Autowired
+  private EntityManager em;
 
   private final PriceMapService priceMapService;
 
@@ -61,4 +82,33 @@ public class PriceMapCommands extends BaseShellSupport {
     // TODO
   }
 
+  /**
+   * Handle a price map offer accepted event.
+   * 
+   * <p>
+   * This will print a status message to the shell.
+   * </p>
+   * 
+   * @param event
+   *        the event
+   */
+  @Async
+  @EventListener
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+  public void handlePriceMapOfferAcceptedEvent(PriceMapOfferAccepted event) {
+    PriceMapOfferEventEntity entity = em.merge(event.getOfferEvent());
+
+    DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
+    LocalDateTime offerEventDate = LocalDateTime.ofInstant(entity.getStartDate(),
+        ZoneId.systemDefault());
+
+    String msg = wrap(
+        messageSource.getMessage(
+            "priceMap.event.accepted", new Object[] { entity.getId(),
+                entity.offerPriceMap().getInfo(), dtf.format(offerEventDate) },
+            Locale.getDefault()),
+        ShellUtils.SHELL_MAX_COLS);
+    String details = entity.offerPriceMap().toDetailedInfoString(messageSource);
+    wallBanner(msg + "\n" + details, PromptColor.GREEN);
+  }
 }

@@ -77,7 +77,7 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
         .sorted(comparing(PriceMapEntity::getDuration).thenComparing(PriceMapEntity::getId))
         .collect(Collectors.toList());
     showNumberedObjectList(sorted, "priceMap.list.item", "id", new String[] { "info" }, (k, v) -> {
-      showPriceMap(v.priceMap());
+      shell.print(v.priceMap().toDetailedInfoString(messageSource));
       shell.print("");
     });
   }
@@ -114,7 +114,7 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
 
       shell.print(
           messageSource.getMessage("priceMap.edit.confirm.title", null, Locale.getDefault()));
-      showPriceMap(priceMap);
+      shell.print(priceMap.toDetailedInfoString(messageSource));
       if (shell.confirm(
           messageSource.getMessage("priceMap.edit.confirm.ask", null, Locale.getDefault()))) {
         if (shell.confirm(
@@ -184,40 +184,13 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
 
       shell.print(
           messageSource.getMessage("priceMap.edit.confirm.title", null, Locale.getDefault()));
-      showPriceMap(priceMap);
+      shell.print(priceMap.toDetailedInfoString(messageSource));
       shell.print("");
       if (shell.confirm(
           messageSource.getMessage("priceMap.edit.confirm.ask", null, Locale.getDefault()))) {
         return priceMap;
       }
     }
-  }
-
-  private void showPriceMap(PriceMapEmbed priceMap) {
-    String fmt = "%-25s : %.3f %s";
-    PowerComponentsEmbed p = priceMap.powerComponents();
-    shell.print(String.format(fmt,
-        messageSource.getMessage("priceMap.power.real", null, Locale.getDefault()),
-        scaled(p.getRealPower(), -3), "kW"));
-    shell.print(String.format(fmt,
-        messageSource.getMessage("priceMap.power.reactive", null, Locale.getDefault()),
-        scaled(p.getReactivePower(), -3), "kVAR"));
-
-    shell.print(
-        String.format(fmt, messageSource.getMessage("priceMap.duration", null, Locale.getDefault()),
-            scaled(priceMap.duration().toMillis(), -3), "s"));
-
-    shell.print(String.format(fmt,
-        messageSource.getMessage("priceMap.responseTime.min", null, Locale.getDefault()),
-        scaled(priceMap.responseTime().getMin().toMillis(), -3), "s"));
-    shell.print(String.format(fmt,
-        messageSource.getMessage("priceMap.responseTime.max", null, Locale.getDefault()),
-        scaled(priceMap.responseTime().getMax().toMillis(), -3), "s"));
-
-    PriceComponentsEmbed pr = priceMap.getPriceComponents();
-    shell.print(String.format(fmt,
-        messageSource.getMessage("priceMap.price.apparent", null, Locale.getDefault()),
-        scaled(pr.apparentEnergyPrice(), 3), pr.currency().getCurrencyCode() + "/kVAh"));
   }
 
   private Long promptForPriceMapIdFromList() {
@@ -227,7 +200,7 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
         .collect(Collectors.toList());
     return promptForNumberedObjectListItem(sorted, "priceMap.list", "id", new String[] { "info" },
         (k, v) -> {
-          showPriceMap(v.priceMap());
+          shell.print(v.priceMap().toDetailedInfoString(messageSource));
           shell.print("");
         });
   }

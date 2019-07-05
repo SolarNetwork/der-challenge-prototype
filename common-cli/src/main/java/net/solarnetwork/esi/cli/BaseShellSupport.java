@@ -17,6 +17,9 @@
 
 package net.solarnetwork.esi.cli;
 
+import static net.solarnetwork.esi.cli.ShellUtils.getBoldColored;
+import static net.solarnetwork.esi.cli.ShellUtils.wall;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +34,7 @@ import org.springframework.beans.PropertyAccessorFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 
+import com.github.fonimus.ssh.shell.PromptColor;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 
 /**
@@ -240,5 +244,23 @@ public abstract class BaseShellSupport extends BaseMessageSourceSupport {
             new Object[] { 1, ids.size() }, Locale.getDefault()));
       }
     }
+  }
+
+  /**
+   * Broadcast a banner message to all attached shells.
+   * 
+   * @param msg
+   *        the message to broadcast
+   * @param color
+   *        the color to use
+   */
+  public void wallBanner(String msg, PromptColor color) {
+    String armor = getBoldColored(
+        messageSource.getMessage("event.armor", null, Locale.getDefault()), color);
+    String banner = String.format("\n%s\n%s\n%s", armor, shell.getColored(msg, color), armor);
+
+    // broadcast message to all available registered terminals
+    wall(banner);
+
   }
 }

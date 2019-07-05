@@ -18,7 +18,6 @@
 package net.solarnetwork.esi.simple.fac.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -63,7 +62,6 @@ public class ToolConfiguration {
    * 
    * @return the event publisher
    */
-  @Qualifier("AFTER_COMMIT")
   @Bean
   public ApplicationEventPublisher afterCommitTransactionEventPublisher() {
     TransactionalApplicationEventPublisher pub = new TransactionalApplicationEventPublisher(

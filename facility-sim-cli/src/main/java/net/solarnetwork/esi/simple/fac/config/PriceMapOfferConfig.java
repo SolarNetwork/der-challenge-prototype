@@ -17,8 +17,9 @@
 
 package net.solarnetwork.esi.simple.fac.config;
 
+import javax.annotation.Resource;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,8 +56,7 @@ public class PriceMapOfferConfig {
   @Autowired
   private ChannelProvider exchangeChannelProvider;
 
-  @Qualifier("AFTER_COMMIT")
-  @Autowired
+  @Resource(name = "afterCommitTransactionEventPublisher")
   private ApplicationEventPublisher eventPublisher;
 
   /**

@@ -17,6 +17,12 @@
 
 package net.solarnetwork.esi.domain.jpa;
 
+import static java.lang.String.format;
+import static net.solarnetwork.esi.util.NumberUtils.scaled;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.time.Duration;
@@ -32,6 +38,8 @@ import javax.persistence.Column;
 import javax.persistence.Embeddable;
 import javax.persistence.Embedded;
 
+import org.springframework.context.MessageSource;
+
 import net.solarnetwork.esi.domain.support.Cloning;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
@@ -43,6 +51,16 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  */
 @Embeddable
 public class PriceMapEmbed implements SignableMessage, Cloning<PriceMapEmbed> {
+
+  /**
+   * The property format used in {@link #toDetailedInfoString(MessageSource)}.
+   */
+  public static final String STANDARD_DETAILED_INFO_FORMAT = "%-25s : %.3f %s";
+
+  /**
+   * The code prefix used in {@link #toDetailedInfoString(MessageSource)}.
+   */
+  public static final String STANDARD_DETAILED_INFO_CODE_PREFIX = "priceMap";
 
   @Embedded
   private PowerComponentsEmbed powerComponents;
@@ -186,6 +204,72 @@ public class PriceMapEmbed implements SignableMessage, Cloning<PriceMapEmbed> {
   @Nonnull
   public String getInfo() {
     return toInfoString(Locale.getDefault());
+  }
+
+  /**
+   * Get a detailed informational string using the default locale and standard formatting.
+   * 
+   * @param messageSource
+   *        the message source
+   * @return the detail string
+   * @see #toDetailedInfoString(Locale, MessageSource, String, String)
+   */
+  public String toDetailedInfoString(MessageSource messageSource) {
+    return toDetailedInfoString(Locale.getDefault(), messageSource, STANDARD_DETAILED_INFO_FORMAT,
+        STANDARD_DETAILED_INFO_CODE_PREFIX);
+  }
+
+  /**
+   * Get a detailed informational string.
+   * 
+   * <p>
+   * The resulting string will contain one line per property in this price map. Each property will
+   * be printed using a key/unit/value format, using {@code messageFormat} as the string format. The
+   * key unit parameters will be strings. The value will a number.
+   * </p>
+   * 
+   * @param locale
+   *        the locale to render messages with
+   * @param messageSource
+   *        the message source
+   * @param messageFormat
+   *        the detailed message property format
+   * @param codePrefix
+   *        a message source code prefix
+   * @return the string
+   */
+  public String toDetailedInfoString(Locale locale, MessageSource messageSource,
+      String messageFormat, String codePrefix) {
+    // use PrintWriter for proper line.separator support
+    try (StringWriter buf = new StringWriter(); PrintWriter out = new PrintWriter(buf)) {
+
+      PowerComponentsEmbed p = powerComponents();
+      out.println(
+          format(messageFormat, messageSource.getMessage(codePrefix + ".power.real", null, locale),
+              scaled(p.getRealPower(), -3), "kW"));
+      out.println(format(messageFormat,
+          messageSource.getMessage(codePrefix + ".power.reactive", null, locale),
+          scaled(p.getReactivePower(), -3), "kVAR"));
+      out.println(
+          format(messageFormat, messageSource.getMessage(codePrefix + ".duration", null, locale),
+              scaled(duration().toMillis(), -3), "s"));
+      out.println(format(messageFormat,
+          messageSource.getMessage(codePrefix + ".responseTime.min", null, locale),
+          scaled(responseTime().min().toMillis(), -3), "s"));
+      out.println(String.format(messageFormat,
+          messageSource.getMessage(codePrefix + ".responseTime.max", null, locale),
+          scaled(responseTime().max().toMillis(), -3), "s"));
+
+      PriceComponentsEmbed pr = priceComponents();
+      out.print(String.format(messageFormat,
+          messageSource.getMessage(codePrefix + ".price.apparent", null, locale),
+          scaled(pr.apparentEnergyPrice(), 3), pr.currency().getCurrencyCode() + "/kVAh"));
+      // note last line *no* println() because shell.print() does that
+      out.flush();
+      return buf.toString();
+    } catch (IOException e) {
+      throw new RuntimeException("Error rendering price map: " + e.getMessage(), e);
+    }
   }
 
   /**

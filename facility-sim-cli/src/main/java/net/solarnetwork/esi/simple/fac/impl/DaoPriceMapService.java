@@ -111,16 +111,20 @@ public class DaoPriceMapService implements PriceMapService {
         // no counter offer, so let's accept this one
         event.setAccepted(true);
         event.setExecutionState(PriceMapOfferExecutionState.WAITING);
-        publishEvent(new PriceMapOfferNotification.PriceMapOfferAccepted(event));
       } else {
         // we've got a counter offer to propose
         event.setAccepted(false);
         event.setCounterOffer(new PriceMapEntity(Instant.now(), match));
         event.setExecutionState(PriceMapOfferExecutionState.COUNTERED);
-        publishEvent(new PriceMapOfferNotification.PriceMapOfferCountered(event));
       }
     }
-    return offerEventDao.save(event);
+    event = offerEventDao.save(event);
+    if (event.getCounterOffer() != null) {
+      publishEvent(new PriceMapOfferNotification.PriceMapOfferCountered(event));
+    } else if (event.isAccepted()) {
+      publishEvent(new PriceMapOfferNotification.PriceMapOfferAccepted(event));
+    }
+    return event;
   }
 
   private PriceMapEmbed acceptablePriceMapForEvent(PriceMapEntity supportedPriceMap,

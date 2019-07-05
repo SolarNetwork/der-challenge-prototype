@@ -17,17 +17,12 @@
 
 package net.solarnetwork.esi.simple.xchg.impl.cli;
 
-import static java.lang.String.format;
 import static java.util.stream.Collectors.toCollection;
 import static net.solarnetwork.esi.cli.ShellUtils.SHELL_MAX_COLS;
 import static net.solarnetwork.esi.cli.ShellUtils.getBold;
-import static net.solarnetwork.esi.cli.ShellUtils.wall;
 import static net.solarnetwork.esi.cli.ShellUtils.wrap;
 import static net.solarnetwork.esi.util.NumberUtils.scaled;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
@@ -90,7 +85,6 @@ import net.solarnetwork.esi.simple.xchg.service.PriceMapOfferingService;
 @ShellCommandGroup("Price Maps")
 public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
 
-  private static final String PRICE_MAP_PROP_FORMAT = "%-25s : %.3f %s";
   private static final String OFFER_PROP_FORMAT = "%-25s : %s";
   private static final Pattern RELATIVE_TIME_PAT = Pattern.compile("\\+\\s*(\\d+)\\s*(\\w)");
 
@@ -139,7 +133,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
       for (PriceMapEntity priceMap : priceMaps) {
         shell.print(getBold(messageSource.getMessage("priceMap.list.item",
             new Object[] { idx, priceMap.getId() }, Locale.getDefault())));
-        showPriceMap(priceMap.priceMap());
+        shell.print(priceMap.priceMap().toDetailedInfoString(messageSource));
         shell.print("");
       }
     } catch (IllegalArgumentException e) {
@@ -172,7 +166,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
       shell
           .print(messageSource.getMessage("offer.create.confirm.title", null, Locale.getDefault()));
 
-      showPriceMap(priceMap);
+      shell.print(priceMap.toDetailedInfoString(messageSource));
       shell.print(String.format(OFFER_PROP_FORMAT,
           messageSource.getMessage("offer.startDate", null, Locale.getDefault()),
           dtf.format(LocalDateTime.ofInstant(startDate, ZoneId.systemDefault()))));
@@ -284,7 +278,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
 
       shell.print(
           messageSource.getMessage("priceMap.edit.confirm.title", null, Locale.getDefault()));
-      showPriceMap(priceMap);
+      shell.print(priceMap.toDetailedInfoString(messageSource));
       shell.print("");
       if (shell.confirm(
           messageSource.getMessage("priceMap.edit.confirm.ask", null, Locale.getDefault()))) {
@@ -307,23 +301,21 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
   @EventListener
   @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
   public void handleFacilityPriceMapOfferCompletedEvent(FacilityPriceMapOfferCompleted event) {
-    FacilityPriceMapOfferEntity offer = event.getOffer();
-    offer = em.merge(offer);
+    FacilityPriceMapOfferEntity offer = em.merge(event.getOffer());
     PriceMapEmbed priceMap = offer.offerPriceMap();
     boolean countered = !priceMap.equals(offer.getOffering().priceMap().priceMap());
-    String armor = messageSource.getMessage("event.armor", null, Locale.getDefault());
-    String msg = String.format("\n%s\n%s\n\n%s\n%s\n", armor,
-        wrap(messageSource.getMessage(
-            event.isSuccess()
-                ? countered ? "offer.event.completed.acceptedWithCounterOffer"
-                    : "offer.event.completed.accepted"
-                : "offer.event.completed.declined",
-            new Object[] { offer.getId(), offer.getFacility().getFacilityUid() },
-            Locale.getDefault()), SHELL_MAX_COLS),
-        renderPriceMap(priceMap), armor);
+
+    String msg = wrap(messageSource.getMessage(
+        event.isSuccess()
+            ? countered ? "offer.event.completed.acceptedWithCounterOffer"
+                : "offer.event.completed.accepted"
+            : "offer.event.completed.declined",
+        new Object[] { offer.getId(), offer.getFacility().getFacilityUid(),
+            offer.getOffering().getId() },
+        Locale.getDefault()), SHELL_MAX_COLS) + "\n" + priceMap.toDetailedInfoString(messageSource);
 
     // broadcast message to all available registered terminals
-    wall(shell.getColored(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED));
+    wallBanner(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED);
   }
 
   private String promptForFacilityUidFromList() {
@@ -411,41 +403,4 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
     }
   }
 
-  private void showPriceMap(PriceMapEmbed priceMap) {
-    shell.print(renderPriceMap(priceMap));
-  }
-
-  private String renderPriceMap(PriceMapEmbed priceMap) {
-    // use PrintWriter for proper line.separator support
-    try (StringWriter buf = new StringWriter(); PrintWriter out = new PrintWriter(buf)) {
-
-      PowerComponentsEmbed p = priceMap.powerComponents();
-      out.println(format(PRICE_MAP_PROP_FORMAT,
-          messageSource.getMessage("priceMap.power.real", null, Locale.getDefault()),
-          p.getRealPower() / 1000.0, "kW"));
-      out.println(format(PRICE_MAP_PROP_FORMAT,
-          messageSource.getMessage("priceMap.power.reactive", null, Locale.getDefault()),
-          p.getReactivePower() / 1000.0, "kVAR"));
-      out.println(format(PRICE_MAP_PROP_FORMAT,
-          messageSource.getMessage("priceMap.duration", null, Locale.getDefault()),
-          scaled(priceMap.duration().toMillis(), -3), "s"));
-      out.println(format(PRICE_MAP_PROP_FORMAT,
-          messageSource.getMessage("priceMap.responseTime.min", null, Locale.getDefault()),
-          scaled(priceMap.responseTime().min().toMillis(), -3), "s"));
-      out.println(String.format(PRICE_MAP_PROP_FORMAT,
-          messageSource.getMessage("priceMap.responseTime.max", null, Locale.getDefault()),
-          scaled(priceMap.responseTime().max().toMillis(), -3), "s"));
-
-      PriceComponentsEmbed pr = priceMap.priceComponents();
-      out.print(String.format(PRICE_MAP_PROP_FORMAT,
-          messageSource.getMessage("priceMap.price.apparent", null, Locale.getDefault()),
-          scaled(pr.apparentEnergyPrice(), 3), pr.currency().getCurrencyCode() + "/kVAh"));
-      // note last line *no* println() because shell.print() does that
-      out.flush();
-      return buf.toString();
-    } catch (IOException e) {
-      log.error("Error rendering price map", e);
-      return "";
-    }
-  }
 }
