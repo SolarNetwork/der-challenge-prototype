@@ -21,7 +21,6 @@ import java.time.Instant;
 import java.util.UUID;
 
 import javax.persistence.Column;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 
@@ -37,7 +36,6 @@ public abstract class BaseUuidEntity extends BaseEntity<UUID> {
   private static final long serialVersionUID = 4582556470770011903L;
 
   @Id
-  @GeneratedValue
   @Column(name = "ID", nullable = false, insertable = true, updatable = false, length = 16)
   private UUID id;
 

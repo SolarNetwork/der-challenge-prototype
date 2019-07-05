@@ -349,8 +349,8 @@ public class DaoFacilityCharacteristicsServiceTests {
   @Test
   public void priceMapsForFacility() {
     // given
-    FacilityEntity facility = new FacilityEntity(Instant.now());
-    PriceMapEntity priceMap = new PriceMapEntity(Instant.now());
+    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.randomUUID());
+    PriceMapEntity priceMap = new PriceMapEntity(Instant.now(), UUID.randomUUID());
     facility.addPriceMap(priceMap);
 
     given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
@@ -368,7 +368,7 @@ public class DaoFacilityCharacteristicsServiceTests {
   @Test
   public void priceMapsForFacilityNotFound() {
     // given
-    FacilityEntity facility = new FacilityEntity(Instant.now());
+    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.randomUUID());
 
     given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
 

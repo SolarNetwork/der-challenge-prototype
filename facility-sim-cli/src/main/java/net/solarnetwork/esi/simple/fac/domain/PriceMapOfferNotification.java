@@ -94,4 +94,55 @@ public abstract class PriceMapOfferNotification extends ApplicationEvent {
 
   }
 
+  /**
+   * Event published when a price map offer execution state has changed.
+   * 
+   * @author matt
+   * @version 1.0
+   */
+  public static final class PriceMapOfferExecutionStateChanged
+      extends PriceMapOfferEventEntityNotification {
+
+    private static final long serialVersionUID = 6641451857195970377L;
+
+    private final PriceMapOfferExecutionState oldState;
+    private final PriceMapOfferExecutionState newState;
+
+    /**
+     * Constructor.
+     * 
+     * @param entity
+     *        the entity
+     * @param oldState
+     *        the old state
+     * @param newState
+     *        the new state
+     */
+    public PriceMapOfferExecutionStateChanged(PriceMapOfferEventEntity entity,
+        PriceMapOfferExecutionState oldState, PriceMapOfferExecutionState newState) {
+      super(entity);
+      this.oldState = oldState;
+      this.newState = newState;
+    }
+
+    /**
+     * Get the old state.
+     * 
+     * @return the old state
+     */
+    public PriceMapOfferExecutionState getOldState() {
+      return oldState;
+    }
+
+    /**
+     * Get the new state.
+     * 
+     * @return the new state
+     */
+    public PriceMapOfferExecutionState getNewState() {
+      return newState;
+    }
+
+  }
+
 }

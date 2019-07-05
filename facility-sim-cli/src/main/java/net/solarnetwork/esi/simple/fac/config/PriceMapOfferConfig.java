@@ -25,11 +25,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import net.solarnetwork.esi.grpc.ChannelProvider;
-import net.solarnetwork.esi.simple.fac.dao.PriceMapEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.PriceMapOfferEventEntityDao;
-import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
+import net.solarnetwork.esi.simple.fac.impl.DaoPriceMapOfferExecutionService;
 import net.solarnetwork.esi.simple.fac.impl.DaoPriceMapService;
+import net.solarnetwork.esi.simple.fac.impl.PriceMapOfferExecutionManager;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
+import net.solarnetwork.esi.simple.fac.service.PriceMapOfferExecutionService;
 import net.solarnetwork.esi.simple.fac.service.PriceMapService;
 
 /**
@@ -45,13 +46,7 @@ public class PriceMapOfferConfig {
   private FacilityService facilityService;
 
   @Autowired
-  private PriceMapEntityDao priceMapDao;
-
-  @Autowired
   private PriceMapOfferEventEntityDao offerEventDao;
-
-  @Autowired
-  private ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
 
   @Autowired
   private ChannelProvider exchangeChannelProvider;
@@ -69,6 +64,32 @@ public class PriceMapOfferConfig {
     DaoPriceMapService s = new DaoPriceMapService(facilityService, offerEventDao);
     s.setEventPublisher(eventPublisher);
     return s;
+  }
+
+  /**
+   * The price map offer execution service.
+   * 
+   * @return the offer execution service
+   */
+  @Bean
+  public PriceMapOfferExecutionService priceMapOfferExecutionService() {
+    DaoPriceMapOfferExecutionService service = new DaoPriceMapOfferExecutionService(facilityService,
+        offerEventDao);
+    service.setEventPublisher(eventPublisher);
+    service.setExchangeChannelProvider(exchangeChannelProvider);
+    return service;
+  }
+
+  /**
+   * The price map offer execution manager.
+   * 
+   * @return the offer execution manager
+   */
+  @Bean
+  public PriceMapOfferExecutionManager priceMapOfferExecutionManager() {
+    PriceMapOfferExecutionManager mgr = new PriceMapOfferExecutionManager(
+        priceMapOfferExecutionService());
+    return mgr;
   }
 
 }

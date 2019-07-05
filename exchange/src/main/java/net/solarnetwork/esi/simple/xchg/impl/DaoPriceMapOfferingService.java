@@ -21,8 +21,10 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static net.solarnetwork.esi.util.CryptoUtils.decodePublicKey;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
+import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -50,11 +52,14 @@ import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import net.solarnetwork.esi.dao.support.TransactionUtils;
 import net.solarnetwork.esi.domain.DerRoute;
+import net.solarnetwork.esi.domain.DerRouteOrBuilder;
 import net.solarnetwork.esi.domain.PriceMapOffer;
 import net.solarnetwork.esi.domain.PriceMapOfferResponse;
 import net.solarnetwork.esi.domain.PriceMapOfferResponseOrBuilder;
+import net.solarnetwork.esi.domain.PriceMapOfferStatusOrBuilder;
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
+import net.solarnetwork.esi.domain.support.SignableMessage;
 import net.solarnetwork.esi.grpc.ChannelProvider;
 import net.solarnetwork.esi.grpc.CompletableStreamObserver;
 import net.solarnetwork.esi.grpc.FutureStreamObserver;
@@ -123,7 +128,7 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
   public PriceMapOfferingEntity createPriceMapOffering(PriceMapEmbed priceMap, Instant startDate) {
-    PriceMapOfferingEntity offering = new PriceMapOfferingEntity(Instant.now());
+    PriceMapOfferingEntity offering = new PriceMapOfferingEntity(Instant.now(), UUID.randomUUID());
     offering.setStartDate(startDate);
     offering.setPriceMap(new PriceMapEntity(Instant.now(), priceMap));
     offering = offeringDao.save(offering);
@@ -166,6 +171,55 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
         .thenApply(
             l -> offers.stream().map(e -> e.future).map(CompletableFuture::join).collect(toList()));
     return cf;
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public FacilityPriceMapOfferEntity receiveOfferStatusUpdate(PriceMapOfferStatusOrBuilder status) {
+    DerRouteOrBuilder route = status.getRouteOrBuilder();
+    if (route == null) {
+      throw new IllegalArgumentException("Route missing");
+    }
+
+    if (!exchangeUid.equals(route.getExchangeUid())) {
+      throw new IllegalArgumentException("Exchange UID not valid.");
+    }
+
+    String facilityUid = route.getFacilityUid();
+    if (facilityUid == null || facilityUid.trim().isEmpty()) {
+      throw new IllegalArgumentException("Facility UID missing.");
+    }
+
+    // verify the offer exists
+    UUID offerId = ProtobufUtils.uuidValue(status.getOfferId());
+    FacilityPriceMapOfferEntity entity = priceMapOfferDao.findById(offerId)
+        .orElseThrow(() -> new IllegalArgumentException("Offer not available."));
+
+    // verify offer facility matches
+    if (!entity.getFacility().getFacilityUid().equals(status.getRoute().getFacilityUid())) {
+      throw new IllegalArgumentException("Facility does not match.");
+    }
+
+    // verify signature
+    ByteBuffer signatureData = ByteBuffer
+        .allocate(SignableMessage.uuidSignatureMessageSize() + Integer.BYTES);
+    SignableMessage.addUuidSignatureMessageBytes(signatureData, offerId);
+    signatureData.putInt(status.getStatus().getNumber());
+
+    // @formatter:off
+    validateMessageSignature(cryptoHelper, route.getSignature(), exchangeKeyPair,
+        entity.getFacility().publicKey(),
+        asList(exchangeUid, 
+            facilityUid,
+            signatureData));
+    // @formatter:on
+
+    log.info("Saving facility {} price map offer {} status: {}", facilityUid, offerId,
+        status.getStatus());
+
+    // TODO: save state
+
+    return entity;
   }
 
   /**

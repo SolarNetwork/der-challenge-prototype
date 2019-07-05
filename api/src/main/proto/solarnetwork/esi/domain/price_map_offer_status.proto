@@ -23,13 +23,25 @@ option java_outer_classname = "PriceMapOfferStatusProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
+import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/uuid.proto";
 
 // Status information for a price map offer.
 message PriceMapOfferStatus {
 
+  // The routing info.
+  //
+  // The MessageSignature of the route must include the following:
+  //
+  // * `exchange_uid` UTF-8 bytes
+  // * `facility_uid` UTF-8 bytes
+  // * `offer_id.hi` big-endian encoded bytes
+  // * `offer_id.lo` big-endian encoded bytes
+  // * `status` ordinal value as big-endian encoded bytes
+  DerRoute route = 1;
+  
   // The globally unique ID of the offer this status is for.
-  Uuid offer_id = 1;
+  Uuid offer_id = 2;
   
   enum Status {
   	UNKNOWN = 0;
@@ -40,6 +52,6 @@ message PriceMapOfferStatus {
   }
 
   // The offer status.
-  Status status = 2;
+  Status status = 3;
 
 }

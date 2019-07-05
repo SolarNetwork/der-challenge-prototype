@@ -158,4 +158,32 @@ public interface SignableMessage {
     }
   }
 
+  /**
+   * Get the size, in bytes, needed to encode a boolean in the
+   * {@link #addBooleanSignatureMessageBytes(ByteBuffer, Boolean)} method.
+   * 
+   * @return the size in bytes
+   */
+  static int booleanSignatureMessageSize() {
+    return 1;
+  }
+
+  /**
+   * Add a {@link UUID} to a signature message.
+   * 
+   * <p>
+   * This puts a single byte into the buffer, {@literal 0x01} for {@literal true} and
+   * {@literal 0x00} for {@literal false}.
+   * </p>
+   * 
+   * @param buf
+   *        the signature message to add the boolean to
+   * @param bool
+   *        the boolean to add; if {@literal null} then a false will be put into the buffer
+   */
+  static void addBooleanSignatureMessageBytes(@Nonnull ByteBuffer buf, Boolean bool) {
+    boolean val = (bool != null ? bool.booleanValue() : false);
+    buf.put(val ? (byte) 1 : (byte) 0);
+  }
+
 }

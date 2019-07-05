@@ -104,7 +104,8 @@ public class SimpleDerFacilityExchangeTests {
 
     exchangeUid = UUID.randomUUID().toString();
     exchangeKeyPair = STANDARD_HELPER.generateKeyPair();
-    service = new SimpleDerFacilityExchange(exchangeUid, exchangeKeyPair, registrationForms);
+    service = new SimpleDerFacilityExchange(exchangeUid, exchangeKeyPair, registrationForms,
+        STANDARD_HELPER);
 
     facilityKeyPair = STANDARD_HELPER.generateKeyPair();
 

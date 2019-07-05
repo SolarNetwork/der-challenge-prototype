@@ -96,7 +96,8 @@ public class JpaPriceMapOfferEventEntityDaoTests extends SpringTestSupport {
 
   @Test
   public void insert() {
-    PriceMapOfferEventEntity obj = new PriceMapOfferEventEntity(Instant.now(), UUID.randomUUID());
+    UUID id = UUID.randomUUID();
+    PriceMapOfferEventEntity obj = new PriceMapOfferEventEntity(Instant.now(), id);
     obj.setAccepted(true);
     obj.setCompletedSuccessfully(true);
     obj.setExecutionState(PriceMapOfferExecutionState.COMPLETED);
@@ -117,7 +118,7 @@ public class JpaPriceMapOfferEventEntityDaoTests extends SpringTestSupport {
     em.flush();
     assertPriceMapOfferEventRowCountEqualTo(1);
     assertPriceMapRowCountEqualTo(1);
-    assertThat("ID", entity.getId(), notNullValue());
+    assertThat("ID", entity.getId(), equalTo(id));
     assertThat("Created set", entity.getCreated(), notNullValue());
     assertThat("Modified set", entity.getModified(), notNullValue());
     em.clear();

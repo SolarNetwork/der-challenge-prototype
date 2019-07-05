@@ -24,6 +24,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 import net.solarnetwork.esi.cli.CliServices;
 import net.solarnetwork.esi.simple.fac.config.AppConfiguration;
@@ -37,6 +39,8 @@ import net.solarnetwork.esi.simple.fac.impl.AppServices;
  */
 @SpringBootApplication(scanBasePackageClasses = { AppConfiguration.class, AppServices.class,
     CliServices.class })
+@EnableAsync
+@EnableScheduling
 public class FacilityTool {
 
   /**

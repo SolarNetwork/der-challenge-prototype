@@ -24,6 +24,7 @@ import java.util.concurrent.Future;
 
 import org.springframework.scheduling.annotation.Async;
 
+import net.solarnetwork.esi.domain.PriceMapOfferStatusOrBuilder;
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapOfferEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEntity;
@@ -65,5 +66,16 @@ public interface PriceMapOfferingService {
   @Async
   Future<Iterable<FacilityPriceMapOfferEntity>> makeOfferToFacilities(UUID offeringId,
       Set<String> facilityUids);
+
+  /**
+   * Receie a price map offer status update.
+   * 
+   * @param status
+   *        the status
+   * @return an updated entity if accepted
+   * @throws IllegalArgumentException
+   *         if not accepted
+   */
+  FacilityPriceMapOfferEntity receiveOfferStatusUpdate(PriceMapOfferStatusOrBuilder status);
 
 }

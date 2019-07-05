@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
@@ -242,7 +243,7 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
   public Future<FacilityEntity> processFacilityRegistration(
       FacilityRegistrationEntity registration) {
     // automatically approve
-    FacilityEntity entity = new FacilityEntity(Instant.now());
+    FacilityEntity entity = new FacilityEntity(Instant.now(), UUID.randomUUID());
     entity.setCustomerId(registration.getCustomerId());
     entity.setFacilityEndpointUri(registration.getFacilityEndpointUri());
     entity.setFacilityPublicKey(registration.getFacilityPublicKey());

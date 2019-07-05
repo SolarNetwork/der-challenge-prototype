@@ -123,7 +123,7 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
 
   @Test
   public void insert() {
-    FacilityEntity obj = new FacilityEntity(Instant.now());
+    FacilityEntity obj = new FacilityEntity(Instant.now(), UUID.randomUUID());
     obj.setCustomerId(TEST_CUSTOMER_ID);
     obj.setUici(TEST_UICI);
     obj.setFacilityUid(TEST_UID);
@@ -186,7 +186,7 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
   public void addPriceMap() {
     insert();
 
-    PriceMapEntity priceMap = new PriceMapEntity(Instant.now());
+    PriceMapEntity priceMap = new PriceMapEntity(Instant.now(), UUID.randomUUID());
     priceMap.setPowerComponents(new PowerComponentsEmbed(1L, 2L));
     priceMap.setDuration(Duration.ofMillis(123456L));
     priceMap.setResponseTime(
@@ -243,7 +243,7 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
   public void findAllInfoMulti() {
     List<FacilityEntity> data = new ArrayList<>(3);
     for (int i = 0; i < 3; i++) {
-      FacilityEntity obj = new FacilityEntity(Instant.now());
+      FacilityEntity obj = new FacilityEntity(Instant.now(), UUID.randomUUID());
       obj.setCustomerId("CUST_" + (3 - i)); // insert in reverse order
       obj.setUici(TEST_UICI + "_" + (3 - 1));
       obj.setFacilityUid(TEST_UID + "_" + (3 - i));
@@ -270,7 +270,7 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
   public void findByFacilityUids() {
     List<FacilityEntity> data = new ArrayList<>(3);
     for (int i = 0; i < 3; i++) {
-      FacilityEntity obj = new FacilityEntity(Instant.now());
+      FacilityEntity obj = new FacilityEntity(Instant.now(), UUID.randomUUID());
       obj.setCustomerId("CUST_" + i);
       obj.setUici(TEST_UICI + i);
       obj.setFacilityUid(TEST_UID + i);

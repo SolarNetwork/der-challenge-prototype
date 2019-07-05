@@ -23,15 +23,27 @@ option java_outer_classname = "PriceMapOfferStatusResponseProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
+import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/uuid.proto";
 
 // Response to a price map status request.
 message PriceMapOfferStatusResponse {
 
+  // The routing info.
+  //
+  // The MessageSignature of the route must include the following:
+  //
+  // * `exchange_uid` UTF-8 bytes
+  // * `facility_uid` UTF-8 bytes
+  // * `offer_id.hi` big-endian encoded bytes
+  // * `offer_id.lo` big-endian encoded bytes
+  // * `accepted` 0x01 for true, 0x00 for false
+  DerRoute route = 1;
+  
   // The globally unique ID of the offer this response is for.
-  Uuid offer_id = 1;
+  Uuid offer_id = 2;
   
   // Flag if the status has been processed successfully.
-  bool accepted = 2;
+  bool accepted = 3;
 
 }

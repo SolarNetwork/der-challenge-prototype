@@ -90,7 +90,7 @@ public class PriceMapEntity extends BaseUuidEntity implements SignableMessage {
    *        the price map details
    */
   public PriceMapEntity(Instant created, PriceMapEmbed priceMap) {
-    this(created);
+    this(created, UUID.randomUUID());
     setPriceMap(priceMap);
   }
 

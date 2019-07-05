@@ -97,7 +97,7 @@ public class JpaFacilityResourceCharacteristicsEntityDaoTests extends SpringTest
   }
 
   private FacilityEntity setupFacility() {
-    FacilityEntity obj = new FacilityEntity(Instant.now());
+    FacilityEntity obj = new FacilityEntity(Instant.now(), UUID.randomUUID());
     obj.setCustomerId(TEST_CUSTOMER_ID);
     obj.setUici(TEST_UICI);
     obj.setFacilityUid(TEST_UID);
