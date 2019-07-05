@@ -33,7 +33,7 @@ import "solarnetwork/esi/domain/der_facility_registration_form_request.proto";
 import "solarnetwork/esi/domain/der_program_set.proto";
 import "solarnetwork/esi/domain/der_characteristics.proto";
 import "solarnetwork/esi/domain/price_datum.proto";
-import "solarnetwork/esi/domain/price_map.proto";
+import "solarnetwork/esi/domain/price_map_characteristics.proto";
 import "solarnetwork/esi/domain/price_map_offer_status.proto";
 import "solarnetwork/esi/domain/price_map_offer_status_response.proto";
 
@@ -82,7 +82,7 @@ service DerFacilityExchange {
   returns (google.protobuf.Empty);
 
   // Publish price maps for facilities.
-  rpc ProvidePriceMaps(stream solarnetwork.esi.domain.PriceMap)
+  rpc ProvidePriceMaps(stream solarnetwork.esi.domain.PriceMapCharacteristics)
   returns (google.protobuf.Empty);
   
   // Publish the supported program types.

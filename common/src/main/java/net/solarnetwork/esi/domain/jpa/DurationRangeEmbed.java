@@ -21,10 +21,12 @@ import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Objects;
 
+import javax.annotation.Nonnull;
 import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
+import net.solarnetwork.esi.domain.support.Cloning;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -39,7 +41,7 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  * @version 1.0
  */
 @Embeddable
-public class DurationRangeEmbed implements SignableMessage {
+public class DurationRangeEmbed implements SignableMessage, Cloning<DurationRangeEmbed> {
 
   @Basic
   @Column(name = "DUR_MIN", nullable = false, insertable = true, updatable = true)
@@ -70,6 +72,25 @@ public class DurationRangeEmbed implements SignableMessage {
     this.max = max;
   }
 
+  /**
+   * Create a new duration out of second values.
+   * 
+   * @param min
+   *        the minimum value, in seconds
+   * @param max
+   *        the maximum value, in seconds
+   * @return the range instance
+   */
+  @Nonnull
+  public static DurationRangeEmbed ofSeconds(long min, long max) {
+    return new DurationRangeEmbed(Duration.ofSeconds(min), Duration.ofSeconds(max));
+  }
+
+  @Override
+  public DurationRangeEmbed copy() {
+    return new DurationRangeEmbed(getMin(), getMax());
+  }
+
   @Override
   public int hashCode() {
     return Objects.hash(max, min);
@@ -88,6 +109,11 @@ public class DurationRangeEmbed implements SignableMessage {
     }
     DurationRangeEmbed other = (DurationRangeEmbed) obj;
     return Objects.equals(max, other.max) && Objects.equals(min, other.min);
+  }
+
+  @Override
+  public String toString() {
+    return "DurationRange{min=" + min + ", max=" + max + "}";
   }
 
   @Override
@@ -121,6 +147,18 @@ public class DurationRangeEmbed implements SignableMessage {
   }
 
   /**
+   * Get the minimum duration, never {@literal null}.
+   */
+  @Nonnull
+  public Duration min() {
+    Duration d = getMin();
+    if (d == null) {
+      d = Duration.ZERO;
+    }
+    return d;
+  }
+
+  /**
    * Get the maximum duration.
    * 
    * @return the maximum duration
@@ -137,6 +175,18 @@ public class DurationRangeEmbed implements SignableMessage {
    */
   public void setMax(Duration max) {
     this.max = max;
+  }
+
+  /**
+   * Get the maximum duration, never {@literal null}.
+   */
+  @Nonnull
+  public Duration max() {
+    Duration d = getMax();
+    if (d == null) {
+      d = Duration.ZERO;
+    }
+    return d;
   }
 
 }

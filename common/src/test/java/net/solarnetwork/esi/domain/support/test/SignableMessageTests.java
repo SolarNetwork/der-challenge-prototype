@@ -22,6 +22,7 @@ import static org.junit.Assert.assertThat;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
+import java.time.Instant;
 
 import org.junit.Test;
 
@@ -38,7 +39,7 @@ public class SignableMessageTests {
   @Test
   public void durationSignatureMessageSize() {
     int size = SignableMessage.durationSignatureMessageSize();
-    assertThat("Duratino bytes size", size, equalTo(Long.BYTES + Integer.BYTES));
+    assertThat("Duration bytes size", size, equalTo(Long.BYTES + Integer.BYTES));
   }
 
   @Test
@@ -47,6 +48,22 @@ public class SignableMessageTests {
     SignableMessage.addDurationSignatureMessageBytes(bb, Duration.ofMillis(123456789));
     bb.flip();
     assertThat("Seconds", bb.getLong(), equalTo(123456L));
+  }
+
+  @Test
+  public void instantSignatureMessageSize() {
+    int size = SignableMessage.instantSignatureMessageSize();
+    assertThat("Instant bytes size", size, equalTo(Long.BYTES + Integer.BYTES));
+  }
+
+  @Test
+  public void addInstantSignatureMessageBytes() {
+    ByteBuffer bb = ByteBuffer.allocate(SignableMessage.instantSignatureMessageSize());
+    Instant now = Instant.now();
+    SignableMessage.addInstantSignatureMessageBytes(bb, now);
+    bb.flip();
+    assertThat("Seconds", bb.getLong(), equalTo(now.getEpochSecond()));
+    assertThat("Nanos", bb.getInt(), equalTo(now.getNano()));
   }
 
 }

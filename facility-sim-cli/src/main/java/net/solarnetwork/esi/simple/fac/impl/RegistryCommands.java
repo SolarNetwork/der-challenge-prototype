@@ -17,16 +17,15 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import static java.lang.String.format;
 import static net.solarnetwork.esi.cli.ShellUtils.getBold;
 import static net.solarnetwork.esi.cli.ShellUtils.getBoldColored;
 import static net.solarnetwork.esi.cli.ShellUtils.getFaint;
 import static net.solarnetwork.esi.cli.ShellUtils.wall;
 import static net.solarnetwork.esi.cli.ShellUtils.wrap;
-import static net.solarnetwork.esi.simple.fac.impl.ShellConstants.SHELL_MAX_COLS;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
+import java.util.stream.StreamSupport;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -38,6 +37,8 @@ import com.github.fonimus.ssh.shell.PromptColor;
 import com.github.fonimus.ssh.shell.SshShellHelper;
 import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
+import net.solarnetwork.esi.cli.BaseShellSupport;
+import net.solarnetwork.esi.cli.ShellUtils;
 import net.solarnetwork.esi.domain.DerFacilityExchangeInfo;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationForm;
 import net.solarnetwork.esi.domain.Form;
@@ -45,7 +46,7 @@ import net.solarnetwork.esi.domain.FormData;
 import net.solarnetwork.esi.domain.FormSetting;
 import net.solarnetwork.esi.domain.FormSetting.FormSettingType;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEntity;
-import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEvent.ExchangeRegistrationCompleted;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationNotification.ExchangeRegistrationCompleted;
 import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
 
 /**
@@ -56,9 +57,8 @@ import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
  */
 @SshShellComponent
 @ShellCommandGroup("Registry")
-public class RegistryCommands extends BaseMessageSourceSupport {
+public class RegistryCommands extends BaseShellSupport {
 
-  private final SshShellHelper shell;
   private final ExchangeRegistrationService exchangeRegistrationService;
 
   /**
@@ -72,8 +72,7 @@ public class RegistryCommands extends BaseMessageSourceSupport {
   @Autowired
   public RegistryCommands(SshShellHelper shell,
       ExchangeRegistrationService exchangeRegistrationService) {
-    super();
-    this.shell = shell;
+    super(shell);
     this.exchangeRegistrationService = exchangeRegistrationService;
   }
 
@@ -90,37 +89,25 @@ public class RegistryCommands extends BaseMessageSourceSupport {
    */
   @ShellMethod("Choose a facility exchange to connect to.")
   public void exchangeChoose() {
-    List<DerFacilityExchangeInfo> exchanges = listExchanges();
-    while (true) {
-      String choice = shell
-          .read(messageSource.getMessage("reg.registry.choose", null, Locale.getDefault()));
-      try {
-        int idx = Integer.parseInt(choice);
-        if (idx > 0 && idx <= exchanges.size()) {
-          DerFacilityExchangeInfo exchange = exchanges.get(idx - 1);
-          if (shell.confirm(messageSource.getMessage("reg.registry.exchangeConfirm",
-              new Object[] { exchange.getName(), exchange.getEndpointUri() },
-              Locale.getDefault()))) {
-            shell.printSuccess(messageSource.getMessage("reg.registry.exchangeSelected",
-                new Object[] { exchange.getName() }, Locale.getDefault()));
-            shell.print("");
-            shell.print(messageSource.getMessage("reg.form.intro",
-                new Object[] { exchange.getName() }, Locale.getDefault()));
-            shell.print("");
+    Iterable<DerFacilityExchangeInfo> infos = exchangeRegistrationService.listExchanges(null);
+    String uid = promptForExchangeIdFromList(infos);
+    DerFacilityExchangeInfo exchange = StreamSupport.stream(infos.spliterator(), false)
+        .filter(e -> uid.equals(e.getUid())).findAny().orElse(null);
+    if (exchange == null) {
+      return;
+    }
+    if (shell.confirm(messageSource.getMessage("exchange.register.confirm.ask",
+        new Object[] { exchange.getName(), exchange.getEndpointUri() }, Locale.getDefault()))) {
+      shell.printSuccess(messageSource.getMessage("exchange.register.success",
+          new Object[] { exchange.getName() }, Locale.getDefault()));
+      shell.print("");
+      shell.print(messageSource.getMessage("reg.form.intro", new Object[] { exchange.getName() },
+          Locale.getDefault()));
+      shell.print("");
 
-            DerFacilityRegistrationForm regForm = exchangeRegistrationService
-                .getExchangeRegistrationForm(exchange, Locale.getDefault());
-            handleRegisterForm(exchange, regForm);
-            break;
-          }
-        } else {
-          shell.printError(
-              messageSource.getMessage("reg.error.numOutOfRange", null, Locale.getDefault()));
-        }
-      } catch (NumberFormatException e) {
-        shell.printError(
-            messageSource.getMessage("reg.error.enterNumber", null, Locale.getDefault()));
-      }
+      DerFacilityRegistrationForm regForm = exchangeRegistrationService
+          .getExchangeRegistrationForm(exchange, Locale.getDefault());
+      handleRegisterForm(exchange, regForm);
     }
   }
 
@@ -164,35 +151,37 @@ public class RegistryCommands extends BaseMessageSourceSupport {
             messageSource.getMessage(
                 event.isSuccess() ? "reg.event.completed.success" : "reg.event.completed.error",
                 new Object[] { reg.getId(), reg.getExchangeEndpointUri() }, Locale.getDefault()),
-            SHELL_MAX_COLS),
+            ShellUtils.SHELL_MAX_COLS),
         armor);
 
     // broadcast message to all available registered terminals
     wall(shell.getColored(msg, event.isSuccess() ? PromptColor.GREEN : PromptColor.RED));
   }
 
-  private List<DerFacilityExchangeInfo> listExchanges() {
-    List<DerFacilityExchangeInfo> result = new ArrayList<>(8);
+  private void listExchanges() {
     Iterable<DerFacilityExchangeInfo> infos = exchangeRegistrationService.listExchanges(null);
-    int i = 0;
+    showNumberedObjectList(infos, "exchange.list.item", "uid", new String[] { "name" }, (k, v) -> {
+      showRegistry(v);
+      shell.print("");
+    });
+  }
+
+  private String promptForExchangeIdFromList(Iterable<DerFacilityExchangeInfo> infos) {
+    return promptForNumberedObjectListItem(infos, "exchange.list", "uid", new String[] { "name" },
+        (k, v) -> {
+          showRegistry(v);
+          shell.print("");
+        });
+  }
+
+  private void showRegistry(DerFacilityExchangeInfo info) {
     String fmt = "  %-10s %s";
-    for (DerFacilityExchangeInfo info : infos) {
-      i += 1;
-      result.add(info);
-      shell.print(messageSource.getMessage("reg.registry.entry.title", new Object[] { i },
-          Locale.getDefault()), PromptColor.MAGENTA);
-      shell.print(String.format(fmt,
-          messageSource.getMessage("reg.registry.entry.name", null, Locale.getDefault()),
-          info.getName()));
-      shell.print(String.format(fmt,
-          messageSource.getMessage("reg.registry.entry.id", null, Locale.getDefault()),
-          info.getUid()));
-      shell.print(String.format(fmt,
-          messageSource.getMessage("reg.registry.entry.uri", null, Locale.getDefault()),
-          info.getEndpointUri()));
-    }
-    shell.print("");
-    return result;
+    shell.print(format(fmt, messageSource.getMessage("exchange.name", null, Locale.getDefault()),
+        info.getName()));
+    shell.print(format(fmt, messageSource.getMessage("exchange.uid", null, Locale.getDefault()),
+        info.getUid()));
+    shell.print(format(fmt, messageSource.getMessage("exchange.uri", null, Locale.getDefault()),
+        info.getEndpointUri()));
   }
 
   private void handleRegisterForm(DerFacilityExchangeInfo exchange,
@@ -227,7 +216,7 @@ public class RegistryCommands extends BaseMessageSourceSupport {
             shell.printSuccess(wrap(
                 messageSource.getMessage("reg.success",
                     new Object[] { exchange.getName(), reg.getId() }, Locale.getDefault()),
-                SHELL_MAX_COLS));
+                ShellUtils.SHELL_MAX_COLS));
             shell.print("");
           } catch (IllegalArgumentException e) {
             // there was some error submitting the form; allow the user the chance to re-try
@@ -236,7 +225,7 @@ public class RegistryCommands extends BaseMessageSourceSupport {
                 messageSource.getMessage("reg.form.tryAgain", null, Locale.getDefault()))) {
               shell.printError(
                   wrap(messageSource.getMessage("reg.error.tryAgain", null, Locale.getDefault()),
-                      SHELL_MAX_COLS));
+                      ShellUtils.SHELL_MAX_COLS));
               shell.print("");
             } else {
               keepGoing = false;
@@ -284,7 +273,7 @@ public class RegistryCommands extends BaseMessageSourceSupport {
   }
 
   private void showFieldInfo(FormSetting field) {
-    shell.printInfo(wrap(field.getCaption(), SHELL_MAX_COLS));
+    shell.printInfo(wrap(field.getCaption(), ShellUtils.SHELL_MAX_COLS));
     shell.print("");
   }
 

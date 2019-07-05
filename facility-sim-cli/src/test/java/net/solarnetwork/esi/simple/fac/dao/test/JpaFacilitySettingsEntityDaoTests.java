@@ -73,6 +73,7 @@ public class JpaFacilitySettingsEntityDaoTests extends SpringTestSupport {
   private FacilitySettingsEntityDao dao;
 
   private FacilitySettingsEntity last;
+  private PriceMapEntity lastPriceMap;
 
   @Autowired
   public void setDataSource(DataSource ds) {
@@ -147,15 +148,16 @@ public class JpaFacilitySettingsEntityDaoTests extends SpringTestSupport {
     PriceMapEntity priceMap = new PriceMapEntity(Instant.now());
     priceMap.setDuration(Duration.ofSeconds(1L));
     priceMap.setPowerComponents(new PowerComponentsEmbed(2L, 3L));
-    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
-        new BigDecimal("1.23"), new BigDecimal("2.34")));
+    priceMap.setPriceComponents(
+        new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("2.34")));
     priceMap
         .setResponseTime(new DurationRangeEmbed(Duration.ofSeconds(4L), Duration.ofSeconds(5L)));
 
     FacilitySettingsEntity entity = dao.findById(last.getId()).get();
-    entity.setPriceMap(priceMap);
+    entity.addPriceMap(priceMap);
     entity = dao.save(entity);
     last = entity;
+    lastPriceMap = entity.getPriceMaps().iterator().next();
     em.flush();
     em.clear();
 
@@ -166,16 +168,14 @@ public class JpaFacilitySettingsEntityDaoTests extends SpringTestSupport {
   public void getByIdWithPriceMap() {
     addPriceMap();
     FacilitySettingsEntity entity = dao.findById(last.getId()).get();
-    PriceMapEntity priceMap = entity.getPriceMap();
-    entity.setPriceMap(priceMap);
-    entity = dao.save(entity);
+    PriceMapEntity priceMap = entity.getPriceMaps().iterator().next();
 
-    assertThat("Duration", priceMap.getDuration(), equalTo(last.getPriceMap().getDuration()));
+    assertThat("Duration", priceMap.getDuration(), equalTo(lastPriceMap.getDuration()));
     assertThat("Power components", priceMap.getPowerComponents(),
-        equalTo(last.getPriceMap().getPowerComponents()));
+        equalTo(lastPriceMap.getPowerComponents()));
     assertThat("Price components", priceMap.getPriceComponents().scaledExactly(2),
-        equalTo(last.getPriceMap().getPriceComponents().scaledExactly(2)));
+        equalTo(lastPriceMap.getPriceComponents().scaledExactly(2)));
     assertThat("Response time", priceMap.getResponseTime(),
-        equalTo(last.getPriceMap().getResponseTime()));
+        equalTo(lastPriceMap.getResponseTime()));
   }
 }

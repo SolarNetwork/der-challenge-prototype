@@ -17,9 +17,14 @@
 
 package net.solarnetwork.esi.simple.xchg.dao.test;
 
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
+import static java.util.stream.StreamSupport.stream;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
@@ -27,7 +32,12 @@ import static org.hamcrest.Matchers.sameInstance;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Currency;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
@@ -39,6 +49,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.jpa.repository.support.JpaRepositoryFactory;
 import org.springframework.data.repository.core.support.RepositoryFactorySupport;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -54,7 +66,8 @@ import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
-import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.test.SpringTestSupport;
 
 /**
@@ -82,7 +95,7 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
   private FacilityEntityDao dao;
 
   private FacilityEntity last;
-  private FacilityPriceMapEntity lastPriceMap;
+  private PriceMapEntity lastPriceMap;
 
   @Autowired
   public void setDataSource(DataSource ds) {
@@ -100,13 +113,17 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
   }
 
   private void assertFacilityPriceMapRowCountEqualTo(final int expected) {
+    assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "PRICE_MAPS"), equalTo(expected));
+  }
+
+  private void assertFacilityPriceMapJoinTableRowCountEqualTo(final int expected) {
     assertThat(JdbcTestUtils.countRowsInTable(jdbcTemplate, "FACILITY_PRICE_MAPS"),
         equalTo(expected));
   }
 
   @Test
   public void insert() {
-    FacilityEntity obj = new FacilityEntity(Instant.now());
+    FacilityEntity obj = new FacilityEntity(Instant.now(), UUID.randomUUID());
     obj.setCustomerId(TEST_CUSTOMER_ID);
     obj.setUici(TEST_UICI);
     obj.setFacilityUid(TEST_UID);
@@ -168,20 +185,22 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
   @Test
   public void addPriceMap() {
     insert();
-    FacilityEntity entity = dao.findById(last.getId()).get();
 
-    FacilityPriceMapEntity priceMap = new FacilityPriceMapEntity(Instant.now(), entity);
+    PriceMapEntity priceMap = new PriceMapEntity(Instant.now(), UUID.randomUUID());
     priceMap.setPowerComponents(new PowerComponentsEmbed(1L, 2L));
     priceMap.setDuration(Duration.ofMillis(123456L));
     priceMap.setResponseTime(
         new DurationRangeEmbed(Duration.ofMillis(234567L), Duration.ofMillis(345678L)));
-    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
-        new BigDecimal("9.99"), new BigDecimal("99.99")));
-    entity.setPriceMap(priceMap);
+    priceMap.setPriceComponents(
+        new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("99.99")));
+
+    FacilityEntity entity = dao.findById(last.getId()).get();
+    entity.addPriceMap(priceMap);
     entity = dao.save(entity);
     em.flush();
     assertFacilityPriceMapRowCountEqualTo(1);
-    lastPriceMap = entity.getPriceMap();
+    assertFacilityPriceMapJoinTableRowCountEqualTo(1);
+    lastPriceMap = entity.getPriceMaps().iterator().next();
   }
 
   @Test
@@ -189,7 +208,7 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
     addPriceMap();
     em.clear();
     FacilityEntity facility = dao.findById(last.getId()).get();
-    FacilityPriceMapEntity entity = facility.getPriceMap();
+    PriceMapEntity entity = facility.getPriceMaps().iterator().next();
     assertThat("Created", entity.getCreated(), equalTo(lastPriceMap.getCreated()));
     assertThat("Modified", entity.getModified(), equalTo(lastPriceMap.getModified()));
     assertThat("Duration", entity.getDuration(), equalTo(lastPriceMap.getDuration()));
@@ -198,5 +217,73 @@ public class JpaFacilityEntityDaoTests extends SpringTestSupport {
     assertThat("Price components", entity.getPriceComponents().scaledExactly(2),
         equalTo(lastPriceMap.getPriceComponents().scaledExactly(2)));
     assertThat("Response time", entity.getResponseTime(), equalTo(lastPriceMap.getResponseTime()));
+  }
+
+  @Test
+  public void findAllInfoEmpty() {
+    Iterable<FacilityInfo> infos = dao.findAllInfoBy(Sort.by(Direction.ASC, "customerId"));
+    assertThat("Result available", infos, notNullValue());
+    List<FacilityInfo> infoList = stream(infos.spliterator(), false).collect(toList());
+    assertThat("Result count", infoList, hasSize(0));
+  }
+
+  @Test
+  public void findAllInfoSingle() {
+    insert();
+    Iterable<FacilityInfo> infos = dao.findAllInfoBy(Sort.by(Direction.ASC, "customerId"));
+    assertThat("Result available", infos, notNullValue());
+    List<FacilityInfo> infoList = stream(infos.spliterator(), false).collect(toList());
+    assertThat("Result count", infoList, hasSize(1));
+    assertThat("Customer ID", infoList.get(0).getCustomerId(), equalTo(last.getCustomerId()));
+    assertThat("Faciilty", infoList.get(0).getFacilityUid(), equalTo(last.getFacilityUid()));
+    assertThat("UICI", infoList.get(0).getUici(), equalTo(last.getUici()));
+  }
+
+  @Test
+  public void findAllInfoMulti() {
+    List<FacilityEntity> data = new ArrayList<>(3);
+    for (int i = 0; i < 3; i++) {
+      FacilityEntity obj = new FacilityEntity(Instant.now(), UUID.randomUUID());
+      obj.setCustomerId("CUST_" + (3 - i)); // insert in reverse order
+      obj.setUici(TEST_UICI + "_" + (3 - 1));
+      obj.setFacilityUid(TEST_UID + "_" + (3 - i));
+      obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
+      obj.setFacilityPublicKey(TEST_KEY);
+      data.add(dao.save(obj));
+    }
+    Iterable<FacilityInfo> infos = dao.findAllInfoBy(Sort.by(Direction.ASC, "customerId"));
+    assertThat("Result available", infos, notNullValue());
+    List<FacilityInfo> infoList = stream(infos.spliterator(), false).collect(toList());
+    assertThat("Result count", infoList, hasSize(3));
+    // verify sorted by customer ID
+    for (ListIterator<FacilityInfo> itr = infoList.listIterator(); itr.hasNext();) {
+      FacilityInfo info = itr.next();
+      int i = 3 - itr.previousIndex() - 1;
+      assertThat("Customer ID " + itr.nextIndex(), info.getCustomerId(),
+          equalTo(data.get(i).getCustomerId()));
+      assertThat("UID ", info.getFacilityUid(), equalTo(data.get(i).getFacilityUid()));
+      assertThat("UID", info.getUici(), equalTo(data.get(i).getUici()));
+    }
+  }
+
+  @Test
+  public void findByFacilityUids() {
+    List<FacilityEntity> data = new ArrayList<>(3);
+    for (int i = 0; i < 3; i++) {
+      FacilityEntity obj = new FacilityEntity(Instant.now(), UUID.randomUUID());
+      obj.setCustomerId("CUST_" + i);
+      obj.setUici(TEST_UICI + i);
+      obj.setFacilityUid(TEST_UID + i);
+      obj.setFacilityEndpointUri(TEST_ENDPOINT_URI);
+      obj.setFacilityPublicKey(TEST_KEY);
+      data.add(dao.save(obj));
+    }
+    Set<String> queryUids = new HashSet<>(asList(TEST_UID + "1", TEST_UID + "2"));
+    Iterable<FacilityEntity> facilities = dao.findAllByFacilityUidIn(queryUids);
+    assertThat("Result available", facilities, notNullValue());
+    Set<String> uids = stream(facilities.spliterator(), false).map(FacilityEntity::getFacilityUid)
+        .collect(toSet());
+    assertThat("Result UIDs", uids, equalTo(queryUids));
+
   }
 }

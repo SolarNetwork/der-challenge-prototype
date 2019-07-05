@@ -17,11 +17,16 @@
 
 package net.solarnetwork.esi.simple.fac.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.event.SimpleApplicationEventMulticaster;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.transaction.event.TransactionPhase;
+
+import net.solarnetwork.esi.dao.support.TransactionalApplicationEventPublisher;
 
 /**
  * General configuration for the tool.
@@ -31,6 +36,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
  */
 @Configuration
 public class ToolConfiguration {
+
+  @Autowired
+  private ApplicationEventPublisher eventPublisher;
 
   @Bean
   public ThreadPoolTaskExecutor taskExecutor() {
@@ -47,5 +55,18 @@ public class ToolConfiguration {
     SimpleApplicationEventMulticaster eventMulticaster = new SimpleApplicationEventMulticaster();
     eventMulticaster.setTaskExecutor(taskExecutor());
     return eventMulticaster;
+  }
+
+  /**
+   * Get an event publisher that publishes after the current transaction commits successfully.
+   * 
+   * @return the event publisher
+   */
+  @Bean
+  public ApplicationEventPublisher afterCommitTransactionEventPublisher() {
+    TransactionalApplicationEventPublisher pub = new TransactionalApplicationEventPublisher(
+        eventPublisher);
+    pub.setPhase(TransactionPhase.AFTER_COMMIT);
+    return pub;
   }
 }

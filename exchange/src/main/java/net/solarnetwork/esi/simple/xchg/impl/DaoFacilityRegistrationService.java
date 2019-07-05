@@ -30,9 +30,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,13 +77,8 @@ import net.solarnetwork.esi.util.CryptoUtils;
  */
 public class DaoFacilityRegistrationService implements FacilityRegistrationService {
 
-  @Autowired
   private FacilityEntityDao facilityDao;
-
-  @Autowired
   private FacilityRegistrationEntityDao facilityRegistrationDao;
-
-  @Autowired
   private Executor taskExecutor;
 
   private static final Logger log = LoggerFactory.getLogger(DaoFacilityRegistrationService.class);
@@ -243,10 +240,10 @@ public class DaoFacilityRegistrationService implements FacilityRegistrationServi
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
-  public CompletableFuture<FacilityEntity> processFacilityRegistration(
+  public Future<FacilityEntity> processFacilityRegistration(
       FacilityRegistrationEntity registration) {
     // automatically approve
-    FacilityEntity entity = new FacilityEntity(Instant.now());
+    FacilityEntity entity = new FacilityEntity(Instant.now(), UUID.randomUUID());
     entity.setCustomerId(registration.getCustomerId());
     entity.setFacilityEndpointUri(registration.getFacilityEndpointUri());
     entity.setFacilityPublicKey(registration.getFacilityPublicKey());

@@ -18,14 +18,11 @@
 package net.solarnetwork.esi.simple.xchg.domain;
 
 import java.nio.ByteBuffer;
-import java.time.Duration;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Basic;
-import javax.persistence.Column;
+import javax.annotation.Nonnull;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.ForeignKey;
@@ -38,6 +35,8 @@ import javax.persistence.Table;
 import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.domain.jpa.BaseEntity;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.ResourceCharacteristicsEmbed;
+import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -54,7 +53,7 @@ public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID>
   // NOTE that this class does NOT extend BaseUuidEntity so that it can override the @Id using
   // the @MapsId on the one-to-one facility relationship
 
-  private static final long serialVersionUID = 4828967993081419913L;
+  private static final long serialVersionUID = 643497212720367137L;
 
   @Id
   private UUID id;
@@ -65,32 +64,8 @@ public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID>
   @JoinColumn(name = "FACILITY_ID", nullable = false, foreignKey = @ForeignKey(name = "FACILITY_RESOURCE_CHARS_FACILITY_FK"))
   private FacilityEntity facility;
 
-  @Basic
-  @Column(name = "LOAD_POWER_MAX", nullable = false, insertable = true, updatable = true)
-  private Long loadPowerMax;
-
-  @Basic
-  @Column(name = "LOAD_POWER_FACTOR", nullable = false, insertable = true, updatable = true)
-  private Float loadPowerFactor;
-
-  @Basic
-  @Column(name = "SUPPLY_POWER_MAX", nullable = false, insertable = true, updatable = true)
-  private Long supplyPowerMax;
-
-  @Basic
-  @Column(name = "SUPPLY_POWER_FACTOR", nullable = false, insertable = true, updatable = true)
-  private Float supplyPowerFactor;
-
-  @Basic
-  @Column(name = "STORAGE_ENERGY_CAP", nullable = false, insertable = true, updatable = true)
-  private Long storageEnergyCapacity;
-
-  // CHECKSTYLE IGNORE LineLength FOR NEXT 4 LINES
   @Embedded
-  @AttributeOverrides({
-      @AttributeOverride(name = "min", column = @Column(name = "RESP_TIME_MIN", nullable = false)),
-      @AttributeOverride(name = "max", column = @Column(name = "RESP_TIME_MAX", nullable = false)) })
-  private DurationRangeEmbed responseTime;
+  private ResourceCharacteristicsEmbed characteristics;
 
   /**
    * Default constructor.
@@ -149,151 +124,24 @@ public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID>
     setSupplyPowerMax(message.getSupplyPowerMax());
     setSupplyPowerFactor(message.getSupplyPowerFactor());
     setStorageEnergyCapacity(message.getStorageEnergyCapacity());
-    setResponseTime(new DurationRangeEmbed(
-        Duration.ofSeconds(message.getResponseTime().getMin().getSeconds(),
-            message.getResponseTime().getMin().getNanos()),
-        Duration.ofSeconds(message.getResponseTime().getMax().getSeconds(),
-            message.getResponseTime().getMax().getNanos())));
+    setResponseTime(
+        new DurationRangeEmbed(ProtobufUtils.durationValue(message.getResponseTime().getMin()),
+            ProtobufUtils.durationValue(message.getResponseTime().getMax())));
   }
 
   @Override
   public int signatureMessageBytesSize() {
-    return Long.BYTES * 7 + Float.BYTES * 2;
+    return characteristics().signatureMessageBytesSize();
   }
 
   @Override
-  public void addSignatureMessageBytes(ByteBuffer bb) {
-    // @formatter:off
-    bb.putLong(getLoadPowerMax())
-        .putFloat(getLoadPowerFactor())
-        .putLong(getSupplyPowerMax())
-        .putFloat(getSupplyPowerFactor())
-        .putLong(getStorageEnergyCapacity());
-    // @formatter:on
-    DurationRangeEmbed d = responseTime != null ? responseTime
-        : new DurationRangeEmbed(Duration.ZERO, Duration.ZERO);
-    d.addSignatureMessageBytes(bb);
+  public void addSignatureMessageBytes(ByteBuffer buf) {
+    characteristics().addSignatureMessageBytes(buf);
   }
 
   @Override
   public UUID getId() {
     return id;
-  }
-
-  /**
-   * Get the maximum load this resource can demand, in W.
-   * 
-   * @return the power maximum
-   */
-  public Long getLoadPowerMax() {
-    return loadPowerMax;
-  }
-
-  /**
-   * Set the maximum load this resource can demand, in W.
-   * 
-   * @param loadPowerMax
-   *        the power maximum to set
-   */
-  public void setLoadPowerMax(Long loadPowerMax) {
-    this.loadPowerMax = loadPowerMax;
-  }
-
-  /**
-   * Get the expected power factor of load, between -1..1.
-   * 
-   * @return the power factor
-   */
-  public Float getLoadPowerFactor() {
-    return loadPowerFactor;
-  }
-
-  /**
-   * Set the maximum supply resource can offer, in W.
-   * 
-   * @param loadPowerFactor
-   *        the loadPowerFactor to set
-   */
-  public void setLoadPowerFactor(Float loadPowerFactor) {
-    this.loadPowerFactor = loadPowerFactor;
-  }
-
-  /**
-   * Get the maximum supply resource can offer, in W.
-   * 
-   * @return the power maximum
-   */
-  public Long getSupplyPowerMax() {
-    return supplyPowerMax;
-  }
-
-  /**
-   * Set the maximum supply resource can offer, in W.
-   * 
-   * @param supplyPowerMax
-   *        the power maximum to set
-   */
-  public void setSupplyPowerMax(Long supplyPowerMax) {
-    this.supplyPowerMax = supplyPowerMax;
-  }
-
-  /**
-   * Get the expected power factor of supply, between -1..1.
-   * 
-   * @return the power factor
-   */
-  public Float getSupplyPowerFactor() {
-    return supplyPowerFactor;
-  }
-
-  /**
-   * Set the expected power factor of supply, between -1..1.
-   * 
-   * @param supplyPowerFactor
-   *        the power factor to set
-   */
-  public void setSupplyPowerFactor(Float supplyPowerFactor) {
-    this.supplyPowerFactor = supplyPowerFactor;
-  }
-
-  /**
-   * Get the theoretical storage capacity of this resource, in Wh.
-   * 
-   * @return the capacity
-   */
-  public Long getStorageEnergyCapacity() {
-    return storageEnergyCapacity;
-  }
-
-  /**
-   * Set the theoretical storage capacity of this resource, in Wh.
-   * 
-   * @param storageEnergyCapacity
-   *        the capacity to set
-   */
-  public void setStorageEnergyCapacity(Long storageEnergyCapacity) {
-    this.storageEnergyCapacity = storageEnergyCapacity;
-  }
-
-  /**
-   * Get the expected minimum/maximum response time to start/finish executing load or supply
-   * changes.
-   * 
-   * @return the response time
-   */
-  public DurationRangeEmbed getResponseTime() {
-    return responseTime;
-  }
-
-  /**
-   * Set the expected minimum/maximum response time to start/finish executing load or supply
-   * changes.
-   * 
-   * @param responseTime
-   *        the value to set
-   */
-  public void setResponseTime(DurationRangeEmbed responseTime) {
-    this.responseTime = responseTime;
   }
 
   /**
@@ -313,6 +161,168 @@ public class FacilityResourceCharacteristicsEntity extends BaseEntity<UUID>
    */
   public void setFacility(FacilityEntity facility) {
     this.facility = facility;
+  }
+
+  /**
+   * Get the resource characteristics.
+   * 
+   * @return the characteristics
+   */
+  public ResourceCharacteristicsEmbed getCharacteristics() {
+    return characteristics;
+  }
+
+  /**
+   * Set the resource characteristics.
+   * 
+   * @param characteristics
+   *        the characteristics to set
+   */
+  public void setCharacteristics(ResourceCharacteristicsEmbed characteristics) {
+    this.characteristics = characteristics;
+  }
+
+  /**
+   * Get an optional of the characteristic details.
+   * 
+   * @return the optional characteristic details
+   */
+  @Nonnull
+  public Optional<ResourceCharacteristicsEmbed> characteristicsOpt() {
+    return Optional.ofNullable(getCharacteristics());
+  }
+
+  /**
+   * Get the resource characteristics, creating a new one if it doesn't already exist.
+   * 
+   * @return the characteristic details
+   */
+  @Nonnull
+  public ResourceCharacteristicsEmbed characteristics() {
+    ResourceCharacteristicsEmbed pm = getCharacteristics();
+    if (pm == null) {
+      pm = new ResourceCharacteristicsEmbed();
+      setCharacteristics(pm);
+    }
+    return pm;
+  }
+
+  /**
+   * Get the maximum load this resource can demand, in W.
+   * 
+   * @return the power maximum
+   */
+  public Long getLoadPowerMax() {
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getLoadPowerMax).orElse(null);
+  }
+
+  /**
+   * Set the maximum load this resource can demand, in W.
+   * 
+   * @param loadPowerMax
+   *        the power maximum to set
+   */
+  public void setLoadPowerMax(Long loadPowerMax) {
+    characteristics().setLoadPowerMax(loadPowerMax);
+  }
+
+  /**
+   * Get the expected power factor of load, between -1..1.
+   * 
+   * @return the power factor
+   */
+  public Float getLoadPowerFactor() {
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getLoadPowerFactor).orElse(null);
+  }
+
+  /**
+   * Set the maximum supply resource can offer, in W.
+   * 
+   * @param loadPowerFactor
+   *        the loadPowerFactor to set
+   */
+  public void setLoadPowerFactor(Float loadPowerFactor) {
+    characteristics().setLoadPowerFactor(loadPowerFactor);
+  }
+
+  /**
+   * Get the maximum supply resource can offer, in W.
+   * 
+   * @return the power maximum
+   */
+  public Long getSupplyPowerMax() {
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getSupplyPowerMax).orElse(null);
+  }
+
+  /**
+   * Set the maximum supply resource can offer, in W.
+   * 
+   * @param supplyPowerMax
+   *        the power maximum to set
+   */
+  public void setSupplyPowerMax(Long supplyPowerMax) {
+    characteristics().setSupplyPowerMax(supplyPowerMax);
+  }
+
+  /**
+   * Get the expected power factor of supply, between -1..1.
+   * 
+   * @return the power factor
+   */
+  public Float getSupplyPowerFactor() {
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getSupplyPowerFactor)
+        .orElse(null);
+  }
+
+  /**
+   * Set the expected power factor of supply, between -1..1.
+   * 
+   * @param supplyPowerFactor
+   *        the power factor to set
+   */
+  public void setSupplyPowerFactor(Float supplyPowerFactor) {
+    characteristics().setSupplyPowerFactor(supplyPowerFactor);
+  }
+
+  /**
+   * Get the theoretical storage capacity of this resource, in Wh.
+   * 
+   * @return the capacity
+   */
+  public Long getStorageEnergyCapacity() {
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getStorageEnergyCapacity)
+        .orElse(null);
+  }
+
+  /**
+   * Set the theoretical storage capacity of this resource, in Wh.
+   * 
+   * @param storageEnergyCapacity
+   *        the capacity to set
+   */
+  public void setStorageEnergyCapacity(Long storageEnergyCapacity) {
+    characteristics().setStorageEnergyCapacity(storageEnergyCapacity);
+  }
+
+  /**
+   * Get the expected minimum/maximum response time to start/finish executing load or supply
+   * changes.
+   * 
+   * @return the response time
+   */
+  public DurationRangeEmbed getResponseTime() {
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getResponseTime).orElse(null);
+  }
+
+  /**
+   * Set the expected minimum/maximum response time to start/finish executing load or supply
+   * changes.
+   * 
+   * @param responseTime
+   *        the value to set
+   */
+  public void setResponseTime(DurationRangeEmbed responseTime) {
+    characteristics().setResponseTime(responseTime);
   }
 
 }

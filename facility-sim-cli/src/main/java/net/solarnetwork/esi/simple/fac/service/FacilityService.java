@@ -99,14 +99,22 @@ public interface FacilityService {
    * @return the price map
    */
   @Nonnull
-  PriceMapEntity getPriceMap();
+  Iterable<PriceMapEntity> getPriceMaps();
 
   /**
-   * Update the facility price map settings.
+   * Save a facility price map settings.
    * 
    * @param priceMap
    *        the price map
    */
   void savePriceMap(PriceMapEntity priceMap);
+
+  /**
+   * Delete a facility price map.
+   * 
+   * @param priceMapId
+   *        the ID of the facility price map to remove
+   */
+  void deletePriceMap(Long priceMapId);
 
 }

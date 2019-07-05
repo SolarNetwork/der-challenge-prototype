@@ -20,9 +20,11 @@ package net.solarnetwork.esi.simple.xchg.dao;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
 
 /**
  * DAO API for {@link FacilityEntity} entities.
@@ -31,6 +33,24 @@ import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
  * @version 1.0
  */
 public interface FacilityEntityDao extends PagingAndSortingRepository<FacilityEntity, UUID> {
+
+  /**
+   * Find all available facility infos.
+   * 
+   * @param sort
+   *        the sort
+   * @return sorted collection of all matching infos
+   */
+  Iterable<FacilityInfo> findAllInfoBy(Sort sort);
+
+  /**
+   * Find a set of facilities by their UIDs.
+   *
+   * @param facilityUids
+   *        the UIDs of the facilities to find
+   * @return the matching results
+   */
+  Iterable<FacilityEntity> findAllByFacilityUidIn(Iterable<String> facilityUids);
 
   /**
    * Find a facility by its UID.

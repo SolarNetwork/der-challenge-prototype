@@ -74,23 +74,39 @@ public interface FacilityCharacteristicsService {
   void saveActiveProgramTypes(Set<String> programs);
 
   /**
-   * Get the current facility price map.
+   * Get the current facility price map settings.
    * 
-   * @return the current price map, never {@literal null}
+   * @return the price map
    */
   @Nonnull
-  PriceMapEntity priceMap();
+  Iterable<PriceMapEntity> priceMaps();
 
   /**
-   * Save the facility price map.
+   * Get a price map by ID.
    * 
-   * <p>
-   * Only non-{@literal null} properties will be persisted.
-   * </p>
+   * @param priceMapId
+   *        the ID of the price map to get
+   * @return the price map
+   * @throws IllegalArgumentException
+   *         if the price map is not found
+   */
+  @Nonnull
+  PriceMapEntity priceMap(Long priceMapId);
+
+  /**
+   * Save a facility price map settings.
    * 
    * @param priceMap
-   *        the price map to save
+   *        the price map
    */
   void savePriceMap(PriceMapEntity priceMap);
+
+  /**
+   * Delete a facility price map.
+   * 
+   * @param priceMapId
+   *        the ID of the facility price map to remove
+   */
+  void deletePriceMap(Long priceMapId);
 
 }

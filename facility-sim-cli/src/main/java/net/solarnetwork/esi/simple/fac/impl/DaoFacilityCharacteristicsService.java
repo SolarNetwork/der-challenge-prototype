@@ -24,7 +24,9 @@ import java.net.URI;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -45,9 +47,7 @@ import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.DurationRange;
-import net.solarnetwork.esi.domain.PowerComponents;
-import net.solarnetwork.esi.domain.PriceComponents;
-import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristics;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.grpc.ChannelProvider;
@@ -55,6 +55,7 @@ import net.solarnetwork.esi.grpc.FutureStreamObserver;
 import net.solarnetwork.esi.grpc.QueuingStreamObserver;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeStub;
+import net.solarnetwork.esi.simple.fac.dao.PriceMapEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
@@ -71,6 +72,7 @@ import net.solarnetwork.esi.simple.fac.service.FacilityService;
 public class DaoFacilityCharacteristicsService implements FacilityCharacteristicsService {
 
   private final FacilityService facilityService;
+  private final PriceMapEntityDao priceMapDao;
   private final ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
   private ChannelProvider exchangeChannelProvider;
 
@@ -80,13 +82,18 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
   /**
    * Constructor.
    * 
+   * @param facilityService
+   *        the facility service
+   * @param priceMapDao
+   *        the price map DAO
    * @param resourceCharacteristicsDao
    *        the resource characteristics DAO
    */
   public DaoFacilityCharacteristicsService(FacilityService facilityService,
-      ResourceCharacteristicsEntityDao resourceCharacteristicsDao) {
+      PriceMapEntityDao priceMapDao, ResourceCharacteristicsEntityDao resourceCharacteristicsDao) {
     super();
     this.facilityService = facilityService;
+    this.priceMapDao = priceMapDao;
     this.resourceCharacteristicsDao = resourceCharacteristicsDao;
   }
 
@@ -172,7 +179,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
                     facilityService.getKeyPair(), exchange.publicKey(), asList(
                         exchange.getId(),
                         facilityService.getUid(),
-                        characteristics.toSignatureBytes()))
+                        characteristics))
                     )
                 .build())
             .build());
@@ -222,8 +229,8 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
           .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
       try {
         DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
-        FutureStreamObserver<Empty, Iterable<Empty>> out = new QueuingStreamObserver<>(1);
-        StreamObserver<DerProgramSet> in = client.provideSupportedDerPrograms(out);
+        FutureStreamObserver<Empty, Iterable<Empty>> in = new QueuingStreamObserver<>(1);
+        StreamObserver<DerProgramSet> out = client.provideSupportedDerPrograms(in);
         DerProgramSet.Builder derProgramSetBuilder = DerProgramSet.newBuilder();
         ByteBuffer signatureData = ByteBuffer.allocate(Integer.BYTES * programs.size());
         for (String program : programs) {
@@ -252,16 +259,15 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
                 .build())
             .build();
         // @formatter:on
-        in.onNext(derProgram);
-        in.onCompleted();
-        out.nab(1, TimeUnit.MINUTES);
+        out.onNext(derProgram);
+        out.onCompleted();
+        in.nab(1, TimeUnit.MINUTES);
         log.info("Successfully published active programs {} to exchange {}", programs,
             exchange.getId());
         facilityService.setEnabledProgramTypes(programs);
       } catch (TimeoutException e) {
         throw new RuntimeException(
-            "Timeout waiting to publish resource characteristics to exchange " + exchange.getId(),
-            e);
+            "Timeout waiting to publish active programs to exchange " + exchange.getId(), e);
       } catch (StatusRuntimeException e) {
         if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
           throw new IllegalArgumentException(e.getStatus().getDescription());
@@ -283,71 +289,63 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
   @Override
-  public PriceMapEntity priceMap() {
-    return facilityService.getPriceMap();
+  public Iterable<PriceMapEntity> priceMaps() {
+    return facilityService.getPriceMaps();
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public PriceMapEntity priceMap(Long priceMapId) {
+    return priceMapDao.findById(priceMapId).orElseThrow(
+        () -> new IllegalArgumentException("Price map " + priceMapId + " not available."));
   }
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
   public void savePriceMap(PriceMapEntity priceMap) {
+    facilityService.savePriceMap(priceMap);
+    postPriceMapsToExchange();
+  }
+
+  @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
+  @Override
+  public void deletePriceMap(Long priceMapId) {
+    facilityService.deletePriceMap(priceMapId);
+    postPriceMapsToExchange();
+  }
+
+  private void postPriceMapsToExchange() {
     ExchangeEntity exchange = facilityService.getExchange();
-    if (exchange == null) {
-      facilityService.savePriceMap(priceMap);
-    } else {
+    if (exchange != null) {
+      List<Object> messageData = new ArrayList<>();
+      messageData.add(exchange.getId());
+      messageData.add(facilityService.getUid());
+      PriceMapCharacteristics.Builder pmc = PriceMapCharacteristics.newBuilder();
+      for (PriceMapEntity pme : facilityService.getPriceMaps()) {
+        messageData.add(pme);
+        pmc.addPriceMap(ProtobufUtils.priceMapForPriceMapEmbed(pme.getPriceMap()));
+      }
       ManagedChannel channel = exchangeChannelProvider
           .channelForUri(URI.create(exchange.getExchangeEndpointUri()));
       try {
         DerFacilityExchangeStub client = DerFacilityExchangeGrpc.newStub(channel);
-        FutureStreamObserver<Empty, Iterable<Empty>> out = new QueuingStreamObserver<>(1);
-        StreamObserver<PriceMap> in = client.providePriceMaps(out);
+        FutureStreamObserver<Empty, Iterable<Empty>> in = new QueuingStreamObserver<>(1);
+        StreamObserver<PriceMapCharacteristics> out = client.providePriceMaps(in);
         // @formatter:off
-        in.onNext(PriceMap.newBuilder()
-            .setPowerComponents(PowerComponents.newBuilder()
-                .setRealPower(priceMap.getPowerComponents().getRealPower())
-                .setReactivePower(priceMap.getPowerComponents().getReactivePower())
-                .build())
-            .setDuration(com.google.protobuf.Duration.newBuilder()
-                .setSeconds(priceMap.getDuration().getSeconds())
-                .setNanos(priceMap.getDuration().getNano())
-                .build())
-            .setResponseTime(DurationRange.newBuilder()
-                .setMin(com.google.protobuf.Duration.newBuilder()
-                    .setSeconds(priceMap.getResponseTime().getMin().getSeconds())
-                    .setNanos(priceMap.getResponseTime().getMin().getNano())
-                    .build())
-                .setMax(com.google.protobuf.Duration.newBuilder()
-                    .setSeconds(priceMap.getResponseTime().getMax().getSeconds())
-                    .setNanos(priceMap.getResponseTime().getMax().getNano())
-                    .build())
-                .build())
-            .setPrice(PriceComponents.newBuilder()
-                .setRealEnergyPrice(ProtobufUtils.moneyForDecimal(
-                    priceMap.getPriceComponents().getCurrency(), 
-                    priceMap.getPriceComponents().getRealEnergyPrice()))
-                .setApparentEnergyPrice(ProtobufUtils.moneyForDecimal(
-                    priceMap.getPriceComponents().getCurrency(), 
-                    priceMap.getPriceComponents().getApparentEnergyPrice()))
-                .build())
-            .setRoute(DerRoute.newBuilder()
+        out.onNext(pmc.setRoute(DerRoute.newBuilder()
                 .setExchangeUid(exchange.getId())
                 .setFacilityUid(facilityService.getUid())
                 .setSignature(generateMessageSignature(facilityService.getCryptoHelper(), 
-                    facilityService.getKeyPair(), exchange.publicKey(), asList(
-                        exchange.getId(),
-                        facilityService.getUid(),
-                        priceMap))
-                    )
+                    facilityService.getKeyPair(), exchange.publicKey(), messageData))
                 .build())
             .build());
         // @formatter:on
-        in.onCompleted();
-        out.nab(1, TimeUnit.MINUTES);
-        log.info("Successfully published price map to exchange {}", exchange.getId());
-        facilityService.savePriceMap(priceMap);
+        out.onCompleted();
+        in.nab(1, TimeUnit.MINUTES);
+        log.info("Successfully published price map list to exchange {}", exchange.getId());
       } catch (TimeoutException e) {
         throw new RuntimeException(
-            "Timeout waiting to publish resource characteristics to exchange " + exchange.getId(),
-            e);
+            "Timeout waiting to publish price map list to exchange " + exchange.getId(), e);
       } catch (StatusRuntimeException e) {
         if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {
           throw new IllegalArgumentException(e.getStatus().getDescription());

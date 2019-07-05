@@ -18,19 +18,25 @@
 package net.solarnetwork.esi.simple.xchg.impl;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toSet;
 import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 
 import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,12 +44,14 @@ import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRouteOrBuilder;
-import net.solarnetwork.esi.domain.PriceMapOrBuilder;
+import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristicsOrBuilder;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
-import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.util.CryptoHelper;
 
@@ -79,6 +87,19 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
     this.exchangeUid = exchangeUid;
     this.exchangeKeyPair = exchangeKeyPair;
     this.cryptoHelper = cryptoHelper;
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public Iterable<FacilityInfo> listFacilities() {
+    return facilityDao.findAllInfoBy(Sort.by(Direction.ASC, "customerId"));
+  }
+
+  @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
+  @Override
+  public FacilityInfo facilityInfo(String facilityUid) {
+    return facilityDao.findByFacilityUid(facilityUid)
+        .orElseThrow(() -> new IllegalArgumentException("Facility not found."));
   }
 
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
@@ -212,17 +233,20 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
 
   @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
   @Override
-  public FacilityPriceMapEntity priceMap(String facilityUid) {
+  public Iterable<PriceMapEntity> priceMaps(String facilityUid) {
     FacilityEntity facility = facilityDao.findByFacilityUid(facilityUid)
         .orElseThrow(() -> new IllegalArgumentException("Facility not registered."));
-    FacilityPriceMapEntity result = facility.getPriceMap();
-    return (result != null ? result.copy() : null);
+    Set<PriceMapEntity> result = facility.getPriceMaps();
+    if (result == null) {
+      return Collections.emptySet();
+    }
+    return result.stream().map(PriceMapEntity::copy).collect(toSet());
   }
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
-  public void savePriceMap(PriceMapOrBuilder priceMap) {
-    DerRouteOrBuilder route = priceMap.getRouteOrBuilder();
+  public void savePriceMaps(PriceMapCharacteristicsOrBuilder priceMapCharacteristics) {
+    DerRouteOrBuilder route = priceMapCharacteristics.getRouteOrBuilder();
     if (route == null) {
       throw new IllegalArgumentException("Route missing");
     }
@@ -236,28 +260,27 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
       throw new IllegalArgumentException("Facility UID missing.");
     }
 
-    FacilityEntity facility = facilityDao.findByFacilityUid(facilityUid)
+    final FacilityEntity facility = facilityDao.findByFacilityUid(facilityUid)
         .orElseThrow(() -> new IllegalArgumentException("Facility not registered."));
+    facility.clearPriceMaps();
 
-    FacilityPriceMapEntity posted = FacilityPriceMapEntity.entityForMessage(priceMap);
+    List<Object> messageSignatureData = new ArrayList<>();
+    messageSignatureData.add(exchangeUid);
+    messageSignatureData.add(facilityUid);
+    List<PriceMap> priceMapList = priceMapCharacteristics.getPriceMapList();
+    if (priceMapList != null) {
+      for (PriceMap priceMap : priceMapList) {
+        PriceMapEntity posted = PriceMapEntity.entityForMessage(priceMap, UUID.randomUUID());
+        facility.addPriceMap(posted);
+        messageSignatureData.add(posted);
+      }
+    }
 
     // verify signature
-    // @formatter:off
     validateMessageSignature(cryptoHelper, route.getSignature(), exchangeKeyPair,
-        facility.publicKey(),
-        asList(exchangeUid, 
-            facilityUid,
-            posted));
-    // @formatter:on
+        facility.publicKey(), messageSignatureData);
 
-    FacilityPriceMapEntity pm = facility.getPriceMap();
-    if (pm == null) {
-      pm = new FacilityPriceMapEntity(Instant.now(), facility);
-      facility.setPriceMap(pm);
-    }
-    pm.populateFromMessage(priceMap);
-
-    log.info("Saving facility {} price map: {}", facilityUid, pm);
+    log.info("Saving facility {} price map: {}", facilityUid, facility.getPriceMaps());
     facilityDao.save(facility);
   }
 

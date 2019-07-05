@@ -24,6 +24,7 @@ import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Embeddable;
 
+import net.solarnetwork.esi.domain.support.Cloning;
 import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
@@ -33,7 +34,7 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  * @version 1.0
  */
 @Embeddable
-public class PowerComponentsEmbed implements SignableMessage {
+public class PowerComponentsEmbed implements SignableMessage, Cloning<PowerComponentsEmbed> {
 
   @Basic
   @Column(name = "POWER_REAL", nullable = true, insertable = true, updatable = true)
@@ -65,6 +66,14 @@ public class PowerComponentsEmbed implements SignableMessage {
   }
 
   @Override
+  public PowerComponentsEmbed copy() {
+    PowerComponentsEmbed c = new PowerComponentsEmbed();
+    c.setRealPower(getRealPower());
+    c.setReactivePower(getReactivePower());
+    return c;
+  }
+
+  @Override
   public int hashCode() {
     return Objects.hash(reactivePower, realPower);
   }
@@ -83,6 +92,22 @@ public class PowerComponentsEmbed implements SignableMessage {
     PowerComponentsEmbed other = (PowerComponentsEmbed) obj;
     return Objects.equals(reactivePower, other.reactivePower)
         && Objects.equals(realPower, other.realPower);
+  }
+
+  @Override
+  public String toString() {
+    return "PowerComponents{realPower=" + realPower + ", reactivePower=" + reactivePower + "}";
+  }
+
+  /**
+   * Derive a simple apparent power value from the configured real and reactive power values.
+   * 
+   * @return the apparent power
+   */
+  public double derivedApparentPower() {
+    double p = realPower != null ? realPower.doubleValue() : 0.0;
+    double q = reactivePower != null ? reactivePower.doubleValue() : 0.0;
+    return Math.sqrt(p * p + q * q);
   }
 
   @Override

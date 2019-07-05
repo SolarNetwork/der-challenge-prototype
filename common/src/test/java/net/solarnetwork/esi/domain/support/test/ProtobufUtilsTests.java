@@ -48,7 +48,7 @@ public class ProtobufUtilsTests {
     assertThat("Money returned", m, notNullValue());
     assertThat("Money currency", m.getCurrencyCode(), equalTo(currency.getCurrencyCode()));
     assertThat("Money units", m.getUnits(), equalTo(9L));
-    assertThat("Money nanos", m.getNanos(), equalTo(99));
+    assertThat("Money nanos", m.getNanos(), equalTo(990000000));
   }
 
   @Test
@@ -59,7 +59,18 @@ public class ProtobufUtilsTests {
     assertThat("Money returned", m, notNullValue());
     assertThat("Money currency", m.getCurrencyCode(), equalTo(currency.getCurrencyCode()));
     assertThat("Money units", m.getUnits(), equalTo(-9L));
-    assertThat("Money nanos", m.getNanos(), equalTo(-99));
+    assertThat("Money nanos", m.getNanos(), equalTo(-990000000));
+  }
+
+  @Test
+  public void moneyForSmallDecimalWithLeadingZeros() {
+    Currency currency = Currency.getInstance("USD");
+    BigDecimal value = new BigDecimal("0.001234569");
+    Money m = ProtobufUtils.moneyForDecimal(currency, value);
+    assertThat("Money returned", m, notNullValue());
+    assertThat("Money currency", m.getCurrencyCode(), equalTo(currency.getCurrencyCode()));
+    assertThat("Money units", m.getUnits(), equalTo(0L));
+    assertThat("Money nanos", m.getNanos(), equalTo(1234569));
   }
 
   @Test
@@ -86,16 +97,23 @@ public class ProtobufUtilsTests {
 
   @Test
   public void decimalForMoney() {
-    Money m = Money.newBuilder().setCurrencyCode("USD").setUnits(9).setNanos(99).build();
+    Money m = Money.newBuilder().setCurrencyCode("USD").setUnits(9).setNanos(990000000).build();
     BigDecimal value = ProtobufUtils.decimalValue(m);
     assertThat("Result", value, equalTo(new BigDecimal("9.99")));
   }
 
   @Test
   public void decimalForMoneyNegative() {
-    Money m = Money.newBuilder().setCurrencyCode("USD").setUnits(-9).setNanos(-99).build();
+    Money m = Money.newBuilder().setCurrencyCode("USD").setUnits(-9).setNanos(-990000000).build();
     BigDecimal value = ProtobufUtils.decimalValue(m);
     assertThat("Result", value, equalTo(new BigDecimal("-9.99")));
+  }
+
+  @Test
+  public void decimalForSmallMoneyWithLeadingZeros() {
+    Money m = Money.newBuilder().setCurrencyCode("USD").setUnits(0).setNanos(1234569).build();
+    BigDecimal value = ProtobufUtils.decimalValue(m);
+    assertThat("Result", value, equalTo(new BigDecimal("0.001234569")));
   }
 
   @Test

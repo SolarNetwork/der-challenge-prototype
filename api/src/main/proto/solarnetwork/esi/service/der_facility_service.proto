@@ -74,8 +74,15 @@ service DerFacilityService {
 
   // Propose a price map offer for the service to accept, reject, or propose a
   // counter offer.
-  rpc ProposePriceMapOffer(solarnetwork.esi.domain.PriceMapOffer)
-  returns (solarnetwork.esi.domain.PriceMapOfferResponse);
+  //
+  // The exchange will invoke this method to make a price map offer to the
+  // facility. The facility must respond with either an acceptance/rejection 
+  // of the offer or a counter offer in the form of a different price map proposal.
+  // If a counter offer is proposed, the exchange can then respond with a new offer,
+  // and the process repeats as many times as necessary until the facility responds
+  // with an acceptance/rejection value (without a counter-offer).
+  rpc ProposePriceMapOffer(stream solarnetwork.esi.domain.PriceMapOffer)
+  returns (stream solarnetwork.esi.domain.PriceMapOfferResponse);
   
   // Get the status of a price map offer.
   rpc GetPriceMapOfferStatus(solarnetwork.esi.domain.PriceMapOfferStatusRequest)

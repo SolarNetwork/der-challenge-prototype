@@ -15,30 +15,21 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.xchg.impl.cli;
+package net.solarnetwork.esi.simple.xchg.dao;
 
-import org.springframework.shell.standard.ShellCommandGroup;
-import org.springframework.shell.standard.ShellMethod;
+import java.util.UUID;
 
-import com.github.fonimus.ssh.shell.commands.SshShellComponent;
+import org.springframework.data.repository.PagingAndSortingRepository;
+
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEntity;
 
 /**
- * A simple "hello?" command.
+ * DAO API for price map offering entities.
  * 
  * @author matt
  * @version 1.0
  */
-@SshShellComponent
-@ShellCommandGroup("Ping")
-public class PingCommand {
-
-  public PingCommand() {
-    super();
-  }
-
-  @ShellMethod("Reach out.")
-  public String ping() {
-    return "pong";
-  }
+public interface PriceMapOfferingEntityDao
+    extends PagingAndSortingRepository<PriceMapOfferingEntity, UUID> {
 
 }

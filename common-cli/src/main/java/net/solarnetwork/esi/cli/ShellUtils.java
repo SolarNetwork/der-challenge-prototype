@@ -32,6 +32,9 @@ import com.github.fonimus.ssh.shell.SshContext;
  */
 public final class ShellUtils {
 
+  /** A default maximum width of shell output, i.e. for wrapping. */
+  public static final int SHELL_MAX_COLS = 80;
+
   /**
    * Color a bold message.
    *
@@ -93,6 +96,18 @@ public final class ShellUtils {
    */
   public static String wrap(CharSequence message, int maxColumns) {
     return WordWrap.from(message).maxWidth(maxColumns).wrap();
+  }
+
+  /**
+   * Wrap a string to the default character column width.
+   * 
+   * @param message
+   *        the message to wrap
+   * @return the message with newline characters inserted where needed to wrap the text to at most
+   *         {@link #SHELL_MAX_COLS} characters wide
+   */
+  public static String wrap(CharSequence message) {
+    return wrap(message, SHELL_MAX_COLS);
   }
 
 }

@@ -19,6 +19,7 @@ package net.solarnetwork.esi.simple.fac.impl.test;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toCollection;
+import static net.solarnetwork.esi.domain.support.ProtobufUtils.decimalValue;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -36,6 +37,7 @@ import java.security.KeyPair;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Currency;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -55,12 +57,14 @@ import net.solarnetwork.esi.domain.DerCharacteristics;
 import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristics;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.grpc.InProcessChannelProvider;
 import net.solarnetwork.esi.grpc.StaticInProcessChannelProvider;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
+import net.solarnetwork.esi.simple.fac.dao.PriceMapEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
@@ -86,6 +90,7 @@ public class DaoFacilityCharacteristicsServiceTests {
   private KeyPair facilityKeyPair;
   private String exchangeUid;
   private KeyPair exchangeKeyPair;
+  private PriceMapEntityDao priceMapDao;
   private ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
   private DaoFacilityCharacteristicsService service;
   private ExchangeEntity exchangeEntity;
@@ -98,8 +103,10 @@ public class DaoFacilityCharacteristicsServiceTests {
     facilityService = mock(FacilityService.class);
     exchangeUid = UUID.randomUUID().toString();
     exchangeKeyPair = CryptoUtils.STANDARD_HELPER.generateKeyPair();
+    priceMapDao = mock(PriceMapEntityDao.class);
     resourceCharacteristicsDao = mock(ResourceCharacteristicsEntityDao.class);
-    service = new DaoFacilityCharacteristicsService(facilityService, resourceCharacteristicsDao);
+    service = new DaoFacilityCharacteristicsService(facilityService, priceMapDao,
+        resourceCharacteristicsDao);
     service.setExchangeChannelProvider(new InProcessChannelProvider(true));
     exchangeEntity = new ExchangeEntity(Instant.now());
     exchangeEntity.setId(exchangeUid);
@@ -148,7 +155,7 @@ public class DaoFacilityCharacteristicsServiceTests {
                 asList(
                     exchangeUid, 
                     facilityUid,
-                    characteristics.toSignatureBytes()));
+                    characteristics));
             // @formatter:on
             assertThat("Load power max", value.getLoadPowerMax(),
                 equalTo(characteristics.getLoadPowerMax()));
@@ -259,7 +266,7 @@ public class DaoFacilityCharacteristicsServiceTests {
   }
 
   @Test
-  public void providePriceMap() throws IOException {
+  public void savePriceMap() throws IOException {
     // given
     String exchangeServerName = InProcessServerBuilder.generateName();
     URI exchangeUri = URI.create("//" + exchangeServerName);
@@ -270,17 +277,20 @@ public class DaoFacilityCharacteristicsServiceTests {
     priceMap.setDuration(Duration.ofMillis(12345L));
     priceMap.setResponseTime(
         new DurationRangeEmbed(Duration.ofMillis(2456L), Duration.ofMillis(4567L)));
-    priceMap.setPriceComponents(new PriceComponentsEmbed(Currency.getInstance("USD"),
-        new BigDecimal("123.12345"), new BigDecimal("234.23456")));
+    priceMap.setPriceComponents(
+        new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("234.23456")));
+
+    given(facilityService.getPriceMaps()).willReturn(Collections.singleton(priceMap));
 
     DerFacilityExchangeImplBase exchangeService = new DerFacilityExchangeImplBase() {
 
       @Override
-      public StreamObserver<PriceMap> providePriceMaps(StreamObserver<Empty> responseObserver) {
-        return new StreamObserver<PriceMap>() {
+      public StreamObserver<PriceMapCharacteristics> providePriceMaps(
+          StreamObserver<Empty> responseObserver) {
+        return new StreamObserver<PriceMapCharacteristics>() {
 
           @Override
-          public void onNext(PriceMap value) {
+          public void onNext(PriceMapCharacteristics value) {
             // @formatter:off
             CryptoUtils.validateMessageSignature(CryptoUtils.STANDARD_HELPER,
                 value.getRoute().getSignature(), exchangeKeyPair, facilityKeyPair.getPublic(),
@@ -289,36 +299,29 @@ public class DaoFacilityCharacteristicsServiceTests {
                     facilityUid,
                     priceMap));
             // @formatter:on
-            assertThat("Real power", value.getPowerComponents().getRealPower(),
+            PriceMap pm = value.getPriceMap(0);
+            assertThat("Real power", pm.getPowerComponents().getRealPower(),
                 equalTo(priceMap.getPowerComponents().getRealPower()));
-            assertThat("Reactive power", value.getPowerComponents().getReactivePower(),
+            assertThat("Reactive power", pm.getPowerComponents().getReactivePower(),
                 equalTo(priceMap.getPowerComponents().getReactivePower()));
-            assertThat("Duration seconds", value.getDuration().getSeconds(),
+            assertThat("Duration seconds", pm.getDuration().getSeconds(),
                 equalTo(priceMap.getDuration().getSeconds()));
-            assertThat("Duration nanos", value.getDuration().getNanos(),
+            assertThat("Duration nanos", pm.getDuration().getNanos(),
                 equalTo(priceMap.getDuration().getNano()));
-            assertThat("Response time min seconds", value.getResponseTime().getMin().getSeconds(),
+            assertThat("Response time min seconds", pm.getResponseTime().getMin().getSeconds(),
                 equalTo(priceMap.getResponseTime().getMin().getSeconds()));
-            assertThat("Response time min nanos", value.getResponseTime().getMin().getNanos(),
+            assertThat("Response time min nanos", pm.getResponseTime().getMin().getNanos(),
                 equalTo(priceMap.getResponseTime().getMin().getNano()));
-            assertThat("Response time max seconds", value.getResponseTime().getMax().getSeconds(),
+            assertThat("Response time max seconds", pm.getResponseTime().getMax().getSeconds(),
                 equalTo(priceMap.getResponseTime().getMax().getSeconds()));
-            assertThat("Response time max nanos", value.getResponseTime().getMax().getNanos(),
+            assertThat("Response time max nanos", pm.getResponseTime().getMax().getNanos(),
                 equalTo(priceMap.getResponseTime().getMax().getNano()));
-            assertThat("Real energy price currency code",
-                value.getPrice().getRealEnergyPrice().getCurrencyCode(),
-                equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
-            assertThat("Real energy price",
-                value.getPrice().getRealEnergyPrice().getUnits() + "."
-                    + value.getPrice().getRealEnergyPrice().getNanos(),
-                equalTo(priceMap.getPriceComponents().getRealEnergyPrice().toString()));
             assertThat("Apparent energy price currency code",
-                value.getPrice().getRealEnergyPrice().getCurrencyCode(),
+                pm.getPrice().getApparentEnergyPrice().getCurrencyCode(),
                 equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
             assertThat("Apparent energy price",
-                value.getPrice().getApparentEnergyPrice().getUnits() + "."
-                    + value.getPrice().getApparentEnergyPrice().getNanos(),
-                equalTo(priceMap.getPriceComponents().getApparentEnergyPrice().toString()));
+                decimalValue(pm.getPrice().getApparentEnergyPrice()),
+                equalTo(priceMap.getPriceComponents().getApparentEnergyPrice()));
           }
 
           @Override

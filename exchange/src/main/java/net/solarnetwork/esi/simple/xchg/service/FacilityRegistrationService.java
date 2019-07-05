@@ -17,7 +17,7 @@
 
 package net.solarnetwork.esi.simple.xchg.service;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import org.springframework.scheduling.annotation.Async;
 
@@ -62,7 +62,6 @@ public interface FacilityRegistrationService {
    * @return the approved facility
    */
   @Async
-  CompletableFuture<FacilityEntity> processFacilityRegistration(
-      FacilityRegistrationEntity registration);
+  Future<FacilityEntity> processFacilityRegistration(FacilityRegistrationEntity registration);
 
 }

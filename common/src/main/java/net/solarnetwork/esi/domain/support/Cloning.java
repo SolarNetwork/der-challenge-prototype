@@ -15,17 +15,28 @@
  * ========================================================================
  */
 
-package net.solarnetwork.esi.simple.fac.impl;
+package net.solarnetwork.esi.domain.support;
 
 /**
- * Shell related constants.
+ * API for something that can make copies of itself.
  * 
+ * @param <T>
+ *        the cloned object type
  * @author matt
  * @version 1.0
  */
-public final class ShellConstants {
+public interface Cloning<T> {
 
-  /** The maximum width of shell output, i.e. for wrapping. */
-  public static final int SHELL_MAX_COLS = 80;
+  /**
+   * Make a copy of this object.
+   * 
+   * <p>
+   * Generally this method is expected to return a deep copy of the object, at least for any mutable
+   * portions of the object hierarchy.
+   * </p>
+   * 
+   * @return the copy
+   */
+  T copy();
 
 }

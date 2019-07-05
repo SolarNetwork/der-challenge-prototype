@@ -92,4 +92,51 @@ public final class NumberUtils {
         .toBigInteger();
   }
 
+  /**
+   * Get the fractional part of a {@link BigDecimal} as a {@link BigInteger}, scaled by some power
+   * of ten.
+   * 
+   * <p>
+   * For example, to convert the fractional part to "nano" scale, pass in {@literal 9} for the
+   * scale.
+   * </p>
+   * 
+   * @param decimal
+   *        the decimal to get the scaled fractional part from
+   * @return the fractional part as an integer, or zero if {@code decimal} is {@literal null}
+   */
+  @Nonnull
+  public static BigInteger fractionalPartScaledToInteger(BigDecimal decimal, int scale) {
+    if (decimal == null) {
+      return BigInteger.ZERO;
+    }
+    return decimal.subtract(new BigDecimal(wholePartToInteger(decimal))).movePointRight(scale)
+        .setScale(0, decimal.signum() < 0 ? RoundingMode.CEILING : RoundingMode.FLOOR)
+        .toBigInteger();
+  }
+
+  /**
+   * Scale a number by a power of 10.
+   * 
+   * @param num
+   *        the number to scale
+   * @param scale
+   *        the power of 10 to scale by; a negative value shifts the decimal point left this many
+   *        places; a positive value shifts the decimcal point right this many places
+   * @return the scaled value
+   */
+  public static BigDecimal scaled(Number num, int scale) {
+    if (num == null) {
+      return null;
+    }
+    BigDecimal n = (num instanceof BigDecimal ? (BigDecimal) num : new BigDecimal(num.toString()));
+    if (scale == 0) {
+      return n;
+    } else if (scale < 0) {
+      return n.movePointLeft(-scale);
+    } else {
+      return n.movePointRight(scale);
+    }
+  }
+
 }

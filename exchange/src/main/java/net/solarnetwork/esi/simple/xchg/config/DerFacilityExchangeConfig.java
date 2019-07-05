@@ -34,24 +34,32 @@ import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import com.google.protobuf.util.JsonFormat;
 
 import net.solarnetwork.esi.domain.Form;
+import net.solarnetwork.esi.grpc.ChannelProvider;
 import net.solarnetwork.esi.grpc.SimpleChannelProvider;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
+import net.solarnetwork.esi.simple.xchg.dao.FacilityPriceMapOfferEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityRegistrationEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
+import net.solarnetwork.esi.simple.xchg.dao.PriceMapOfferingEntityDao;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityRegistrationService;
+import net.solarnetwork.esi.simple.xchg.impl.DaoPriceMapOfferingService;
 import net.solarnetwork.esi.simple.xchg.impl.SimpleDerFacilityExchange;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
+import net.solarnetwork.esi.simple.xchg.service.PriceMapOfferingService;
 import net.solarnetwork.esi.util.CryptoHelper;
 import net.solarnetwork.esi.util.CryptoUtils;
 
@@ -83,7 +91,7 @@ public class DerFacilityExchangeConfig {
   private String keyStoreIv = "not.an.initialization.vector";
 
   // CHECKSTYLE IGNORE LineLength FOR NEXT 1 LINE
-  @Value("${xchg.registrationFormPath:classpath:/net/solarnetwork/esi/oper/impl/default-registration-form.json}")
+  @Value("${xchg.registrationFormPath:classpath:/net/solarnetwork/esi/simple/xchg/impl/default-registration-form.json}")
   private Resource registrationFormResource = new ClassPathResource(
       "default-registration-form.json", SimpleDerFacilityExchange.class);
 
@@ -97,7 +105,19 @@ public class DerFacilityExchangeConfig {
   public FacilityEntityDao facilityDao;
 
   @Autowired
+  public FacilityPriceMapOfferEntityDao priceMapOfferDao;
+
+  @Autowired
   public FacilityResourceCharacteristicsEntityDao resourceCharacteristicsDao;
+
+  @Autowired
+  public PriceMapOfferingEntityDao offeringDao;
+
+  @javax.annotation.Resource(name = "afterCommitTransactionEventPublisher")
+  private ApplicationEventPublisher eventPublisher;
+
+  @Autowired
+  private PlatformTransactionManager txManager;
 
   @Qualifier("exchange-uid")
   @Bean
@@ -192,6 +212,11 @@ public class DerFacilityExchangeConfig {
     return CryptoUtils.STANDARD_HELPER;
   }
 
+  @Bean
+  public ChannelProvider facilityChannelProvider() {
+    return new SimpleChannelProvider(usePlaintext);
+  }
+
   /**
    * Create the {@link FacilityRegistrationService}.
    * 
@@ -203,7 +228,7 @@ public class DerFacilityExchangeConfig {
         exchangeKeyPair(), registrationForms(), cryptoHelper());
     s.setFacilityDao(facilityDao);
     s.setFacilityRegistrationDao(facilityRegistrationDao);
-    s.setFacilityChannelProvider(new SimpleChannelProvider(usePlaintext));
+    s.setFacilityChannelProvider(facilityChannelProvider());
     return s;
   }
 
@@ -218,6 +243,24 @@ public class DerFacilityExchangeConfig {
         exchangeKeyPair(), cryptoHelper());
     s.setFacilityDao(facilityDao);
     s.setResourceCharacteristicsDao(resourceCharacteristicsDao);
+    return s;
+  }
+
+  /**
+   * Create the {@link PriceMapOfferingService}.
+   * 
+   * @return the service
+   */
+  @Bean
+  public PriceMapOfferingService priceMapOfferingService() {
+    DaoPriceMapOfferingService s = new DaoPriceMapOfferingService(exchangeUid(), exchangeKeyPair(),
+        cryptoHelper());
+    s.setFacilityDao(facilityDao);
+    s.setOfferingDao(offeringDao);
+    s.setPriceMapOfferDao(priceMapOfferDao);
+    s.setEventPublisher(eventPublisher);
+    s.setFacilityChannelProvider(facilityChannelProvider());
+    s.setTransactionTemplate(new TransactionTemplate(txManager));
     return s;
   }
 

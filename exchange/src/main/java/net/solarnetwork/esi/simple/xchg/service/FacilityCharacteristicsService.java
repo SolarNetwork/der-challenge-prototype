@@ -24,9 +24,10 @@ import javax.annotation.Nonnull;
 import net.solarnetwork.esi.domain.DerCharacteristicsOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramSetOrBuilder;
 import net.solarnetwork.esi.domain.DerProgramType;
-import net.solarnetwork.esi.domain.PriceMapOrBuilder;
-import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
+import net.solarnetwork.esi.domain.PriceMapCharacteristicsOrBuilder;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityInfo;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 
 /**
  * API for supporting facility characteristics.
@@ -35,6 +36,27 @@ import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEn
  * @version 1.0
  */
 public interface FacilityCharacteristicsService {
+
+  /**
+   * Get a listing of all available facilities.
+   * 
+   * <p>
+   * The facilities will be ordered by {@code customerId}, ascending.
+   * </p>
+   * 
+   * @return the facilities
+   */
+  Iterable<FacilityInfo> listFacilities();
+
+  /**
+   * Get a info on a single facility.
+   * 
+   * @return the facility info
+   * @throws IllegalArgumentException
+   *         if no facility exists for {@code facilityUid}
+   */
+  @Nonnull
+  FacilityInfo facilityInfo(String facilityUid);
 
   /**
    * Get the current resource characteristics for a specific facility.
@@ -79,26 +101,28 @@ public interface FacilityCharacteristicsService {
   void saveActiveProgramTypes(DerProgramSetOrBuilder programSet);
 
   /**
-   * Get the current price map for a specific facility.
+   * Get the current price maps for a specific facility.
    * 
    * @param facilityUid
    *        the UID of the facility to get the price map for
    * @return the types
+   * @throws IllegalArgumentException
+   *         if no facility exists for {@code facilityUid}
    */
   @Nonnull
-  FacilityPriceMapEntity priceMap(String facilityUid);
+  Iterable<PriceMapEntity> priceMaps(String facilityUid);
 
   /**
-   * Save the price map for a facility.
+   * Save the price map characteristics for a facility.
    * 
    * <p>
-   * This method completely replaces price map details for the specified facility with the given
-   * price map.
+   * This method completely replaces price map characteristics for the specified facility with the
+   * given value.
    * </p>
    * 
-   * @param priceMap
-   *        the price map to save
+   * @param priceMapCharacteristcis
+   *        the price map characteristics to save
    */
-  void savePriceMap(PriceMapOrBuilder priceMap);
+  void savePriceMaps(PriceMapCharacteristicsOrBuilder priceMapCharacteristcis);
 
 }

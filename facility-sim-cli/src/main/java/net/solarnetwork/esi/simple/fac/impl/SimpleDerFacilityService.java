@@ -17,6 +17,8 @@
 
 package net.solarnetwork.esi.simple.fac.impl;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -39,8 +41,11 @@ import net.solarnetwork.esi.domain.PriceMapOfferResponse;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusRequest;
 import net.solarnetwork.esi.domain.PriceParameters;
+import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.service.DerFacilityServiceGrpc.DerFacilityServiceImplBase;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferEventEntity;
 import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
+import net.solarnetwork.esi.simple.fac.service.PriceMapService;
 
 /**
  * Simple gRPC implementation of a DER facility service.
@@ -53,6 +58,11 @@ public class SimpleDerFacilityService extends DerFacilityServiceImplBase {
 
   @Autowired
   private ExchangeRegistrationService registrationService;
+
+  @Autowired
+  private PriceMapService priceMapService;
+
+  private static final Logger log = LoggerFactory.getLogger(SimpleDerFacilityService.class);
 
   @Transactional(readOnly = false, propagation = Propagation.REQUIRED)
   @Override
@@ -71,10 +81,56 @@ public class SimpleDerFacilityService extends DerFacilityServiceImplBase {
   }
 
   @Override
-  public void proposePriceMapOffer(PriceMapOffer request,
+  public StreamObserver<PriceMapOffer> proposePriceMapOffer(
       StreamObserver<PriceMapOfferResponse> responseObserver) {
-    // TODO Auto-generated method stub
-    super.proposePriceMapOffer(request, responseObserver);
+    return new StreamObserver<PriceMapOffer>() {
+
+      private boolean error = false;
+      private boolean completed = false;
+
+      @Override
+      public void onNext(PriceMapOffer offer) {
+        log.info("Received price map offer: {}", offer);
+        try {
+          PriceMapOfferEventEntity event = priceMapService.receivePriceMapOffer(offer);
+          PriceMapOfferResponse.Builder response = PriceMapOfferResponse.newBuilder()
+              .setOfferId(offer.getOfferId());
+          if (event.getCounterOffer() != null) {
+            response.setCounterOffer(
+                ProtobufUtils.priceMapForPriceMapEmbed(event.getCounterOffer().priceMap()));
+          } else {
+            response.setAccept(event.isAccepted());
+          }
+          responseObserver.onNext(response.build());
+          if (!response.hasCounterOffer()) {
+            completed = true;
+            responseObserver.onCompleted();
+          }
+        } catch (IllegalArgumentException e) {
+          error = true;
+          responseObserver.onError(
+              Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
+        } catch (RuntimeException e) {
+          error = true;
+          log.error("Error processing price map offer: " + e.getMessage(), e);
+          responseObserver.onError(
+              Status.INTERNAL.withDescription("Internal error").withCause(e).asException());
+        }
+
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        log.error("Error receiving price map offer", t);
+      }
+
+      @Override
+      public void onCompleted() {
+        if (!(error || completed)) {
+          responseObserver.onCompleted();
+        }
+      }
+    };
   }
 
   @Override

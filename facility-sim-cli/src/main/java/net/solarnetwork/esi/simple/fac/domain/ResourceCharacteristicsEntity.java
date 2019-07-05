@@ -19,18 +19,17 @@ package net.solarnetwork.esi.simple.fac.domain;
 
 import java.nio.ByteBuffer;
 import java.time.Instant;
+import java.util.Optional;
 
 import javax.annotation.Nonnull;
-import javax.persistence.AttributeOverride;
-import javax.persistence.AttributeOverrides;
-import javax.persistence.Basic;
-import javax.persistence.Column;
 import javax.persistence.Embedded;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 
 import net.solarnetwork.esi.domain.jpa.BaseLongEntity;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.ResourceCharacteristicsEmbed;
+import net.solarnetwork.esi.domain.support.SignableMessage;
 
 /**
  * Resource characterisitcs entity.
@@ -40,41 +39,18 @@ import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
  */
 @Entity
 @Table(name = "RESOURCE_CHARS")
-public class ResourceCharacteristicsEntity extends BaseLongEntity {
+public class ResourceCharacteristicsEntity extends BaseLongEntity implements SignableMessage {
 
-  private static final long serialVersionUID = 3836713957221189845L;
-
-  @Basic
-  @Column(name = "LOAD_POWER_MAX", nullable = false, insertable = true, updatable = true)
-  private Long loadPowerMax;
-
-  @Basic
-  @Column(name = "LOAD_POWER_FACTOR", nullable = false, insertable = true, updatable = true)
-  private Float loadPowerFactor;
-
-  @Basic
-  @Column(name = "SUPPLY_POWER_MAX", nullable = false, insertable = true, updatable = true)
-  private Long supplyPowerMax;
-
-  @Basic
-  @Column(name = "SUPPLY_POWER_FACTOR", nullable = false, insertable = true, updatable = true)
-  private Float supplyPowerFactor;
-
-  @Basic
-  @Column(name = "STORAGE_ENERGY_CAP", nullable = false, insertable = true, updatable = true)
-  private Long storageEnergyCapacity;
+  private static final long serialVersionUID = -7830594787689855896L;
 
   @Embedded
-  @AttributeOverrides({ @AttributeOverride(name = "min", column = @Column(name = "RESP_TIME_MIN")),
-      @AttributeOverride(name = "max", column = @Column(name = "RESP_TIME_MAX")) })
-  private DurationRangeEmbed responseTime;
+  private ResourceCharacteristicsEmbed characteristics;
 
   /**
    * Default constructor.
    */
   public ResourceCharacteristicsEntity() {
     super();
-    // TODO Auto-generated constructor stub
   }
 
   /**
@@ -99,29 +75,58 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
     super(created, id);
   }
 
+  @Override
+  public int signatureMessageBytesSize() {
+    return characteristics().signatureMessageBytesSize();
+  }
+
+  @Override
+  public void addSignatureMessageBytes(ByteBuffer buf) {
+    characteristics().addSignatureMessageBytes(buf);
+  }
+
   /**
-   * Encode this entity as a byte array suitable for using as message signature data.
+   * Get the resource characteristics.
    * 
-   * @return the bytes
+   * @return the characteristics
+   */
+  public ResourceCharacteristicsEmbed getCharacteristics() {
+    return characteristics;
+  }
+
+  /**
+   * Set the resource characteristics.
+   * 
+   * @param characteristics
+   *        the characteristics to set
+   */
+  public void setCharacteristics(ResourceCharacteristicsEmbed characteristics) {
+    this.characteristics = characteristics;
+  }
+
+  /**
+   * Get an optional of the characteristic details.
+   * 
+   * @return the optional characteristic details
    */
   @Nonnull
-  public byte[] toSignatureBytes() {
-    // @formatter:off
-    ByteBuffer bb = ByteBuffer.allocate(64)
-        .putLong(getLoadPowerMax())
-        .putFloat(getLoadPowerFactor())
-        .putLong(getSupplyPowerMax())
-        .putFloat(getSupplyPowerFactor())
-        .putLong(getStorageEnergyCapacity())
-        .putLong(getResponseTime().getMin().getSeconds())
-        .putLong(getResponseTime().getMin().getNano())
-        .putLong(getResponseTime().getMax().getSeconds())
-        .putLong(getResponseTime().getMax().getNano());
-    // @formatter:on
-    bb.flip();
-    byte[] bytes = new byte[bb.limit()];
-    bb.get(bytes);
-    return bytes;
+  public Optional<ResourceCharacteristicsEmbed> characteristicsOpt() {
+    return Optional.ofNullable(getCharacteristics());
+  }
+
+  /**
+   * Get the resource characteristics, creating a new one if it doesn't already exist.
+   * 
+   * @return the characteristic details
+   */
+  @Nonnull
+  public ResourceCharacteristicsEmbed characteristics() {
+    ResourceCharacteristicsEmbed pm = getCharacteristics();
+    if (pm == null) {
+      pm = new ResourceCharacteristicsEmbed();
+      setCharacteristics(pm);
+    }
+    return pm;
   }
 
   /**
@@ -130,7 +135,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    * @return the power maximum
    */
   public Long getLoadPowerMax() {
-    return loadPowerMax;
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getLoadPowerMax).orElse(null);
   }
 
   /**
@@ -140,7 +145,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    *        the power maximum to set
    */
   public void setLoadPowerMax(Long loadPowerMax) {
-    this.loadPowerMax = loadPowerMax;
+    characteristics().setLoadPowerMax(loadPowerMax);
   }
 
   /**
@@ -149,7 +154,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    * @return the power factor
    */
   public Float getLoadPowerFactor() {
-    return loadPowerFactor;
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getLoadPowerFactor).orElse(null);
   }
 
   /**
@@ -159,7 +164,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    *        the loadPowerFactor to set
    */
   public void setLoadPowerFactor(Float loadPowerFactor) {
-    this.loadPowerFactor = loadPowerFactor;
+    characteristics().setLoadPowerFactor(loadPowerFactor);
   }
 
   /**
@@ -168,7 +173,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    * @return the power maximum
    */
   public Long getSupplyPowerMax() {
-    return supplyPowerMax;
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getSupplyPowerMax).orElse(null);
   }
 
   /**
@@ -178,7 +183,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    *        the power maximum to set
    */
   public void setSupplyPowerMax(Long supplyPowerMax) {
-    this.supplyPowerMax = supplyPowerMax;
+    characteristics().setSupplyPowerMax(supplyPowerMax);
   }
 
   /**
@@ -187,7 +192,8 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    * @return the power factor
    */
   public Float getSupplyPowerFactor() {
-    return supplyPowerFactor;
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getSupplyPowerFactor)
+        .orElse(null);
   }
 
   /**
@@ -197,7 +203,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    *        the power factor to set
    */
   public void setSupplyPowerFactor(Float supplyPowerFactor) {
-    this.supplyPowerFactor = supplyPowerFactor;
+    characteristics().setSupplyPowerFactor(supplyPowerFactor);
   }
 
   /**
@@ -206,7 +212,8 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    * @return the capacity
    */
   public Long getStorageEnergyCapacity() {
-    return storageEnergyCapacity;
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getStorageEnergyCapacity)
+        .orElse(null);
   }
 
   /**
@@ -216,7 +223,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    *        the capacity to set
    */
   public void setStorageEnergyCapacity(Long storageEnergyCapacity) {
-    this.storageEnergyCapacity = storageEnergyCapacity;
+    characteristics().setStorageEnergyCapacity(storageEnergyCapacity);
   }
 
   /**
@@ -226,7 +233,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    * @return the response time
    */
   public DurationRangeEmbed getResponseTime() {
-    return responseTime;
+    return characteristicsOpt().map(ResourceCharacteristicsEmbed::getResponseTime).orElse(null);
   }
 
   /**
@@ -237,7 +244,7 @@ public class ResourceCharacteristicsEntity extends BaseLongEntity {
    *        the value to set
    */
   public void setResponseTime(DurationRangeEmbed responseTime) {
-    this.responseTime = responseTime;
+    characteristics().setResponseTime(responseTime);
   }
 
 }

@@ -44,20 +44,8 @@ public class PriceComponentsEmbedTests {
   @Test
   public void equalityEqualsAll() {
     // given
-    PriceComponentsEmbed p1 = new PriceComponentsEmbed(USD, new BigDecimal("1.23"),
-        new BigDecimal("2.34"));
-    PriceComponentsEmbed p2 = new PriceComponentsEmbed(USD, new BigDecimal("1.23"),
-        new BigDecimal("2.34"));
-
-    // then
-    assertThat("Equal", p1, equalTo(p2));
-  }
-
-  @Test
-  public void equalityEqualsNoRealPrice() {
-    // given
-    PriceComponentsEmbed p1 = new PriceComponentsEmbed(USD, null, new BigDecimal("2.34"));
-    PriceComponentsEmbed p2 = new PriceComponentsEmbed(USD, null, new BigDecimal("2.34"));
+    PriceComponentsEmbed p1 = new PriceComponentsEmbed(USD, new BigDecimal("2.34"));
+    PriceComponentsEmbed p2 = new PriceComponentsEmbed(USD, new BigDecimal("2.34"));
 
     // then
     assertThat("Equal", p1, equalTo(p2));
@@ -66,8 +54,8 @@ public class PriceComponentsEmbedTests {
   @Test
   public void equalityEqualsNoApparentPrice() {
     // given
-    PriceComponentsEmbed p1 = new PriceComponentsEmbed(USD, new BigDecimal("2.34"), null);
-    PriceComponentsEmbed p2 = new PriceComponentsEmbed(USD, new BigDecimal("2.34"), null);
+    PriceComponentsEmbed p1 = new PriceComponentsEmbed(USD, null);
+    PriceComponentsEmbed p2 = new PriceComponentsEmbed(USD, null);
 
     // then
     assertThat("Equal", p1, equalTo(p2));
@@ -76,10 +64,8 @@ public class PriceComponentsEmbedTests {
   @Test
   public void equalityEqualsNoCurrencyCode() {
     // given
-    PriceComponentsEmbed p1 = new PriceComponentsEmbed(null, new BigDecimal("1.23"),
-        new BigDecimal("2.34"));
-    PriceComponentsEmbed p2 = new PriceComponentsEmbed(null, new BigDecimal("1.23"),
-        new BigDecimal("2.34"));
+    PriceComponentsEmbed p1 = new PriceComponentsEmbed(null, new BigDecimal("2.34"));
+    PriceComponentsEmbed p2 = new PriceComponentsEmbed(null, new BigDecimal("2.34"));
 
     // then
     assertThat("Equal", p1, equalTo(p2));
@@ -88,8 +74,7 @@ public class PriceComponentsEmbedTests {
   @Test
   public void scaledExactly() {
     // given
-    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("1.23"),
-        new BigDecimal("2.34"));
+    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("2.34"));
 
     // when
     PriceComponentsEmbed result = p.scaledExactly(2);
@@ -101,8 +86,7 @@ public class PriceComponentsEmbedTests {
   @Test(expected = ArithmeticException.class)
   public void scaledExactlyException() {
     // given
-    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("1.23"),
-        new BigDecimal("2.34"));
+    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("2.34"));
 
     // when
     p.scaledExactly(1);
@@ -111,48 +95,44 @@ public class PriceComponentsEmbedTests {
   @Test
   public void scaledWithRounding() {
     // given
-    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("2.34"),
-        new BigDecimal("3.45"));
+    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("3.45"));
 
     // when
     PriceComponentsEmbed result = p.scaled(1);
 
     // then
     assertThat("Results equal", result,
-        equalTo(new PriceComponentsEmbed(USD, new BigDecimal("2.3"), new BigDecimal("3.5"))));
+        equalTo(new PriceComponentsEmbed(USD, new BigDecimal("3.5"))));
   }
 
   @Test
   public void signatureMessageBytesSize() {
     // given
-    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("2.34"),
-        new BigDecimal("3.45"));
+    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("3.45"));
 
     // when
     int size = p.signatureMessageBytesSize();
 
     // then
-    assertThat("Size", size, equalTo(3 * 2 + Long.BYTES * 2 + Integer.BYTES * 2));
+    assertThat("Size", size, equalTo(3 + Long.BYTES + Integer.BYTES));
   }
 
   @Test
   public void signatureMessageBytesSizeNoCurrency() {
     // given
-    PriceComponentsEmbed p = new PriceComponentsEmbed(null, new BigDecimal("2.34"),
-        new BigDecimal("3.45"));
+    PriceComponentsEmbed p = new PriceComponentsEmbed(null, new BigDecimal("3.45"));
 
     // when
     int size = p.signatureMessageBytesSize();
 
     // then
-    assertThat("Size", size, equalTo(Long.BYTES * 2 + Integer.BYTES * 2));
+    assertThat("Size", size, equalTo(Long.BYTES + Integer.BYTES));
   }
 
   @Test
   public void toSignatureMessage() {
     // given
-    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("2.34"),
-        new BigDecimal("3.45"));
+    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("3.45"));
 
     // when
     byte[] data = p.toSignatureMessageBytes();
@@ -161,11 +141,8 @@ public class PriceComponentsEmbedTests {
     // @formatter:off
     ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
         .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
-        .putLong(2L)
-        .putInt(34)
-        .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
         .putLong(3L)
-        .putInt(45);
+        .putInt(450000000);
     // @formatter:on
     assertThat("Result", ByteString.copyFrom(data),
         equalTo(ByteString.copyFrom((ByteBuffer) bb.flip())));
@@ -174,8 +151,7 @@ public class PriceComponentsEmbedTests {
   @Test
   public void toSignatureMessageNegativePrice() {
     // given
-    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("2.34"),
-        new BigDecimal("-3.45"));
+    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("-3.45"));
 
     // when
     byte[] data = p.toSignatureMessageBytes();
@@ -184,11 +160,8 @@ public class PriceComponentsEmbedTests {
     // @formatter:off
     ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
         .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
-        .putLong(2L)
-        .putInt(34)
-        .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
         .putLong(-3L)
-        .putInt(-45);
+        .putInt(-450000000);
     // @formatter:on
     assertThat("Result", ByteString.copyFrom(data),
         equalTo(ByteString.copyFrom((ByteBuffer) bb.flip())));
@@ -197,8 +170,7 @@ public class PriceComponentsEmbedTests {
   @Test
   public void toSignatureMessageTruncatedPrice() {
     // given
-    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("2.34"),
-        new BigDecimal("3.99999999999999"));
+    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("3.99999999999999"));
 
     // when
     byte[] data = p.toSignatureMessageBytes();
@@ -206,9 +178,6 @@ public class PriceComponentsEmbedTests {
     // then
     // @formatter:off
     ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
-        .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
-        .putLong(2L)
-        .putInt(34)
         .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
         .putLong(3L)
         .putInt(999999999);
@@ -220,8 +189,7 @@ public class PriceComponentsEmbedTests {
   @Test
   public void toSignatureMessageTruncatedNegativePrice() {
     // given
-    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("2.34"),
-        new BigDecimal("-3.99999999999999"));
+    PriceComponentsEmbed p = new PriceComponentsEmbed(USD, new BigDecimal("-3.99999999999999"));
 
     // when
     byte[] data = p.toSignatureMessageBytes();
@@ -229,9 +197,6 @@ public class PriceComponentsEmbedTests {
     // then
     // @formatter:off
     ByteBuffer bb = ByteBuffer.allocate(p.signatureMessageBytesSize())
-        .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
-        .putLong(2L)
-        .putInt(34)
         .put(p.getCurrency().getCurrencyCode().getBytes(SignableMessage.UTF8))
         .putLong(-3L)
         .putInt(-999999999);

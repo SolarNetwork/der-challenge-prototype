@@ -65,7 +65,7 @@ import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.ExchangeRegistrationEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEntity;
-import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationEvent.ExchangeRegistrationCompleted;
+import net.solarnetwork.esi.simple.fac.domain.ExchangeRegistrationNotification.ExchangeRegistrationCompleted;
 import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
 import net.solarnetwork.esi.util.CryptoUtils;
@@ -306,6 +306,11 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
 
   /**
    * Set an event publisher to use.
+   * 
+   * <p>
+   * <b>Note</b> consider using a transaction-aware publisher so that events are published after the
+   * transactions that emit them are committed.
+   * </p>
    * 
    * @param eventPublisher
    *        the event publisher to set

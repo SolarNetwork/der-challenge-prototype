@@ -17,6 +17,10 @@
 
 package net.solarnetwork.esi.simple.xchg.impl;
 
+import static java.util.Arrays.asList;
+import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
+
+import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,15 +46,21 @@ import net.solarnetwork.esi.domain.DerFacilityRegistrationFormData;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormDataReceipt;
 import net.solarnetwork.esi.domain.DerFacilityRegistrationFormRequest;
 import net.solarnetwork.esi.domain.DerProgramSet;
+import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.Form;
 import net.solarnetwork.esi.domain.PriceDatum;
-import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristics;
 import net.solarnetwork.esi.domain.PriceMapOfferStatus;
 import net.solarnetwork.esi.domain.PriceMapOfferStatusResponse;
+import net.solarnetwork.esi.domain.support.ProtobufUtils;
+import net.solarnetwork.esi.domain.support.SignableMessage;
 import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
+import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapOfferEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityRegistrationEntity;
 import net.solarnetwork.esi.simple.xchg.service.FacilityCharacteristicsService;
 import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
+import net.solarnetwork.esi.simple.xchg.service.PriceMapOfferingService;
+import net.solarnetwork.esi.util.CryptoHelper;
 
 /**
  * Really, really, really simple gRPC implementation of a DER facility exchange.
@@ -61,6 +71,7 @@ import net.solarnetwork.esi.simple.xchg.service.FacilityRegistrationService;
 @GrpcService
 public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
+  private final CryptoHelper cryptoHelper;
   private final String exchangeUid;
   private final List<Form> registrationForms;
   private final KeyPair exchangeKeyPair;
@@ -70,6 +81,9 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
 
   @Autowired
   private FacilityCharacteristicsService facilityCharacteristicsService;
+
+  @Autowired
+  private PriceMapOfferingService offeringService;
 
   private static final Logger log = LoggerFactory.getLogger(SimpleDerFacilityExchange.class);
 
@@ -82,13 +96,15 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
    *        the key pair to use for asymmetric encryption with facilities
    * @param registrationForms
    *        the registration form, as a list to support multiple languages
+   * @param cryptoHelper
+   *        the {@link CryptoHelper} to use
    * @throws IllegalArgumentException
    *         if any parameter is {@literal null} or empty
    */
   @Autowired
   public SimpleDerFacilityExchange(@Qualifier("exchange-uid") String exchangeUid,
       @Qualifier("exchange-key-pair") KeyPair exchangeKeyPair,
-      @Qualifier("regform-list") List<Form> registrationForms) {
+      @Qualifier("regform-list") List<Form> registrationForms, CryptoHelper cryptoHelper) {
     super();
     if (exchangeUid == null || exchangeUid.isEmpty()) {
       throw new IllegalArgumentException("The exchange UID must not be empty.");
@@ -101,6 +117,10 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
     if (registrationForms == null || registrationForms.isEmpty()) {
       throw new IllegalArgumentException("The registration forms list must not be empty.");
     }
+    if (cryptoHelper == null) {
+      throw new IllegalArgumentException("The crypto helper must be provided.");
+    }
+    this.cryptoHelper = cryptoHelper;
     this.registrationForms = Collections.unmodifiableList(new ArrayList<>(registrationForms));
   }
 
@@ -166,6 +186,34 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   @Override
   public void providePriceMapOfferStatus(PriceMapOfferStatus request,
       StreamObserver<PriceMapOfferStatusResponse> responseObserver) {
+    log.info("Recieved price map offer status submission: {}", request);
+    try {
+      FacilityPriceMapOfferEntity result = offeringService.receiveOfferStatusUpdate(request);
+
+      ByteBuffer signatureData = ByteBuffer.allocate(SignableMessage.uuidSignatureMessageSize()
+          + SignableMessage.booleanSignatureMessageSize());
+      SignableMessage.addUuidSignatureMessageBytes(signatureData,
+          ProtobufUtils.uuidValue(request.getOfferId()));
+      SignableMessage.addBooleanSignatureMessageBytes(signatureData, true);
+
+      responseObserver.onNext(PriceMapOfferStatusResponse
+          .newBuilder().setOfferId(request.getOfferId()).setAccepted(
+              true)
+          .setRoute(DerRoute.newBuilder().setExchangeUid(exchangeUid)
+              .setFacilityUid(request.getRoute().getFacilityUid())
+              .setSignature(generateMessageSignature(cryptoHelper, exchangeKeyPair,
+                  result.getFacility().publicKey(),
+                  asList(exchangeUid, result.getFacility().getFacilityUid(), signatureData)))
+              .build())
+          .build());
+      responseObserver.onCompleted();
+    } catch (IllegalArgumentException e) {
+      responseObserver.onError(
+          Status.INVALID_ARGUMENT.withDescription(e.getMessage()).withCause(e).asException());
+    } catch (RuntimeException e) {
+      responseObserver
+          .onError(Status.INTERNAL.withDescription("Internal error").withCause(e).asException());
+    }
   }
 
   @Override
@@ -214,16 +262,17 @@ public class SimpleDerFacilityExchange extends DerFacilityExchangeImplBase {
   }
 
   @Override
-  public StreamObserver<PriceMap> providePriceMaps(StreamObserver<Empty> responseObserver) {
-    return new StreamObserver<PriceMap>() {
+  public StreamObserver<PriceMapCharacteristics> providePriceMaps(
+      StreamObserver<Empty> responseObserver) {
+    return new StreamObserver<PriceMapCharacteristics>() {
 
       private boolean error = false;
 
       @Override
-      public void onNext(PriceMap value) {
+      public void onNext(PriceMapCharacteristics value) {
         log.info("Received facility price map submission: {}", value);
         try {
-          facilityCharacteristicsService.savePriceMap(value);
+          facilityCharacteristicsService.savePriceMaps(value);
         } catch (IllegalArgumentException e) {
           error = true;
           responseObserver.onError(

@@ -19,6 +19,8 @@ package net.solarnetwork.esi.simple.fac.config;
 
 import java.net.URI;
 
+import javax.annotation.Resource;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
@@ -57,7 +59,7 @@ public class RegistrationConfig {
   @Autowired
   private FacilityService facilityService;
 
-  @Autowired
+  @Resource(name = "afterCommitTransactionEventPublisher")
   private ApplicationEventPublisher eventPublisher;
 
   @Autowired

@@ -18,11 +18,14 @@
 package net.solarnetwork.esi.simple.xchg.impl.test;
 
 import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.StreamSupport.stream;
 import static net.solarnetwork.esi.simple.xchg.test.TestUtils.invocationArg;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -60,14 +63,15 @@ import net.solarnetwork.esi.domain.DurationRange;
 import net.solarnetwork.esi.domain.PowerComponents;
 import net.solarnetwork.esi.domain.PriceComponents;
 import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristics;
 import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
 import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityEntityDao;
 import net.solarnetwork.esi.simple.xchg.dao.FacilityResourceCharacteristicsEntityDao;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
-import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityResourceCharacteristicsEntity;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.impl.DaoFacilityCharacteristicsService;
 import net.solarnetwork.esi.util.CryptoUtils;
 
@@ -92,7 +96,6 @@ public class DaoFacilityCharacteristicsServiceTests {
 
   @Before
   public void setUp() throws Exception {
-
     exchangeUid = UUID.randomUUID().toString();
     exchangeKeyPair = STANDARD_HELPER.generateKeyPair();
     facilityUid = UUID.randomUUID().toString();
@@ -344,34 +347,37 @@ public class DaoFacilityCharacteristicsServiceTests {
   }
 
   @Test
-  public void priceMapForFacility() {
+  public void priceMapsForFacility() {
     // given
-    FacilityEntity facility = new FacilityEntity(Instant.now());
-    FacilityPriceMapEntity priceMap = new FacilityPriceMapEntity(Instant.now(), facility);
-    facility.setPriceMap(priceMap);
+    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.randomUUID());
+    PriceMapEntity priceMap = new PriceMapEntity(Instant.now(), UUID.randomUUID());
+    facility.addPriceMap(priceMap);
 
     given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
 
     // when
-    FacilityPriceMapEntity result = service.priceMap(facilityUid);
+    Iterable<PriceMapEntity> result = service.priceMaps(facilityUid);
+    List<PriceMapEntity> list = stream(result.spliterator(), false).collect(toList());
 
     // then
-    assertThat("Result available", result, equalTo(priceMap));
-    assertThat("Result is copy", result, not(sameInstance(priceMap)));
+    assertThat("Result available", list, hasSize(1));
+    assertThat("Result is price map", list.get(0), equalTo(priceMap));
+    assertThat("Result is copy", list.get(0), not(sameInstance(priceMap)));
   }
 
   @Test
-  public void priceMapForFacilityNotFound() {
+  public void priceMapsForFacilityNotFound() {
     // given
-    FacilityEntity facility = new FacilityEntity(Instant.now());
+    FacilityEntity facility = new FacilityEntity(Instant.now(), UUID.randomUUID());
 
     given(facilityDao.findByFacilityUid(facilityUid)).willReturn(Optional.of(facility));
 
     // when
-    FacilityPriceMapEntity result = service.priceMap(facilityUid);
+    Iterable<PriceMapEntity> result = service.priceMaps(facilityUid);
+    List<PriceMapEntity> list = stream(result.spliterator(), false).collect(toList());
 
     // then
-    assertThat("Result not available", result, nullValue());
+    assertThat("Result empty", list, hasSize(0));
   }
 
   @Test
@@ -389,39 +395,36 @@ public class DaoFacilityCharacteristicsServiceTests {
 
     // when
     // @formatter:off
-    PriceMap.Builder priceMapBuilder = PriceMap.newBuilder()
-        .setPowerComponents(PowerComponents.newBuilder()
-            .setRealPower(1L)
-            .setReactivePower(2L)
-            .build())
-        .setDuration(com.google.protobuf.Duration.newBuilder()
-            .setSeconds(1234L)
-            .setNanos(456000000)
-            .build())
-        .setResponseTime(DurationRange.newBuilder()
-            .setMin(com.google.protobuf.Duration.newBuilder()
-                .setSeconds(234L)
-                .setNanos(567000000)
+    PriceMapCharacteristics.Builder priceMapBuilder = PriceMapCharacteristics.newBuilder()
+        .addPriceMap(PriceMap.newBuilder()
+            .setPowerComponents(PowerComponents.newBuilder()
+                .setRealPower(1L)
+                .setReactivePower(2L)
                 .build())
-            .setMax(com.google.protobuf.Duration.newBuilder()
-                .setSeconds(345L)
-                .setNanos(678000000)
+            .setDuration(com.google.protobuf.Duration.newBuilder()
+                .setSeconds(1234L)
+                .setNanos(456000000)
                 .build())
-            .build())
-        .setPrice(PriceComponents.newBuilder()
-            .setRealEnergyPrice(Money.newBuilder()
-                .setCurrencyCode("USD")
-                .setUnits(9L)
-                .setNanos(99)
+            .setResponseTime(DurationRange.newBuilder()
+                .setMin(com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(234L)
+                    .setNanos(567000000)
+                    .build())
+                .setMax(com.google.protobuf.Duration.newBuilder()
+                    .setSeconds(345L)
+                    .setNanos(678000000)
+                    .build())
                 .build())
-            .setApparentEnergyPrice(Money.newBuilder()
-                .setCurrencyCode("USD")
-                .setUnits(99L)
-                .setNanos(88)
+            .setPrice(PriceComponents.newBuilder()
+                .setApparentEnergyPrice(Money.newBuilder()
+                    .setCurrencyCode("USD")
+                    .setUnits(99L)
+                    .setNanos(880000000)
+                    .build())
                 .build())
             .build());
     
-    PriceMap priceMapMessage = priceMapBuilder
+    PriceMapCharacteristics priceMapMessage = priceMapBuilder
         .setRoute(DerRoute.newBuilder()
             .setExchangeUid(exchangeUid)
             .setFacilityUid(facilityUid)
@@ -429,18 +432,17 @@ public class DaoFacilityCharacteristicsServiceTests {
                 facilityKeyPair, exchangeKeyPair.getPublic(), asList(
                     exchangeUid,
                     facilityUid,
-                    FacilityPriceMapEntity.entityForMessage(
-                        priceMapBuilder)))
+                    PriceMapEntity.entityForMessage(priceMapBuilder.getPriceMap(0), null)))
                 )
             .build())
         .build();
     // @formatter:on
-    service.savePriceMap(priceMapMessage);
+    service.savePriceMaps(priceMapMessage);
 
     // then
     assertThat("Facility persisted", facilityCaptor.getValue(), sameInstance(facility));
 
-    FacilityPriceMapEntity entity = facilityCaptor.getValue().getPriceMap();
+    PriceMapEntity entity = facilityCaptor.getValue().getPriceMaps().iterator().next();
     assertThat("Facility persisted with price map", entity, notNullValue());
 
     assertThat("Power components", entity.getPowerComponents(),
@@ -450,8 +452,8 @@ public class DaoFacilityCharacteristicsServiceTests {
         equalTo(new DurationRangeEmbed(Duration.ofSeconds(234L, 567000000),
             Duration.ofSeconds(345L, 678000000))));
     assertThat("Price components", entity.getPriceComponents().scaledExactly(2),
-        equalTo(new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("9.99"),
-            new BigDecimal("99.88")).scaledExactly(2)));
+        equalTo(new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("99.88"))
+            .scaledExactly(2)));
   }
 
 }

@@ -20,10 +20,8 @@ package net.solarnetwork.esi.grpc;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,12 +59,12 @@ import io.grpc.stub.StreamObserver;
  * @author matt
  * @version 1.0
  */
-public class QueuingStreamObserver<V> implements FutureStreamObserver<V, Iterable<V>> {
+public class QueuingStreamObserver<V> extends CompletableStreamObserver<V, Iterable<V>> {
 
   private final BlockingQueue<V> queue;
-  private final CompletableFuture<Iterable<V>> future;
   private final long timeout;
   private final TimeUnit timeoutUnit;
+  private int remaining;
 
   private static final Logger log = LoggerFactory.getLogger(QueuingStreamObserver.class);
 
@@ -91,11 +89,11 @@ public class QueuingStreamObserver<V> implements FutureStreamObserver<V, Iterabl
    *        the time unit to use for the timeout
    */
   public QueuingStreamObserver(int count, long timeout, TimeUnit timeoutUnit) {
-    super();
+    super(new CompletableFuture<>());
     this.queue = new ArrayBlockingQueue<>(count);
-    this.future = new CompletableFuture<>();
     this.timeout = timeout;
     this.timeoutUnit = timeoutUnit;
+    this.remaining = count;
   }
 
   /**
@@ -121,72 +119,17 @@ public class QueuingStreamObserver<V> implements FutureStreamObserver<V, Iterabl
       }
     } catch (InterruptedException e) {
       log.warn("Interrupted receiving stream object; discarding: {}", value);
+    } finally {
+      remaining--;
+      if (remaining < 1) {
+        getFuture().complete(queue);
+      }
     }
-  }
-
-  @Override
-  public void onError(Throwable t) {
-    future.completeExceptionally(t);
   }
 
   @Override
   public void onCompleted() {
-    future.complete(queue);
-  }
-
-  @Override
-  public boolean cancel(boolean mayInterruptIfRunning) {
-    return future.cancel(mayInterruptIfRunning);
-  }
-
-  @Override
-  public boolean isCancelled() {
-    return future.isCancelled();
-  }
-
-  @Override
-  public boolean isDone() {
-    return future.isDone();
-  }
-
-  @Override
-  public Iterable<V> get() throws InterruptedException, ExecutionException {
-    return future.get();
-  }
-
-  @Override
-  public Iterable<V> get(long timeout, TimeUnit unit)
-      throws InterruptedException, ExecutionException, TimeoutException {
-    return future.get(timeout, unit);
-  }
-
-  @Override
-  public Iterable<V> nab() throws InterruptedException {
-    try {
-      return get();
-    } catch (ExecutionException e) {
-      Throwable t = e.getCause();
-      if (t instanceof RuntimeException) {
-        throw (RuntimeException) t;
-      } else {
-        throw new RuntimeException(t);
-      }
-    }
-  }
-
-  @Override
-  public Iterable<V> nab(long timeout, TimeUnit unit)
-      throws InterruptedException, TimeoutException {
-    try {
-      return get(timeout, unit);
-    } catch (ExecutionException e) {
-      Throwable t = e.getCause();
-      if (t instanceof RuntimeException) {
-        throw (RuntimeException) t;
-      } else {
-        throw new RuntimeException(t);
-      }
-    }
+    getFuture().complete(queue);
   }
 
 }

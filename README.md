@@ -88,6 +88,9 @@ After a moment, you should see something like the following printed to the scree
 ```
  :: ESI Facility Exchange :: (0.1.0)
 
+--- Generating password for ssh connection: e73d4bfb-d89f-4873-b10c-d87a08998702
+Ssh server started [127.0.0.1:2222]
+
 gRPC Server started, listening on address: 0.0.0.0, port: 9091
 ```
 

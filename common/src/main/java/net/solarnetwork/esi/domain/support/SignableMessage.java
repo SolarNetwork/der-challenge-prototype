@@ -20,6 +20,8 @@ package net.solarnetwork.esi.domain.support;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.time.Duration;
+import java.time.Instant;
+import java.util.UUID;
 
 import javax.annotation.Nonnull;
 
@@ -68,7 +70,7 @@ public interface SignableMessage {
    * @param buf
    *        the buffer to add to
    */
-  void addSignatureMessageBytes(ByteBuffer buf);
+  void addSignatureMessageBytes(@Nonnull ByteBuffer buf);
 
   /**
    * Get the size, in bytes, needed to encode a {@link Duration} in the
@@ -83,14 +85,105 @@ public interface SignableMessage {
   /**
    * Add a {@link Duration} to a signature message.
    * 
+   * <p>
+   * This puts a long (seconds) and an int (nanos) into the buffer.
+   * </p>
+   * 
    * @param buf
    *        the signature message to add the duration to
    * @param duration
-   *        the duration to add
+   *        the duration to add; if {@literal null} then zero values will be put into the buffer
    */
-  static void addDurationSignatureMessageBytes(ByteBuffer buf, Duration duration) {
+  static void addDurationSignatureMessageBytes(@Nonnull ByteBuffer buf, Duration duration) {
     Duration d = duration != null ? duration : Duration.ZERO;
     buf.putLong(d.getSeconds()).putInt(d.getNano());
+  }
+
+  /**
+   * Get the size, in bytes, needed to encode an {@link Instant} in the
+   * {@link #addInstantSignatureMessageBytes(ByteBuffer, Instant)} method.
+   * 
+   * @return the size in bytes
+   */
+  static int instantSignatureMessageSize() {
+    return Long.BYTES + Integer.BYTES;
+  }
+
+  /**
+   * Add an {@link Instant} to a signature message.
+   * 
+   * <p>
+   * This puts a long (seconds) and an int (nanos) into the buffer.
+   * </p>
+   * 
+   * @param buf
+   *        the signature message to add the duration to
+   * @param instant
+   *        the instant to add; if {@literal null} then zero values will be put into the buffer
+   */
+  static void addInstantSignatureMessageBytes(@Nonnull ByteBuffer buf, Instant instant) {
+    Instant d = instant != null ? instant : Instant.EPOCH;
+    buf.putLong(d.getEpochSecond()).putInt(d.getNano());
+  }
+
+  /**
+   * Get the size, in bytes, needed to encode a {@link UUID} in the
+   * {@link #addUuidSignatureMessageBytes(ByteBuffer, UUID)} method.
+   * 
+   * @return the size in bytes
+   */
+  static int uuidSignatureMessageSize() {
+    return Long.BYTES * 2;
+  }
+
+  /**
+   * Add a {@link UUID} to a signature message.
+   * 
+   * <p>
+   * This puts two longs into the buffer, for the most and least significant bits of the UUID.
+   * </p>
+   * 
+   * @param buf
+   *        the signature message to add the UUID to
+   * @param uuid
+   *        the UUID to add; if {@literal null} then zero values will be put into the buffer
+   */
+  static void addUuidSignatureMessageBytes(@Nonnull ByteBuffer buf, UUID uuid) {
+    if (uuid != null) {
+      buf.putLong(uuid.getMostSignificantBits());
+      buf.putLong(uuid.getLeastSignificantBits());
+    } else {
+      buf.putLong(0L);
+      buf.putLong(0L);
+    }
+  }
+
+  /**
+   * Get the size, in bytes, needed to encode a boolean in the
+   * {@link #addBooleanSignatureMessageBytes(ByteBuffer, Boolean)} method.
+   * 
+   * @return the size in bytes
+   */
+  static int booleanSignatureMessageSize() {
+    return 1;
+  }
+
+  /**
+   * Add a {@link UUID} to a signature message.
+   * 
+   * <p>
+   * This puts a single byte into the buffer, {@literal 0x01} for {@literal true} and
+   * {@literal 0x00} for {@literal false}.
+   * </p>
+   * 
+   * @param buf
+   *        the signature message to add the boolean to
+   * @param bool
+   *        the boolean to add; if {@literal null} then a false will be put into the buffer
+   */
+  static void addBooleanSignatureMessageBytes(@Nonnull ByteBuffer buf, Boolean bool) {
+    boolean val = (bool != null ? bool.booleanValue() : false);
+    buf.put(val ? (byte) 1 : (byte) 0);
   }
 
 }
