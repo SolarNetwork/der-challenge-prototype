@@ -72,7 +72,7 @@ import net.solarnetwork.esi.simple.xchg.domain.FacilityEntity;
 import net.solarnetwork.esi.simple.xchg.domain.FacilityPriceMapOfferEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEntity;
-import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingEvent.FacilityPriceMapOfferCompleted;
+import net.solarnetwork.esi.simple.xchg.domain.PriceMapOfferingNotification.FacilityPriceMapOfferCompleted;
 import net.solarnetwork.esi.simple.xchg.service.PriceMapOfferingService;
 import net.solarnetwork.esi.util.CryptoHelper;
 
