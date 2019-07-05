@@ -21,7 +21,6 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static net.solarnetwork.esi.util.CryptoUtils.decodePublicKey;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
-import static org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization;
 
 import java.net.URI;
 import java.security.KeyPair;
@@ -45,12 +44,11 @@ import org.springframework.transaction.TransactionStatus;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
+import net.solarnetwork.esi.dao.support.TransactionUtils;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.PriceMapOffer;
 import net.solarnetwork.esi.domain.PriceMapOfferResponse;
@@ -150,26 +148,15 @@ public class DaoPriceMapOfferingService implements PriceMapOfferingService {
     offeringDao.save(offering);
 
     // register a post-commit hook to start sending the offers to the facilities
-    if (TransactionSynchronizationManager.isSynchronizationActive()) {
-      registerSynchronization(new TransactionSynchronizationAdapter() {
-
-        @Override
-        public void afterCommit() {
-          try {
-            for (QueuedPriceMapOffer qpmo : offers) {
-              proposeOfferToFacility(offeringId, qpmo);
-            }
-          } catch (Exception e) {
-            log.error("Error proposing offer {} to facility: {}", offeringId, e.getMessage(), e);
-          }
+    TransactionUtils.afterCommit(() -> {
+      try {
+        for (QueuedPriceMapOffer qpmo : offers) {
+          proposeOfferToFacility(offeringId, qpmo);
         }
-
-      });
-    } else {
-      for (QueuedPriceMapOffer qpmo : offers) {
-        proposeOfferToFacility(offeringId, qpmo);
+      } catch (Exception e) {
+        log.error("Error proposing offer {} to facility: {}", offeringId, e.getMessage(), e);
       }
-    }
+    });
 
     // return a single Future that completes when all facilities have been contacted
     @SuppressWarnings("rawtypes")

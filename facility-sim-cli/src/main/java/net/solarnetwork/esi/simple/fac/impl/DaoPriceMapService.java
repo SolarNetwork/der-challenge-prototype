@@ -24,6 +24,7 @@ import java.time.Instant;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,6 +36,7 @@ import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferEventEntity;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferExecutionState;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferNotification;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
 import net.solarnetwork.esi.simple.fac.service.PriceMapService;
 
@@ -48,6 +50,7 @@ public class DaoPriceMapService implements PriceMapService {
 
   private final FacilityService facilityService;
   private final PriceMapOfferEventEntityDao offerEventDao;
+  private ApplicationEventPublisher eventPublisher;
 
   private static final Logger log = LoggerFactory.getLogger(DaoPriceMapService.class);
 
@@ -113,6 +116,9 @@ public class DaoPriceMapService implements PriceMapService {
         event.setCounterOffer(new PriceMapEntity(Instant.now(), match));
         event.setExecutionState(PriceMapOfferExecutionState.COUNTERED);
       }
+      if (eventPublisher != null) {
+        eventPublisher.publishEvent(new PriceMapOfferNotification.PriceMapOfferAccepted(event));
+      }
     }
     return offerEventDao.save(event);
   }
@@ -165,6 +171,21 @@ public class DaoPriceMapService implements PriceMapService {
     }
     // sure, we can accept this offer
     return offerPriceMap;
+  }
+
+  /**
+   * Set an event publisher to use.
+   * 
+   * <p>
+   * <b>Note</b> consider using a transaction-aware publisher so that events are published after the
+   * transactions that emit them are committed.
+   * </p>
+   * 
+   * @param eventPublisher
+   *        the event publisher to set
+   */
+  public void setEventPublisher(ApplicationEventPublisher eventPublisher) {
+    this.eventPublisher = eventPublisher;
   }
 
 }

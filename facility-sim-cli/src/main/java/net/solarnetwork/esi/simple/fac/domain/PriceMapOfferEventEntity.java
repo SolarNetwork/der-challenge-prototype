@@ -123,6 +123,25 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
     super(created, id);
   }
 
+  /**
+   * Construct with values.
+   * 
+   * @param created
+   *        the creation date
+   * @param id
+   *        the ID
+   * @param startDate
+   *        the start date
+   * @param priceMap
+   *        map the price map details
+   */
+  public PriceMapOfferEventEntity(Instant created, UUID id, Instant startDate,
+      PriceMapEmbed priceMap) {
+    super(created, id);
+    setStartDate(startDate);
+    priceMap().setPriceMap(priceMap);
+  }
+
   @Override
   public int signatureMessageBytesSize() {
     return SignableMessage.uuidSignatureMessageSize()

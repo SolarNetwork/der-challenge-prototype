@@ -307,6 +307,11 @@ public class DaoExchangeRegistrationService implements ExchangeRegistrationServi
   /**
    * Set an event publisher to use.
    * 
+   * <p>
+   * <b>Note</b> consider using a transaction-aware publisher so that events are published after the
+   * transactions that emit them are committed.
+   * </p>
+   * 
    * @param eventPublisher
    *        the event publisher to set
    */

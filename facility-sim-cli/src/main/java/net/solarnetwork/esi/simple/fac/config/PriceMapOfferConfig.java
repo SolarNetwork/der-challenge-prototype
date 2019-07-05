@@ -17,69 +17,56 @@
 
 package net.solarnetwork.esi.simple.fac.config;
 
-import java.net.URI;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import net.solarnetwork.esi.grpc.ChannelProvider;
-import net.solarnetwork.esi.grpc.StaticChannelProvider;
-import net.solarnetwork.esi.simple.fac.dao.ExchangeEntityDao;
-import net.solarnetwork.esi.simple.fac.dao.ExchangeRegistrationEntityDao;
-import net.solarnetwork.esi.simple.fac.impl.DaoExchangeRegistrationService;
-import net.solarnetwork.esi.simple.fac.service.ExchangeRegistrationService;
+import net.solarnetwork.esi.simple.fac.dao.PriceMapEntityDao;
+import net.solarnetwork.esi.simple.fac.dao.PriceMapOfferEventEntityDao;
+import net.solarnetwork.esi.simple.fac.dao.ResourceCharacteristicsEntityDao;
+import net.solarnetwork.esi.simple.fac.impl.DaoPriceMapService;
 import net.solarnetwork.esi.simple.fac.service.FacilityService;
+import net.solarnetwork.esi.simple.fac.service.PriceMapService;
 
 /**
- * Configuration for the ESI Facility Registration client.
+ * Price map offer related configuration.
  * 
  * @author matt
  * @version 1.0
  */
 @Configuration
-public class RegistrationConfig {
-
-  @Value("${esi.registry.conn.usePlaintext:false}")
-  private boolean usePlaintext = false;
-
-  @Value("${esi.registry.conn.uri:dns:///localhost:9090}")
-  private String uri = "dns:///localhost:9090";
-
-  @Autowired
-  private ExchangeEntityDao exchangeDao;
-
-  @Autowired
-  private ExchangeRegistrationEntityDao exchangeRegistrationDao;
+public class PriceMapOfferConfig {
 
   @Autowired
   private FacilityService facilityService;
+
+  @Autowired
+  private PriceMapEntityDao priceMapDao;
+
+  @Autowired
+  private PriceMapOfferEventEntityDao offerEventDao;
+
+  @Autowired
+  private ResourceCharacteristicsEntityDao resourceCharacteristicsDao;
+
+  @Autowired
+  private ChannelProvider exchangeChannelProvider;
 
   @Qualifier("AFTER_COMMIT")
   @Autowired
   private ApplicationEventPublisher eventPublisher;
 
-  @Autowired
-  private ChannelProvider exchangeChannelProvider;
-
-  private ChannelProvider exchangeRegistryChannelProvider() {
-    return new StaticChannelProvider(URI.create(uri), usePlaintext);
-  }
-
   /**
-   * Create the {@link ExchangeRegistrationService}.
+   * The price map service.
    * 
    * @return the service
    */
   @Bean
-  public DaoExchangeRegistrationService exchangeRegistrationService() {
-    DaoExchangeRegistrationService s = new DaoExchangeRegistrationService(facilityService,
-        exchangeDao, exchangeRegistrationDao);
-    s.setExchangeRegistryChannelProvider(exchangeRegistryChannelProvider());
-    s.setExchangeChannelProvider(exchangeChannelProvider);
+  public PriceMapService priceMapService() {
+    DaoPriceMapService s = new DaoPriceMapService(facilityService, offerEventDao);
     s.setEventPublisher(eventPublisher);
     return s;
   }
