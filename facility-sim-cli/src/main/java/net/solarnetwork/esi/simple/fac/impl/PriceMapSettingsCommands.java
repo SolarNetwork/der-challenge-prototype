@@ -174,9 +174,17 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
       responseTime.setMax(Duration.ofMillis(scaled(n, 3).longValue()));
 
       PriceComponentsEmbed pr = priceMap.priceComponents();
-      String s = readString("priceMap.price.currency", "3-character code",
-          pr.getCurrency().getCurrencyCode());
-      pr.setCurrency(Currency.getInstance(s));
+      while (true) {
+        String s = readString("priceMap.price.currency", "3-character code",
+            pr.getCurrency().getCurrencyCode());
+        try {
+          pr.setCurrency(Currency.getInstance(s));
+          break;
+        } catch (IllegalArgumentException e) {
+          shell.printError(messageSource.getMessage("answer.error.invalidCurrencyCode", null,
+              Locale.getDefault()));
+        }
+      }
 
       n = readNumber("priceMap.price.apparent", pr.getCurrency().getCurrencyCode() + "/kVAh",
           scaled(pr.getApparentEnergyPrice(), 3), 0L, Long.MAX_VALUE / 1000);
