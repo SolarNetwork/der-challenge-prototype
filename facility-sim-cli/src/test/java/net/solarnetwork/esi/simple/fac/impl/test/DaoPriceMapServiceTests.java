@@ -53,7 +53,6 @@ import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
-import net.solarnetwork.esi.simple.fac.dao.PriceMapEntityDao;
 import net.solarnetwork.esi.simple.fac.dao.PriceMapOfferEventEntityDao;
 import net.solarnetwork.esi.simple.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapEntity;
@@ -81,7 +80,6 @@ public class DaoPriceMapServiceTests {
   private ExchangeEntity exchangeEntity;
 
   private FacilityService facilityService;
-  private PriceMapEntityDao priceMapDao;
   private PriceMapOfferEventEntityDao offerEventDao;
   private ApplicationEventPublisher eventPublisher;
 
@@ -99,7 +97,6 @@ public class DaoPriceMapServiceTests {
     exchangeEntity.setExchangePublicKey(exchangeKeyPair.getPublic().getEncoded());
 
     facilityService = mock(FacilityService.class);
-    priceMapDao = mock(PriceMapEntityDao.class);
     offerEventDao = mock(PriceMapOfferEventEntityDao.class);
     eventPublisher = mock(ApplicationEventPublisher.class);
 
