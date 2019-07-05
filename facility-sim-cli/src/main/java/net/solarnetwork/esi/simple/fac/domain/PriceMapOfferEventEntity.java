@@ -151,7 +151,7 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
   @Override
   public void addSignatureMessageBytes(ByteBuffer buf) {
     SignableMessage.addUuidSignatureMessageBytes(buf, getId());
-    SignableMessage.addInstantSignatureMessageBytes(buf, startDate);
+    SignableMessage.addInstantSignatureMessageBytes(buf, getStartDate());
     priceMap().addSignatureMessageBytes(buf);
   }
 
