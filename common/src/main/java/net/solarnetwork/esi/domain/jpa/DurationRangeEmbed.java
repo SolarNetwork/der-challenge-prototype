@@ -72,6 +72,20 @@ public class DurationRangeEmbed implements SignableMessage, Cloning<DurationRang
     this.max = max;
   }
 
+  /**
+   * Create a new duration out of second values.
+   * 
+   * @param min
+   *        the minimum value, in seconds
+   * @param max
+   *        the maximum value, in seconds
+   * @return the range instance
+   */
+  @Nonnull
+  public static DurationRangeEmbed ofSeconds(long min, long max) {
+    return new DurationRangeEmbed(Duration.ofSeconds(min), Duration.ofSeconds(max));
+  }
+
   @Override
   public DurationRangeEmbed copy() {
     return new DurationRangeEmbed(getMin(), getMax());

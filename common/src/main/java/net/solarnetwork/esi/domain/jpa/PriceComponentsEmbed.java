@@ -79,6 +79,21 @@ public class PriceComponentsEmbed implements SignableMessage, Cloning<PriceCompo
     this.apparentEnergyPrice = apparentEnergyPrice;
   }
 
+  /**
+   * Create a price components out of string values.
+   * 
+   * @param currencyCode
+   *        the currency code
+   * @param apparentEnergyPrice
+   *        the apparent energy price, suitable for passing to {@link BigDecimal#BigDecimal(String)}
+   * @return the new instance
+   */
+  @Nonnull
+  public static PriceComponentsEmbed of(String currencyCode, String apparentEnergyPrice) {
+    return new PriceComponentsEmbed(Currency.getInstance(currencyCode),
+        new BigDecimal(apparentEnergyPrice));
+  }
+
   @Override
   public PriceComponentsEmbed copy() {
     PriceComponentsEmbed c = new PriceComponentsEmbed();
