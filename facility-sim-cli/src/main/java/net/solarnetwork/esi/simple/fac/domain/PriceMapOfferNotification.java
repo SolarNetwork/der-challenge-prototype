@@ -37,12 +37,38 @@ public abstract class PriceMapOfferNotification extends ApplicationEvent {
   }
 
   /**
+   * An event related to a {@link PriceMapOfferEventEntity} instance.
+   * 
+   * @author matt
+   * @version 1.0
+   */
+  public abstract static class PriceMapOfferEventEntityNotification
+      extends PriceMapOfferNotification {
+
+    private static final long serialVersionUID = -636410790824000953L;
+
+    private PriceMapOfferEventEntityNotification(PriceMapOfferEventEntity source) {
+      super(source);
+    }
+
+    /**
+     * Get the price map offer event associated with this event.
+     * 
+     * @return the entity
+     */
+    public PriceMapOfferEventEntity getOfferEvent() {
+      return (PriceMapOfferEventEntity) getSource();
+    }
+
+  }
+
+  /**
    * Event published when a price map offer has been accepted.
    * 
    * @author matt
    * @version 1.0
    */
-  public static final class PriceMapOfferAccepted extends PriceMapOfferNotification {
+  public static final class PriceMapOfferAccepted extends PriceMapOfferEventEntityNotification {
 
     private static final long serialVersionUID = 7666498080860953568L;
 
@@ -50,13 +76,20 @@ public abstract class PriceMapOfferNotification extends ApplicationEvent {
       super(entity);
     }
 
-    /**
-     * Get the price map offer event associated with this event.
-     * 
-     * @return
-     */
-    public PriceMapOfferEventEntity getOfferEvent() {
-      return (PriceMapOfferEventEntity) getSource();
+  }
+
+  /**
+   * Event published when a price map offer has been countered with a different price map.
+   * 
+   * @author matt
+   * @version 1.0
+   */
+  public static final class PriceMapOfferCountered extends PriceMapOfferEventEntityNotification {
+
+    private static final long serialVersionUID = -4926032113197841644L;
+
+    public PriceMapOfferCountered(PriceMapOfferEventEntity entity) {
+      super(entity);
     }
 
   }

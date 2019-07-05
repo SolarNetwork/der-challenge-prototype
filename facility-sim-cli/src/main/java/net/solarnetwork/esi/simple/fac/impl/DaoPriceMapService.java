@@ -24,6 +24,7 @@ import java.time.Instant;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -110,14 +111,13 @@ public class DaoPriceMapService implements PriceMapService {
         // no counter offer, so let's accept this one
         event.setAccepted(true);
         event.setExecutionState(PriceMapOfferExecutionState.WAITING);
+        publishEvent(new PriceMapOfferNotification.PriceMapOfferAccepted(event));
       } else {
         // we've got a counter offer to propose
         event.setAccepted(false);
         event.setCounterOffer(new PriceMapEntity(Instant.now(), match));
         event.setExecutionState(PriceMapOfferExecutionState.COUNTERED);
-      }
-      if (eventPublisher != null) {
-        eventPublisher.publishEvent(new PriceMapOfferNotification.PriceMapOfferAccepted(event));
+        publishEvent(new PriceMapOfferNotification.PriceMapOfferCountered(event));
       }
     }
     return offerEventDao.save(event);
@@ -170,7 +170,15 @@ public class DaoPriceMapService implements PriceMapService {
       return counterOffer;
     }
     // sure, we can accept this offer
+    log.info("Price map offer [{}] is accptable to [{}]", offerPriceMap.getInfo(),
+        priceMap.getInfo());
     return offerPriceMap;
+  }
+
+  private void publishEvent(ApplicationEvent event) {
+    if (eventPublisher != null) {
+      eventPublisher.publishEvent(event);
+    }
   }
 
   /**
