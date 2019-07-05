@@ -43,6 +43,7 @@ import net.solarnetwork.esi.cli.BaseShellSupport;
 import net.solarnetwork.esi.cli.ShellUtils;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferEventEntity;
 import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferNotification.PriceMapOfferAccepted;
+import net.solarnetwork.esi.simple.fac.domain.PriceMapOfferNotification.PriceMapOfferCountered;
 import net.solarnetwork.esi.simple.fac.service.PriceMapService;
 
 /**
@@ -111,4 +112,32 @@ public class PriceMapCommands extends BaseShellSupport {
     String details = entity.offerPriceMap().toDetailedInfoString(messageSource);
     wallBanner(msg + "\n" + details, PromptColor.GREEN);
   }
+
+  /**
+   * Handle a price map offer countered event.
+   * 
+   * <p>
+   * This will print a status message to the shell.
+   * </p>
+   * 
+   * @param event
+   *        the event
+   */
+  @Async
+  @EventListener
+  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
+  public void handlePriceMapOfferCounteredEvent(PriceMapOfferCountered event) {
+    PriceMapOfferEventEntity entity = em.merge(event.getOfferEvent());
+
+    DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
+    LocalDateTime offerEventDate = LocalDateTime.ofInstant(entity.getStartDate(),
+        ZoneId.systemDefault());
+
+    String msg = wrap(messageSource.getMessage("priceMap.event.countered",
+        new Object[] { entity.getId(), entity.getPriceMap().getInfo(), dtf.format(offerEventDate),
+            entity.getCounterOffer().getPriceMap().getInfo() },
+        Locale.getDefault()), ShellUtils.SHELL_MAX_COLS);
+    wallBanner(msg, PromptColor.CYAN);
+  }
+
 }
