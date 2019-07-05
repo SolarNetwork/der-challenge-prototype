@@ -21,6 +21,9 @@ import static net.solarnetwork.esi.cli.ShellUtils.getBoldColored;
 import static net.solarnetwork.esi.cli.ShellUtils.wall;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -255,9 +258,17 @@ public abstract class BaseShellSupport extends BaseMessageSourceSupport {
    *        the color to use
    */
   public void wallBanner(String msg, PromptColor color) {
-    String armor = getBoldColored(
-        messageSource.getMessage("event.armor", null, Locale.getDefault()), color);
-    String banner = String.format("\n%s\n%s\n%s", armor, shell.getColored(msg, color), armor);
+    String now = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
+        .format(LocalDateTime.now());
+    String armor = messageSource.getMessage("event.armor", null, Locale.getDefault());
+    String headArmor = armor;
+    if (armor.length() > (now.length() + 3)) {
+      headArmor = getBoldColored(armor.substring(0, 3), color)
+          + shell.getColored(now, PromptColor.BLACK)
+          + getBoldColored(armor.substring(now.length() + 3), color);
+    }
+    String banner = String.format("\n%s\n%s\n%s", headArmor, shell.getColored(msg, color),
+        getBoldColored(armor, color));
 
     // broadcast message to all available registered terminals
     wall(banner);
