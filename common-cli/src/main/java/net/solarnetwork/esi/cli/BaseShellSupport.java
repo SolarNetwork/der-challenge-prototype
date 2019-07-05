@@ -23,7 +23,7 @@ import static net.solarnetwork.esi.cli.ShellUtils.wall;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.FormatStyle;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -249,6 +249,14 @@ public abstract class BaseShellSupport extends BaseMessageSourceSupport {
     }
   }
 
+  // @formatter:off
+  private static final DateTimeFormatter BANNER_DATE_FORMATTER = new DateTimeFormatterBuilder()
+      .append(DateTimeFormatter.ISO_LOCAL_DATE)
+      .appendLiteral(' ')
+      .append(DateTimeFormatter.ISO_LOCAL_TIME)
+      .toFormatter();
+  // @formatter:on
+
   /**
    * Broadcast a banner message to all attached shells.
    * 
@@ -258,8 +266,7 @@ public abstract class BaseShellSupport extends BaseMessageSourceSupport {
    *        the color to use
    */
   public void wallBanner(String msg, PromptColor color) {
-    String now = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT)
-        .format(LocalDateTime.now());
+    String now = BANNER_DATE_FORMATTER.format(LocalDateTime.now());
     String armor = messageSource.getMessage("event.armor", null, Locale.getDefault());
     String headArmor = armor;
     if (armor.length() > (now.length() + 3)) {
