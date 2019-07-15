@@ -30,7 +30,6 @@ import "solarnetwork/esi/domain/der_route.proto";
 import "solarnetwork/esi/domain/power_parameters.proto";
 import "solarnetwork/esi/domain/power_profile_datum.proto";
 import "solarnetwork/esi/domain/price_datum.proto";
-import "solarnetwork/esi/domain/price_map.proto";
 import "solarnetwork/esi/domain/price_map_offer.proto";
 import "solarnetwork/esi/domain/price_map_offer_feedback.proto";
 import "solarnetwork/esi/domain/price_map_offer_feedback_response.proto";
