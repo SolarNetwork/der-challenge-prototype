@@ -9,6 +9,7 @@ buildscript {
 subprojects {
     apply plugin: "checkstyle"
     apply plugin: "java"
+    apply plugin: "maven-publish"
 
     group = "net.solarnetwork.esi"
 
@@ -170,7 +171,7 @@ subprojects {
     if (JavaVersion.current().isJava10Compatible()) {
         allprojects {
             tasks.withType(Javadoc) {
-                options.addBooleanOption('html4', true)
+                options.addBooleanOption('html5', true)
             }
         }
     }
@@ -193,13 +194,15 @@ subprojects {
     }
 
     task javadocJar(type: Jar) {
-        classifier = 'javadoc'
         from javadoc
+        classifier = 'javadoc'
+        archiveClassifier = 'javadoc'
     }
 
     task sourcesJar(type: Jar) {
-        classifier = 'sources'
         from sourceSets.main.allSource
+        classifier = 'sources'
+        archiveClassifier = 'sources'
     }
 
     // At a test failure, log the stack trace to the console so that we don't
@@ -213,4 +216,53 @@ subprojects {
         }
         maxHeapSize = '1500m'
     }
+
+	// Provide defaults for publishing so build works without anything configured in gradle.properties.
+	// To really support publishing, create a gradle.properties file in this directory with these
+	// properties defined with valid values.
+	
+	if ( !project.hasProperty("publishUrl") ) {
+		ext.publishUrl = "https://data.solarnetwork.net/archive/repository/solarnetwork-stage"
+	}
+	if ( !project.hasProperty("publishUsername") ) {
+		ext.publishUsername = "foo"
+	}
+	if ( !project.hasProperty("publishPassword") ) {
+		ext.publishPassword = "bar"
+	}
+    
+    publishing {
+	    publications {
+	        mavenJava(MavenPublication) {
+	            from components.java
+	            artifact sourcesJar
+	            artifact javadocJar
+	            versionMapping {
+	                usage('java-api') {
+	                    fromResolutionOf('runtimeClasspath')
+	                }
+	                usage('java-runtime') {
+	                    fromResolutionResult()
+	                }
+	            }
+	            pom {
+	                licenses {
+	                    license {
+	                        name = 'The Apache License, Version 2.0'
+	                        url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+	                    }
+	                }
+	            }
+	        }
+	    }
+	    repositories {
+	        maven {
+	            url "${publishUrl}"
+	            credentials {
+	            	username "${publishUsername}"
+	            	password "${publishPassword}"
+	            }
+	        }
+	    }
+	}
 }
