@@ -1,0 +1,10 @@
+Export-Package: \
+	net.solarnetwork.esi; provide:=true,\
+	net.solarnetwork.esi.domain; provide:=true,\
+	net.solarnetwork.esi.service; provide:=true
+Bundle-Name: ESI API
+Bundle-Description: Energy services interface (ESI) API.
+Bundle-SymbolicName: net.solarnetwork.esi.api
+Bundle-Copyright: 2019 SolarNetwork Developers
+Bundle-License: Apache 2.0
+Bundle-Vendor: SolarNetwork
