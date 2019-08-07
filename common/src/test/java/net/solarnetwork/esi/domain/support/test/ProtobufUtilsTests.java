@@ -28,8 +28,8 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Test;
 
 import com.google.protobuf.Duration;
-import com.google.type.Money;
 
+import net.solarnetwork.esi.domain.Money;
 import net.solarnetwork.esi.domain.support.ProtobufUtils;
 
 /**

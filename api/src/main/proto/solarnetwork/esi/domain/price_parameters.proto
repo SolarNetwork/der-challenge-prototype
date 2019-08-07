@@ -23,15 +23,15 @@ option java_outer_classname = "PriceParametersProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
-import "google/type/money.proto";
+import "solarnetwork/esi/domain/money.proto";
 
 // Parameters relating to price characteristics.
 message PriceParameters {
 
   // Price below which a customer will always consume if possible.
-  google.type.Money always_buy_below_price = 1;
+  Money always_buy_below_price = 1;
 
   // Price above which a customer will avoid consuming.
-  google.type.Money avoid_buy_over_price = 2;
+  Money avoid_buy_over_price = 2;
 
 }
