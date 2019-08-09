@@ -236,7 +236,7 @@ public class PriceComponentsEmbed implements SignableMessage, Cloning<PriceCompo
   }
 
   /**
-   * Get the apparent energy price.
+   * Set the apparent energy price.
    * 
    * @param apparentEnergyPrice
    *        the price to set, in units per volt-amp hour (VAh)
