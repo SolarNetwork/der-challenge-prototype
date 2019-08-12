@@ -1,0 +1,71 @@
+buildscript {
+ 	dependencies {
+		classpath "org.springframework.boot:spring-boot-gradle-plugin:2.1.5.RELEASE"
+	}
+}
+
+plugins {
+    id 'checkstyle'
+    id 'java'
+    id 'eclipse'
+    id 'org.springframework.boot' version '2.1.5.RELEASE'
+}
+
+apply plugin: 'checkstyle'
+apply plugin: 'org.springframework.boot'
+apply plugin: 'io.spring.dependency-management'
+
+description = 'ESI: SolarNetwork Facility CLI'
+version = '0.1.0'
+archivesBaseName = 'esi-solarnet-facility-cli'
+
+checkstyle {
+	toolVersion = "${checkstyleVersion}"
+	configFile = rootProject.file('config/checkstyle/checkstyle.xml')
+}
+	
+dependencies {
+	implementation project(':esi-api')
+	implementation project(':esi-common')
+	implementation project(':esi-common-cli')
+	
+	// gRPC
+	implementation "io.grpc:grpc-core:${grpcVersion}"
+	implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+	implementation 'net.devh:grpc-server-spring-boot-starter:2.4.0.RELEASE'
+
+	// Spring
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	
+	// CLI support
+	implementation 'com.github.fonimus:ssh-shell-spring-boot-starter:1.1.5'
+
+	// DB
+	implementation 'org.flywaydb:flyway-core'
+	implementation "org.hibernate:hibernate-entitymanager"
+	runtime 'org.apache.derby:derby:10.14.2.0'
+	
+	// Utils
+	implementation 'commons-codec:commons-codec:1.12'
+	implementation 'com.github.davidmoten:word-wrap:0.1.6'
+	
+	// Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation "io.grpc:grpc-testing:${grpcVersion}"
+    testImplementation 'org.flywaydb.flyway-test-extensions:flyway-spring5-test:5.2.4'
+    //testImplementation 'org.junit.jupiter:junit-jupiter-api'
+}
+
+eclipse {
+	project {
+		natures 'net.sf.eclipsecs.core.CheckstyleNature'
+		buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
+	}
+}
+
+bootJar {
+	manifest {
+		attributes 'Implementation-Version': version
+   	}
+}
