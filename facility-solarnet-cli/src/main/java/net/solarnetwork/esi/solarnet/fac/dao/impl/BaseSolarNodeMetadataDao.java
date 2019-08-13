@@ -241,7 +241,7 @@ public abstract class BaseSolarNodeMetadataDao<T extends SolarNodeMetadataEntity
       uriBuilder.queryParam("nodeIds", StringUtils.commaDelimitedStringFromCollection(nodeIds));
     }
     if (metadataFilter != null && !metadataFilter.isEmpty()) {
-      uriBuilder.queryParam("metadataFilter", "(/pm/esi-resource/*~=.*)");
+      uriBuilder.queryParam("metadataFilter", metadataFilter);
     }
     String url = uriBuilder.toUriString();
     log.info("Querying SolarNetwork for node metadata: {}", url);
