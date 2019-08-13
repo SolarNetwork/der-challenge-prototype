@@ -159,6 +159,26 @@ public class DurationRangeEmbed implements SignableMessage, Cloning<DurationRang
   }
 
   /**
+   * Get the minimum duration, in milliseconds.
+   * 
+   * @return the minimum duration, in milliseconds
+   */
+  public long getMinMillis() {
+    Duration d = getMin();
+    return (d != null ? d.toMillis() : 0);
+  }
+
+  /**
+   * Set the minimum duration, in milliseconds.
+   * 
+   * @param min
+   *        the duration to set, in milliseconds
+   */
+  public void setMinMillis(long min) {
+    setMin(Duration.ofMillis(min));
+  }
+
+  /**
    * Get the maximum duration.
    * 
    * @return the maximum duration
@@ -187,6 +207,26 @@ public class DurationRangeEmbed implements SignableMessage, Cloning<DurationRang
       d = Duration.ZERO;
     }
     return d;
+  }
+
+  /**
+   * Get the maximum duration, in milliseconds.
+   * 
+   * @return the maximum duration, in milliseconds
+   */
+  public long getMaxMillis() {
+    Duration d = getMax();
+    return (d != null ? d.toMillis() : 0);
+  }
+
+  /**
+   * Set the maximum duration, in milliseconds.
+   * 
+   * @param max
+   *        the duration to set, in milliseconds
+   */
+  public void setMaxMillis(long max) {
+    setMax(Duration.ofMillis(max));
   }
 
 }

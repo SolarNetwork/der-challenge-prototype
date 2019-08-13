@@ -20,9 +20,23 @@ package net.solarnetwork.esi.solarnet.fac.dao.test;
 import static java.util.UUID.randomUUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.startsWith;
+import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.queryParam;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+
+import java.io.IOException;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
 import net.solarnetwork.esi.domain.jpa.ResourceCharacteristicsEmbed;
@@ -40,16 +54,24 @@ import net.solarnetwork.web.support.StaticAuthorizationCredentialsProvider;
  */
 public class SnFacilityResourceDaoTests {
 
+  private static final String TEST_BASE_URL = "http://localhost";
+
   private RestTemplate restTemplate;
-  private AuthorizationCredentialsProvider credentialsProvider;
+  private AuthorizationCredentialsProvider credProvider;
   private FacilityResourceDao dao;
+
+  private MockRestServiceServer server;
 
   @Before
   public void setup() {
     restTemplate = new RestTemplate();
-    credentialsProvider = new StaticAuthorizationCredentialsProvider(randomUUID().toString(),
+    credProvider = new StaticAuthorizationCredentialsProvider(randomUUID().toString(),
         randomUUID().toString());
-    dao = new SnFacilityResourceDao(restTemplate, credentialsProvider);
+    SnFacilityResourceDao snDao = new SnFacilityResourceDao(restTemplate, credProvider);
+    snDao.setApiBaseUrl(TEST_BASE_URL);
+    dao = snDao;
+
+    server = MockRestServiceServer.bindTo(restTemplate).build();
   }
 
   private void assertPropertiesEqual(ResourceCharacteristicsEmbed entity,
@@ -67,9 +89,36 @@ public class SnFacilityResourceDaoTests {
   }
 
   @Test
-  public void getById() {
-    FacilityResourceCharacteristics entity = dao.findById("TODO").get();
-    // TODO assertPropertiesEqual(entity.characteristics(), last);
+  public void getById() throws IOException {
+    // given
+    Resource respResource = new ClassPathResource("node-metadata-01.json", getClass());
+    HttpHeaders respHeaders = new HttpHeaders();
+    respHeaders.setContentLength(respResource.contentLength());
+    // @formatter:off
+    server.expect(requestTo(startsWith(TEST_BASE_URL + "/solarquery/api/v1/sec/nodes/meta")))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(queryParam("metadataFilter", "(/pm/esi-resource/*~%3D.*)"))
+        .andExpect(header(HttpHeaders.HOST, "localhost"))
+        .andExpect(header(HttpHeaders.ACCEPT_ENCODING, "gzip,deflate"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, 
+            startsWith("SNWS2 Credential=" + credProvider.getAuthorizationId() 
+                + ",SignedHeaders=date;host,Signature=")))
+        .andRespond(withSuccess(respResource, APPLICATION_JSON_UTF8).headers(respHeaders));
+    // @formatter:on
+
+    // when
+    final FacilityResourceCharacteristics entity = dao.findById("rsrc1").get();
+
+    // then
+    ResourceCharacteristicsEmbed expected = new ResourceCharacteristicsEmbed();
+    expected.setLoadPowerFactor(0.8f);
+    expected.setLoadPowerMax(1000L);
+    expected.setSupplyPowerFactor(0f);
+    expected.setSupplyPowerMax(0L);
+    expected.setStorageEnergyCapacity(0L);
+    expected.responseTime().setMinMillis(5000L);
+    expected.responseTime().setMaxMillis(60000L);
+    assertPropertiesEqual(entity.characteristics(), expected);
   }
 
 }
