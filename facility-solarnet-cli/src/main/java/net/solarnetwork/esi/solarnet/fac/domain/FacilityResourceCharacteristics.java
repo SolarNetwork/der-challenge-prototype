@@ -34,7 +34,7 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  * @version 1.0
  */
 public class FacilityResourceCharacteristics extends BaseIdentity<String>
-    implements SignableMessage {
+    implements SignableMessage, SolarNodeMetadataEntity {
 
   private static final long serialVersionUID = 648885503576968140L;
 

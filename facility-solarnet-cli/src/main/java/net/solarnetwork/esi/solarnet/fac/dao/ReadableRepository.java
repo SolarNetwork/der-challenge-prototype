@@ -27,6 +27,10 @@ import java.util.Optional;
  * {@link org.springframework.data.repository.CrudRepository} API.
  * </p>
  * 
+ * @param <T>
+ *        the entity object type
+ * @param <ID>
+ *        the primary key type
  * @author matt
  * @version 1.0
  */

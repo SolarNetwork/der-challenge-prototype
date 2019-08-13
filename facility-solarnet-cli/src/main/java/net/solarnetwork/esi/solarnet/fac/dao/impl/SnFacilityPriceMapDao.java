@@ -17,8 +17,6 @@
 
 package net.solarnetwork.esi.solarnet.fac.dao.impl;
 
-import java.util.Optional;
-
 import org.springframework.web.client.RestTemplate;
 
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityPriceMapDao;
@@ -31,8 +29,11 @@ import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
  * @author matt
  * @version 1.0
  */
-public class SnFacilityPriceMapDao extends BaseSolarNetworkMetadataDao
+public class SnFacilityPriceMapDao extends BaseSolarNodeMetadataDao<FacilityPriceMap>
     implements FacilityPriceMapDao {
+
+  /** The root key for price map metadata information. */
+  public static final String PRICEMAP_METADATA_ROOT_KEY = "esi-pricemap";
 
   /**
    * Default constructor.
@@ -45,7 +46,7 @@ public class SnFacilityPriceMapDao extends BaseSolarNetworkMetadataDao
    *        the credentials provider
    */
   public SnFacilityPriceMapDao(AuthorizationCredentialsProvider credentialsProvider) {
-    super(credentialsProvider);
+    super(FacilityPriceMap.class, PRICEMAP_METADATA_ROOT_KEY, credentialsProvider);
   }
 
   /**
@@ -58,37 +59,7 @@ public class SnFacilityPriceMapDao extends BaseSolarNetworkMetadataDao
    */
   public SnFacilityPriceMapDao(RestTemplate restTemplate,
       AuthorizationCredentialsProvider credentialsProvider) {
-    super(restTemplate, credentialsProvider);
-  }
-
-  @Override
-  public Optional<FacilityPriceMap> findById(String id) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public boolean existsById(String id) {
-    // TODO Auto-generated method stub
-    return false;
-  }
-
-  @Override
-  public Iterable<FacilityPriceMap> findAll() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public Iterable<FacilityPriceMap> findAllById(Iterable<String> ids) {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
-  @Override
-  public long count() {
-    // TODO Auto-generated method stub
-    return 0;
+    super(FacilityPriceMap.class, PRICEMAP_METADATA_ROOT_KEY, restTemplate, credentialsProvider);
   }
 
 }

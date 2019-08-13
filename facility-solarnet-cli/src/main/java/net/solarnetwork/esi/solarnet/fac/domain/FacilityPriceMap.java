@@ -39,7 +39,8 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
  * @author matt
  * @version 1.0
  */
-public class FacilityPriceMap extends BaseIdentity<String> implements SignableMessage {
+public class FacilityPriceMap extends BaseIdentity<String>
+    implements SignableMessage, SolarNodeMetadataEntity {
 
   private static final long serialVersionUID = -920865449307345318L;
 
