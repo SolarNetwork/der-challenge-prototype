@@ -29,8 +29,8 @@ import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
  * @author matt
  * @version 1.0
  */
-public class SnFacilityResourceDao extends
-    BaseSolarNodeMetadataDao<FacilityResourceCharacteristics> implements FacilityResourceDao {
+public class SnFacilityResourceDao extends BaseSolarNodeMetadataDao<FacilityResourceCharacteristics>
+    implements FacilityResourceDao {
 
   /** The root key for resource metadata information. */
   public static final String RESOURCE_METADATA_ROOT_KEY = "esi-resource";
@@ -53,14 +53,11 @@ public class SnFacilityResourceDao extends
    * Constructor.
    * 
    * @param restTemplate
-   *        the RestTemplate to use
-   * @param credentialsProvider
-   *        the credentials provider
+   *        the RestTemplate to use; this must already be configured to support any necessary
+   *        authentication for working with the SolarNetwork API
    */
-  public SnFacilityResourceDao(RestTemplate restTemplate,
-      AuthorizationCredentialsProvider credentialsProvider) {
-    super(FacilityResourceCharacteristics.class, RESOURCE_METADATA_ROOT_KEY, restTemplate,
-        credentialsProvider);
+  public SnFacilityResourceDao(RestTemplate restTemplate) {
+    super(FacilityResourceCharacteristics.class, RESOURCE_METADATA_ROOT_KEY, restTemplate);
   }
 
 }

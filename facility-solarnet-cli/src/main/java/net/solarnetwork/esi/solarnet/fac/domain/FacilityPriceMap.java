@@ -103,6 +103,7 @@ public class FacilityPriceMap extends BaseIdentity<String>
     if (pm != null) {
       c.setPriceMap(pm.copy());
     }
+    c.setGroupUid(getGroupUid());
     return c;
   }
 

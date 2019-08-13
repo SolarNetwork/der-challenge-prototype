@@ -29,12 +29,12 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
-import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.solarnet.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityPriceMapDao;
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityProgramDao;
 import net.solarnetwork.esi.solarnet.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityProgram;
 import net.solarnetwork.esi.solarnet.fac.service.FacilityService;
 import net.solarnetwork.esi.util.CryptoHelper;
 
@@ -124,8 +124,8 @@ public class DaoFacilityService implements FacilityService {
   @Transactional(readOnly = true, propagation = Propagation.SUPPORTS)
   @Override
   public Set<String> getEnabledProgramTypes() {
-    Iterable<DerProgramType> itr = programDao.findAll();
-    return StreamSupport.stream(itr.spliterator(), false).map(DerProgramType::toString)
+    Iterable<FacilityProgram> itr = programDao.findAll();
+    return StreamSupport.stream(itr.spliterator(), false).map(p -> p.getProgramType().name())
         .collect(Collectors.toSet());
   }
 

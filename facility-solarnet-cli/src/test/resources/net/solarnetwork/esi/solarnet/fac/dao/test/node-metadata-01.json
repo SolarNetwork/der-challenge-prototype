@@ -12,9 +12,9 @@
         "pm": {
           "esi-program": {
             "prgrm1": {
-              "priceMap": "",
-              "resource": "rsrc1",
-              "priceMapGroup": "Demand Response",
+              "priceMapId": "",
+              "resourceId": "rsrc1",
+              "priceMapGroupUid": "Demand Response",
               "programTypeNumber": 7
             }
           },

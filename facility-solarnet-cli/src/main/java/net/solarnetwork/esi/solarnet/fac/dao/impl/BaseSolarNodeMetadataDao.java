@@ -23,7 +23,6 @@ import static java.util.stream.Collectors.toSet;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,12 +30,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -49,10 +46,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import net.solarnetwork.esi.solarnet.fac.dao.ReadableRepository;
 import net.solarnetwork.esi.solarnet.fac.domain.SolarNodeMetadataEntity;
-import net.solarnetwork.esi.web.support.GzipRequestInterceptor;
+import net.solarnetwork.esi.solarnet.fac.impl.WebUtils;
 import net.solarnetwork.util.StringUtils;
 import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
-import net.solarnetwork.web.support.AuthorizationV2RequestInterceptor;
 
 /**
  * Base class for SolarNetwork-based DAO implementations.
@@ -70,7 +66,6 @@ public abstract class BaseSolarNodeMetadataDao<T extends SolarNodeMetadataEntity
   private final Class<T> entityClass;
   private final String metadataRootKey;
   private final RestTemplate client;
-  private final AuthorizationCredentialsProvider credentialsProvider;
   private String apiBaseUrl = "https://data.solarnetwork.net";
 
   /** A class-level logger. */
@@ -88,11 +83,12 @@ public abstract class BaseSolarNodeMetadataDao<T extends SolarNodeMetadataEntity
    * @param metadataRootKey
    *        the metadata root key for all entities
    * @param credentialsProvider
-   *        the credentials provider
+   *        the credentials provider to use
    */
   public BaseSolarNodeMetadataDao(Class<T> entityClass, String metadataRootKey,
       AuthorizationCredentialsProvider credentialsProvider) {
-    this(entityClass, metadataRootKey, new RestTemplate(), credentialsProvider);
+    this(entityClass, metadataRootKey,
+        WebUtils.setupSolarNetworkClient(new RestTemplate(), credentialsProvider));
   }
 
   /**
@@ -103,36 +99,15 @@ public abstract class BaseSolarNodeMetadataDao<T extends SolarNodeMetadataEntity
    * @param metadataRootKey
    *        the metadata root key for all entities
    * @param restTemplate
-   *        the RestTemplate to use
-   * @param credentialsProvider
-   *        the credentials provider
+   *        the RestTemplate to use; this must already be configured to support any necessary
+   *        authentication for working with the SolarNetwork API
    */
   public BaseSolarNodeMetadataDao(Class<T> entityClass, String metadataRootKey,
-      RestTemplate restTemplate, AuthorizationCredentialsProvider credentialsProvider) {
+      RestTemplate restTemplate) {
     super();
     this.entityClass = entityClass;
     this.metadataRootKey = metadataRootKey;
     this.client = restTemplate;
-    this.credentialsProvider = credentialsProvider;
-    setupRestTemplateInterceptors();
-  }
-
-  private void setupRestTemplateInterceptors() {
-    RestTemplate restTemplate = client;
-    List<ClientHttpRequestInterceptor> interceptors = new ArrayList<>();
-    if (restTemplate.getInterceptors() != null) {
-      interceptors.addAll(restTemplate.getInterceptors().stream()
-          .filter(o -> !(o instanceof AuthorizationV2RequestInterceptor))
-          .collect(Collectors.toList()));
-    }
-    if (credentialsProvider != null) {
-      interceptors.add(0, new AuthorizationV2RequestInterceptor(credentialsProvider));
-    }
-    if (!interceptors.stream().filter(o -> o instanceof GzipRequestInterceptor).findAny()
-        .isPresent()) {
-      interceptors.add(0, new GzipRequestInterceptor());
-    }
-    restTemplate.setInterceptors(interceptors);
   }
 
   /**

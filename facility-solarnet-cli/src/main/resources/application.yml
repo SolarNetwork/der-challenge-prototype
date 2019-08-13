@@ -5,8 +5,12 @@ esi:
   facility:
     uid: sn-facility
     conn:
-       uri: dns:///localhost:9094
-       usePlaintext: true
+      uri: dns:///localhost:9094
+      usePlaintext: true
+    solarnetwork:
+      url: https://data.solarnetwork.net
+      tokenId: PLEASE_PROVIDE_TOKEN_ID
+      tokenSecret: PLEASE_PROVIDE_TOKEN_SECRET 
   registry:
     conn:
       uri: dns:///localhost:9090

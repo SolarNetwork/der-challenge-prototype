@@ -39,27 +39,27 @@ import org.springframework.http.HttpMethod;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestTemplate;
 
-import net.solarnetwork.esi.domain.jpa.ResourceCharacteristicsEmbed;
-import net.solarnetwork.esi.solarnet.fac.dao.FacilityResourceDao;
-import net.solarnetwork.esi.solarnet.fac.dao.impl.SnFacilityResourceDao;
-import net.solarnetwork.esi.solarnet.fac.domain.FacilityResourceCharacteristics;
+import net.solarnetwork.esi.domain.DerProgramType;
+import net.solarnetwork.esi.solarnet.fac.dao.FacilityProgramDao;
+import net.solarnetwork.esi.solarnet.fac.dao.impl.SnFacilityProgramDao;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityProgram;
 import net.solarnetwork.esi.solarnet.fac.impl.WebUtils;
 import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
 import net.solarnetwork.web.support.StaticAuthorizationCredentialsProvider;
 
 /**
- * Test cases for the JPA {@link FacilityResourceDao} implementation.
+ * Test cases for the {@link SnFacilityProgramDao} class.
  * 
  * @author matt
  * @version 1.0
  */
-public class SnFacilityResourceDaoTests {
+public class SnFacilityProgramDaoTests {
 
   private static final String TEST_BASE_URL = "http://localhost";
 
   private RestTemplate restTemplate;
   private AuthorizationCredentialsProvider credProvider;
-  private FacilityResourceDao dao;
+  private FacilityProgramDao dao;
 
   private MockRestServiceServer server;
 
@@ -68,25 +68,20 @@ public class SnFacilityResourceDaoTests {
     credProvider = new StaticAuthorizationCredentialsProvider(randomUUID().toString(),
         randomUUID().toString());
     restTemplate = WebUtils.setupSolarNetworkClient(new RestTemplate(), credProvider);
-    SnFacilityResourceDao snDao = new SnFacilityResourceDao(restTemplate);
+    SnFacilityProgramDao snDao = new SnFacilityProgramDao(restTemplate);
     snDao.setApiBaseUrl(TEST_BASE_URL);
     dao = snDao;
 
     server = MockRestServiceServer.bindTo(restTemplate).build();
   }
 
-  private void assertPropertiesEqual(ResourceCharacteristicsEmbed entity,
-      ResourceCharacteristicsEmbed expected) {
-    assertThat("Load power factor", entity.getLoadPowerFactor(),
-        equalTo(expected.getLoadPowerFactor()));
-    assertThat("Load power max", entity.getLoadPowerMax(), equalTo(expected.getLoadPowerMax()));
-    assertThat("Response time", entity.getResponseTime(), equalTo(expected.getResponseTime()));
-    assertThat("Storage energy capacity", entity.getStorageEnergyCapacity(),
-        equalTo(expected.getStorageEnergyCapacity()));
-    assertThat("Suppply power factor", entity.getSupplyPowerFactor(),
-        equalTo(expected.getSupplyPowerFactor()));
-    assertThat("Supply power max", entity.getSupplyPowerMax(),
-        equalTo(expected.getSupplyPowerMax()));
+  private void assertEquals(FacilityProgram entity, FacilityProgram expected) {
+    assertThat("ID", entity.getId(), equalTo(expected.getId()));
+    assertThat("Program type", entity.getProgramType(), equalTo(expected.getProgramType()));
+    assertThat("PriceMap ID", entity.getPriceMapId(), equalTo(expected.getPriceMapId()));
+    assertThat("PriceMap group UID", entity.getPriceMapGroupUid(),
+        equalTo(expected.getPriceMapGroupUid()));
+    assertThat("Resource ID", entity.getResourceId(), equalTo(expected.getResourceId()));
   }
 
   @Test
@@ -98,7 +93,7 @@ public class SnFacilityResourceDaoTests {
     // @formatter:off
     server.expect(requestTo(startsWith(TEST_BASE_URL + "/solarquery/api/v1/sec/nodes/meta")))
         .andExpect(method(HttpMethod.GET))
-        .andExpect(queryParam("metadataFilter", "(/pm/esi-resource/*~%3D.*)"))
+        .andExpect(queryParam("metadataFilter", "(/pm/esi-program/*~%3D.*)"))
         .andExpect(header(HttpHeaders.HOST, "localhost"))
         .andExpect(header(HttpHeaders.ACCEPT_ENCODING, "gzip,deflate"))
         .andExpect(header(HttpHeaders.AUTHORIZATION, 
@@ -108,18 +103,14 @@ public class SnFacilityResourceDaoTests {
     // @formatter:on
 
     // when
-    final FacilityResourceCharacteristics entity = dao.findById("rsrc1").get();
+    final FacilityProgram entity = dao.findById("prgrm1").get();
 
     // then
-    ResourceCharacteristicsEmbed expected = new ResourceCharacteristicsEmbed();
-    expected.setLoadPowerFactor(0.8f);
-    expected.setLoadPowerMax(1000L);
-    expected.setSupplyPowerFactor(0f);
-    expected.setSupplyPowerMax(0L);
-    expected.setStorageEnergyCapacity(0L);
-    expected.responseTime().setMinMillis(5000L);
-    expected.responseTime().setMaxMillis(60000L);
-    assertPropertiesEqual(entity.characteristics(), expected);
+    FacilityProgram expected = new FacilityProgram("prgrm1", DerProgramType.MARKET_PRICE_RESPONSE);
+    expected.setPriceMapId("");
+    expected.setPriceMapGroupUid("Demand Response");
+    expected.setResourceId("rsrc1");
+    assertEquals(entity, expected);
   }
 
 }

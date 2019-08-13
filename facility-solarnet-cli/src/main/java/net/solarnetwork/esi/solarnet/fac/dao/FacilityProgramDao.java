@@ -17,7 +17,7 @@
 
 package net.solarnetwork.esi.solarnet.fac.dao;
 
-import net.solarnetwork.esi.domain.DerProgramType;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityProgram;
 
 /**
  * DAO API for facility program types.
@@ -25,6 +25,6 @@ import net.solarnetwork.esi.domain.DerProgramType;
  * @author matt
  * @version 1.0
  */
-public interface FacilityProgramDao extends ReadableRepository<DerProgramType, Integer> {
+public interface FacilityProgramDao extends ReadableRepository<FacilityProgram, String> {
 
 }

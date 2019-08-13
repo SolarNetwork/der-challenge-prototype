@@ -19,21 +19,21 @@ package net.solarnetwork.esi.solarnet.fac.dao.impl;
 
 import org.springframework.web.client.RestTemplate;
 
-import net.solarnetwork.esi.solarnet.fac.dao.FacilityPriceMapDao;
-import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
+import net.solarnetwork.esi.solarnet.fac.dao.FacilityProgramDao;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityProgram;
 import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
 
 /**
- * SolarNetwork implementation of {@link FacilityPriceMapDao}.
+ * SolarNetwork implementation of {@link FacilityProgramDao}.
  * 
  * @author matt
  * @version 1.0
  */
-public class SnFacilityPriceMapDao extends BaseSolarNodeMetadataDao<FacilityPriceMap>
-    implements FacilityPriceMapDao {
+public class SnFacilityProgramDao extends BaseSolarNodeMetadataDao<FacilityProgram>
+    implements FacilityProgramDao {
 
   /** The root key for price map metadata information. */
-  public static final String PRICEMAP_METADATA_ROOT_KEY = "esi-pricemap";
+  public static final String PROGRAM_METADATA_ROOT_KEY = "esi-program";
 
   /**
    * Default constructor.
@@ -45,8 +45,8 @@ public class SnFacilityPriceMapDao extends BaseSolarNodeMetadataDao<FacilityPric
    * @param credentialsProvider
    *        the credentials provider
    */
-  public SnFacilityPriceMapDao(AuthorizationCredentialsProvider credentialsProvider) {
-    super(FacilityPriceMap.class, PRICEMAP_METADATA_ROOT_KEY, credentialsProvider);
+  public SnFacilityProgramDao(AuthorizationCredentialsProvider credentialsProvider) {
+    super(FacilityProgram.class, PROGRAM_METADATA_ROOT_KEY, credentialsProvider);
   }
 
   /**
@@ -56,8 +56,8 @@ public class SnFacilityPriceMapDao extends BaseSolarNodeMetadataDao<FacilityPric
    *        the RestTemplate to use; this must already be configured to support any necessary
    *        authentication for working with the SolarNetwork API
    */
-  public SnFacilityPriceMapDao(RestTemplate restTemplate) {
-    super(FacilityPriceMap.class, PRICEMAP_METADATA_ROOT_KEY, restTemplate);
+  public SnFacilityProgramDao(RestTemplate restTemplate) {
+    super(FacilityProgram.class, PROGRAM_METADATA_ROOT_KEY, restTemplate);
   }
 
 }

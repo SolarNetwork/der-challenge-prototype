@@ -32,8 +32,7 @@ import static org.mockito.Mockito.mock;
 import java.net.URI;
 import java.security.KeyPair;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.EnumSet;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -51,6 +50,7 @@ import net.solarnetwork.esi.solarnet.fac.dao.ExchangeEntityDao;
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityPriceMapDao;
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityProgramDao;
 import net.solarnetwork.esi.solarnet.fac.domain.ExchangeEntity;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityProgram;
 import net.solarnetwork.esi.solarnet.fac.impl.DaoFacilityService;
 import net.solarnetwork.esi.util.CryptoUtils;
 
@@ -166,16 +166,18 @@ public class DaoFacilityServiceTests {
   @Test
   public void getProgramTypesWithSettings() {
     // given
-    Set<DerProgramType> types = EnumSet.of(DerProgramType.ARTIFICIAL_INERTIA,
-        DerProgramType.VOLTAGE_MANAGEMENT);
-    Set<String> settingsPrograms = types.stream().map(DerProgramType::toString).collect(toSet());
-    given(programDao.findAll()).willReturn(new ArrayList<>(types));
+    List<FacilityProgram> facPrograms = Arrays.asList(
+        new FacilityProgram(DerProgramType.ARTIFICIAL_INERTIA),
+        new FacilityProgram(DerProgramType.VOLTAGE_MANAGEMENT));
+    given(programDao.findAll()).willReturn(facPrograms);
 
     // when
     Set<String> programs = service.getEnabledProgramTypes();
 
     // then
-    assertThat("Programs", programs, equalTo(settingsPrograms));
+    Set<String> expectedPrograms = facPrograms.stream().map(p -> p.getProgramType().name())
+        .collect(toSet());
+    assertThat("Programs", programs, equalTo(expectedPrograms));
   }
 
 }

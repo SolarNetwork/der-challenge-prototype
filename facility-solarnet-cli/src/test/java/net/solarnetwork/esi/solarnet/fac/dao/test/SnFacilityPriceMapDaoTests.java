@@ -46,6 +46,7 @@ import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityPriceMapDao;
 import net.solarnetwork.esi.solarnet.fac.dao.impl.SnFacilityPriceMapDao;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
+import net.solarnetwork.esi.solarnet.fac.impl.WebUtils;
 import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
 import net.solarnetwork.web.support.StaticAuthorizationCredentialsProvider;
 
@@ -67,10 +68,10 @@ public class SnFacilityPriceMapDaoTests {
 
   @Before
   public void setup() {
-    restTemplate = new RestTemplate();
     credProvider = new StaticAuthorizationCredentialsProvider(randomUUID().toString(),
         randomUUID().toString());
-    SnFacilityPriceMapDao snDao = new SnFacilityPriceMapDao(restTemplate, credProvider);
+    restTemplate = WebUtils.setupSolarNetworkClient(new RestTemplate(), credProvider);
+    SnFacilityPriceMapDao snDao = new SnFacilityPriceMapDao(restTemplate);
     snDao.setApiBaseUrl(TEST_BASE_URL);
     dao = snDao;
 
