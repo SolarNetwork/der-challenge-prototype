@@ -226,6 +226,27 @@ public class PriceComponentsEmbed implements SignableMessage, Cloning<PriceCompo
   }
 
   /**
+   * Get the currency code.
+   * 
+   * @return the currency code, or {@literal null} if no currency is available
+   */
+  public String getCurrencyCode() {
+    Currency c = getCurrency();
+    return (c != null ? c.getCurrencyCode() : null);
+  }
+
+  /**
+   * Set the currency via a code.
+   * 
+   * @param currencyCode
+   *        the code
+   * @see Currency#getInstance(String)
+   */
+  public void setCurrencyCode(String currencyCode) {
+    setCurrency(Currency.getInstance(currencyCode));
+  }
+
+  /**
    * Get the apparent energy price.
    * 
    * @return the apparent energy price, in units per volt-amp hour (VAh), or {@literal null} if no
@@ -258,6 +279,30 @@ public class PriceComponentsEmbed implements SignableMessage, Cloning<PriceCompo
   public BigDecimal apparentEnergyPrice() {
     BigDecimal d = getApparentEnergyPrice();
     return (d != null ? d : BigDecimal.ZERO);
+  }
+
+  /**
+   * Get the apparent energy price, as a decimal string.
+   * 
+   * @return the apparent energy price as a decimal string, in units per volt-amp hour (VAh), or
+   *         {@literal null} if no price available
+   */
+  public String getApparentEnergyPriceValue() {
+    BigDecimal p = getApparentEnergyPrice();
+    return (p != null ? p.toPlainString() : null);
+  }
+
+  /**
+   * Set the apparent energy price as a decimal string.
+   * 
+   * @param apparentEnergyPriceValue
+   *        the price to set, in units per volt-amp hour (VAh)
+   * @throws NumberFormatException
+   *         if {@code apparentEnergyPriceValue} is not a valid representation of a
+   *         {@code BigDecimal}.
+   */
+  public void setApparentEnergyPriceValue(String apparentEnergyPriceValue) {
+    setApparentEnergyPrice(new BigDecimal(apparentEnergyPriceValue));
   }
 
 }
