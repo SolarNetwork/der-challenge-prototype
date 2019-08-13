@@ -42,8 +42,9 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
 public class FacilityPriceMap extends BaseIdentity<String>
     implements SignableMessage, SolarNodeMetadataEntity {
 
-  private static final long serialVersionUID = -920865449307345318L;
+  private static final long serialVersionUID = 3850170946185087171L;
 
+  private String groupUid;
   private PriceMapEmbed priceMap;
 
   /**
@@ -161,6 +162,25 @@ public class FacilityPriceMap extends BaseIdentity<String>
   public void addSignatureMessageBytes(ByteBuffer buf) {
     PriceMapEmbed e = (priceMap != null ? priceMap : new PriceMapEmbed());
     e.addSignatureMessageBytes(buf);
+  }
+
+  /**
+   * Get the group ID.
+   * 
+   * @return the groupUid the group ID
+   */
+  public String getGroupUid() {
+    return groupUid;
+  }
+
+  /**
+   * Set the group ID.
+   * 
+   * @param groupUid
+   *        the group ID to set
+   */
+  public void setGroupUid(String groupUid) {
+    this.groupUid = groupUid;
   }
 
   /**
