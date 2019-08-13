@@ -17,16 +17,20 @@
 
 package net.solarnetwork.esi.solarnet.fac.dao.test;
 
+import static java.util.UUID.randomUUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.web.client.RestTemplate;
 
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityPriceMapDao;
 import net.solarnetwork.esi.solarnet.fac.dao.impl.SnFacilityPriceMapDao;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
+import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
+import net.solarnetwork.web.support.StaticAuthorizationCredentialsProvider;
 
 /**
  * Test cases for the {@link SnFacilityPriceMapDao} class.
@@ -36,11 +40,16 @@ import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
  */
 public class SnFacilityPriceMapDaoTests {
 
+  private RestTemplate restTemplate;
+  private AuthorizationCredentialsProvider credentialsProvider;
   private FacilityPriceMapDao dao;
 
   @Before
   public void setup() {
-    dao = new SnFacilityPriceMapDao();
+    restTemplate = new RestTemplate();
+    credentialsProvider = new StaticAuthorizationCredentialsProvider(randomUUID().toString(),
+        randomUUID().toString());
+    dao = new SnFacilityPriceMapDao(restTemplate, credentialsProvider);
   }
 
   private void assertPropertiesEqual(PriceMapEmbed entity, PriceMapEmbed expected) {

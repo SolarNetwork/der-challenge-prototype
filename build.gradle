@@ -19,6 +19,7 @@ subprojects {
     repositories {
         mavenCentral()
         mavenLocal()
+        maven { url "https://data.solarnetwork.net/archive/repository/solarnetwork/" }
     }
 
     [

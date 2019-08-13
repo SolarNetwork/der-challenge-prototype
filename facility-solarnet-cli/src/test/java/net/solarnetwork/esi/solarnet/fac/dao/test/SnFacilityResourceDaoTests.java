@@ -17,16 +17,20 @@
 
 package net.solarnetwork.esi.solarnet.fac.dao.test;
 
+import static java.util.UUID.randomUUID;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.web.client.RestTemplate;
 
 import net.solarnetwork.esi.domain.jpa.ResourceCharacteristicsEmbed;
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityResourceDao;
 import net.solarnetwork.esi.solarnet.fac.dao.impl.SnFacilityResourceDao;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityResourceCharacteristics;
+import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
+import net.solarnetwork.web.support.StaticAuthorizationCredentialsProvider;
 
 /**
  * Test cases for the JPA {@link FacilityResourceDao} implementation.
@@ -36,11 +40,16 @@ import net.solarnetwork.esi.solarnet.fac.domain.FacilityResourceCharacteristics;
  */
 public class SnFacilityResourceDaoTests {
 
+  private RestTemplate restTemplate;
+  private AuthorizationCredentialsProvider credentialsProvider;
   private FacilityResourceDao dao;
 
   @Before
   public void setup() {
-    dao = new SnFacilityResourceDao();
+    restTemplate = new RestTemplate();
+    credentialsProvider = new StaticAuthorizationCredentialsProvider(randomUUID().toString(),
+        randomUUID().toString());
+    dao = new SnFacilityResourceDao(restTemplate, credentialsProvider);
   }
 
   private void assertPropertiesEqual(ResourceCharacteristicsEmbed entity,

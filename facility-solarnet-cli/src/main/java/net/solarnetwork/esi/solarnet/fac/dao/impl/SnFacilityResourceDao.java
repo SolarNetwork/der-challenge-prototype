@@ -19,8 +19,11 @@ package net.solarnetwork.esi.solarnet.fac.dao.impl;
 
 import java.util.Optional;
 
+import org.springframework.web.client.RestTemplate;
+
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityResourceDao;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityResourceCharacteristics;
+import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
 
 /**
  * SolarNetwork implementation of {@link FacilityResourceDao}.
@@ -28,7 +31,35 @@ import net.solarnetwork.esi.solarnet.fac.domain.FacilityResourceCharacteristics;
  * @author matt
  * @version 1.0
  */
-public class SnFacilityResourceDao implements FacilityResourceDao {
+public class SnFacilityResourceDao extends BaseSolarNetworkMetadataDao
+    implements FacilityResourceDao {
+
+  /**
+   * Default constructor.
+   * 
+   * <p>
+   * This will create a new, default {@link RestTemplate}.
+   * </p>
+   * 
+   * @param credentialsProvider
+   *        the credentials provider
+   */
+  public SnFacilityResourceDao(AuthorizationCredentialsProvider credentialsProvider) {
+    super(credentialsProvider);
+  }
+
+  /**
+   * Constructor.
+   * 
+   * @param restTemplate
+   *        the RestTemplate to use
+   * @param credentialsProvider
+   *        the credentials provider
+   */
+  public SnFacilityResourceDao(RestTemplate restTemplate,
+      AuthorizationCredentialsProvider credentialsProvider) {
+    super(restTemplate, credentialsProvider);
+  }
 
   @Override
   public Optional<FacilityResourceCharacteristics> findById(String id) {

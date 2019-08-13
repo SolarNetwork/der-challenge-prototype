@@ -19,8 +19,11 @@ package net.solarnetwork.esi.solarnet.fac.dao.impl;
 
 import java.util.Optional;
 
+import org.springframework.web.client.RestTemplate;
+
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityPriceMapDao;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
+import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
 
 /**
  * SolarNetwork implementation of {@link FacilityPriceMapDao}.
@@ -28,7 +31,35 @@ import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
  * @author matt
  * @version 1.0
  */
-public class SnFacilityPriceMapDao implements FacilityPriceMapDao {
+public class SnFacilityPriceMapDao extends BaseSolarNetworkMetadataDao
+    implements FacilityPriceMapDao {
+
+  /**
+   * Default constructor.
+   * 
+   * <p>
+   * This will create a new, default {@link RestTemplate}.
+   * </p>
+   * 
+   * @param credentialsProvider
+   *        the credentials provider
+   */
+  public SnFacilityPriceMapDao(AuthorizationCredentialsProvider credentialsProvider) {
+    super(credentialsProvider);
+  }
+
+  /**
+   * Constructor.
+   * 
+   * @param restTemplate
+   *        the RestTemplate to use
+   * @param credentialsProvider
+   *        the credentials provider
+   */
+  public SnFacilityPriceMapDao(RestTemplate restTemplate,
+      AuthorizationCredentialsProvider credentialsProvider) {
+    super(restTemplate, credentialsProvider);
+  }
 
   @Override
   public Optional<FacilityPriceMap> findById(String id) {
