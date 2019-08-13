@@ -12,16 +12,16 @@
         "pm": {
           "esi-program": {
             "prgrm1": {
-              "pricemap": "",
+              "priceMap": "",
               "resource": "rsrc1",
-              "pricemapGroup": "Demand Response",
+              "priceMapGroup": "Demand Response",
               "programTypeNumber": 7
             }
           },
           "esi-pricemap": {
             "pm1": {
               "groupUid": "Demand Response",
-              "pricemap": {
+              "priceMap": {
                 "responseTime": {
                   "maxMillis": 60000,
                   "minMillis": 10000
@@ -39,7 +39,7 @@
             },
             "pm2": {
               "groupUid": "Demand Response",
-              "pricemap": {
+              "priceMap": {
                 "responseTime": {
                   "maxMillis": 30000,
                   "minMillis": 10000
