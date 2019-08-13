@@ -60,19 +60,40 @@ public class SolarNetworkConfig {
     return WebUtils.setupSolarNetworkClient(new RestTemplate(), solarNetworkCredentialsProvider());
   }
 
+  /**
+   * Get the facility resource DAO.
+   * 
+   * @return the DAO
+   */
   @Bean
   public FacilityResourceDao facilityResourceDao() {
-    return new SnFacilityResourceDao(solarNetworkRestTemplate());
+    SnFacilityResourceDao dao = new SnFacilityResourceDao(solarNetworkRestTemplate());
+    dao.setApiBaseUrl(solarNetworkBaseUrl);
+    return dao;
   }
 
+  /**
+   * Get the facility price map DAO.
+   * 
+   * @return the DAO
+   */
   @Bean
   public FacilityPriceMapDao facilityPriceMapDao() {
-    return new SnFacilityPriceMapDao(solarNetworkRestTemplate());
+    SnFacilityPriceMapDao dao = new SnFacilityPriceMapDao(solarNetworkRestTemplate());
+    dao.setApiBaseUrl(solarNetworkBaseUrl);
+    return dao;
   }
 
+  /**
+   * Get the facility program DAO.
+   * 
+   * @return the DAO
+   */
   @Bean
   public FacilityProgramDao facilityProgramDao() {
-    return new SnFacilityProgramDao(solarNetworkRestTemplate());
+    SnFacilityProgramDao dao = new SnFacilityProgramDao(solarNetworkRestTemplate());
+    dao.setApiBaseUrl(solarNetworkBaseUrl);
+    return dao;
   }
 
 }
