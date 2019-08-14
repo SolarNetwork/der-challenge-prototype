@@ -20,20 +20,11 @@ server:
 
 spring:
   datasource:
-    tomcat:
-      initialSize: 1
-      maxActive: 10
-      minIdle: 1
-      maxIdle: 2
-      testOnBorrow: true
-      testWhileIdle: true
-      validationQuery: VALUES CURRENT_DATE
-      timeBetweenEvictionRunsMillis: 35000
-      minEvictableIdleTimeMillis: 55000
-      validationInterval: 35000
-      removeAbandoned: true
-      removeAbandonedTimeout: 600
-      jdbcInterceptors: "ConnectionState;StatementCache(prepared=true,callable=false,max=50);ResetAbandonedTimer"
+    hikari:
+      minimumIdle: 1
+      connectionTimeout: 30000
+      idleTimeout: 600000
+      maxLifetime: 1800000
   jpa:
     hibernate.ddl-auto: none
     properties:
