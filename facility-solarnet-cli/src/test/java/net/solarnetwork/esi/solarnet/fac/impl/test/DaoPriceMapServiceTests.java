@@ -231,6 +231,69 @@ public class DaoPriceMapServiceTests {
   }
 
   @Test
+  public void receivePriceMapOffer_AcceptedReduction() {
+    // given
+    final UUID offerId = UUID.randomUUID();
+    final Instant offerDate = Instant.now().plusSeconds(360);
+    final PriceMapEmbed offerPriceMap = new PriceMapEmbed();
+    offerPriceMap.setPowerComponents(new PowerComponentsEmbed(-1L, -2L));
+    offerPriceMap.setDuration(Duration.ofSeconds(3));
+    offerPriceMap.setResponseTime(DurationRangeEmbed.ofSeconds(4, 5));
+    offerPriceMap.setPriceComponents(PriceComponentsEmbed.of("USD", "6.78"));
+
+    String exchangeServerName = InProcessServerBuilder.generateName();
+    URI exchangeUri = URI.create("//" + exchangeServerName);
+    givenDefaultFacilityService(exchangeUri);
+
+    FacilityPriceMap facPriceMap = new FacilityPriceMap(UUID.randomUUID().toString(),
+        offerPriceMap.copy());
+    given(facilityService.getPriceMaps()).willReturn(singleton(facPriceMap));
+
+    ArgumentCaptor<PriceMapOfferEventEntity> offerEventCaptor = ArgumentCaptor
+        .forClass(PriceMapOfferEventEntity.class);
+    given(offerEventDao.save(offerEventCaptor.capture()))
+        .willAnswer(invocationArg(0, PriceMapOfferEventEntity.class));
+
+    // @formatter:off
+    PriceMapOffer offer = PriceMapOffer.newBuilder()
+        .setOfferId(ProtobufUtils.uuidForUuid(offerId))
+        .setWhen(ProtobufUtils.timestampForInstant(offerDate))
+        .setPriceMap(ProtobufUtils.priceMapForPriceMapEmbed(offerPriceMap))
+        .setRoute(DerRoute.newBuilder()
+            .setExchangeUid(exchangeUid)
+            .setFacilityUid(facilityUid)
+            .setSignature(generateMessageSignature(CryptoUtils.STANDARD_HELPER, 
+                exchangeKeyPair, facilityKeyPair.getPublic(), 
+                asList(
+                    exchangeUid,
+                    facilityUid,
+                    new PriceMapOfferEventEntity(Instant.now(), offerId, offerDate, offerPriceMap))
+                ))
+            .build())
+        .build();
+    // @formatter:on
+
+    // when
+    PriceMapOfferEventEntity result = service.receivePriceMapOffer(offer);
+
+    // then
+    assertThat("Result avaialble", result, notNullValue());
+    assertThat("Offer accepted", result.isAccepted(), equalTo(true));
+    assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer waiting to execute", result.getExecutionState(),
+        equalTo(PriceMapOfferExecutionState.WAITING));
+    assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
+
+    ArgumentCaptor<PriceMapOfferAccepted> eventCaptor = ArgumentCaptor
+        .forClass(PriceMapOfferAccepted.class);
+    verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
+
+    PriceMapOfferAccepted evt = eventCaptor.getValue();
+    assertThat("Event entity same as persisted", evt.getSource(),
+        sameInstance(offerEventCaptor.getValue()));
+  }
+
+  @Test
   public void receivePriceMapOffer_AcceptedFromMultiple() {
     // given
     final UUID offerId = UUID.randomUUID();
@@ -365,6 +428,184 @@ public class DaoPriceMapServiceTests {
     PriceMapOfferCountered evt = eventCaptor.getValue();
     assertThat("Event entity same as persisted", evt.getSource(),
         sameInstance(offerEventCaptor.getValue()));
+  }
+
+  @Test
+  public void receivePriceMapOffer_RejectedTooMuchSupply() {
+    // given
+    final UUID offerId = UUID.randomUUID();
+    final Instant offerDate = Instant.now().plusSeconds(360);
+    final PriceMapEmbed offerPriceMap = new PriceMapEmbed();
+    offerPriceMap.setPowerComponents(new PowerComponentsEmbed(1L, 2L));
+    offerPriceMap.setDuration(Duration.ofSeconds(3));
+    offerPriceMap.setResponseTime(DurationRangeEmbed.ofSeconds(4, 5));
+    offerPriceMap.setPriceComponents(PriceComponentsEmbed.of("USD", "6.78"));
+
+    String exchangeServerName = InProcessServerBuilder.generateName();
+    URI exchangeUri = URI.create("//" + exchangeServerName);
+    givenDefaultFacilityService(exchangeUri);
+
+    final PriceMapEmbed facPriceMapEmbed = offerPriceMap.copy();
+    facPriceMapEmbed.powerComponents().setReactivePower(0L);
+    FacilityPriceMap facPriceMap = new FacilityPriceMap(UUID.randomUUID().toString(),
+        facPriceMapEmbed);
+    given(facilityService.getPriceMaps()).willReturn(singleton(facPriceMap));
+
+    ArgumentCaptor<PriceMapOfferEventEntity> offerEventCaptor = ArgumentCaptor
+        .forClass(PriceMapOfferEventEntity.class);
+    given(offerEventDao.save(offerEventCaptor.capture()))
+        .willAnswer(invocationArg(0, PriceMapOfferEventEntity.class));
+
+    // @formatter:off
+    PriceMapOffer offer = PriceMapOffer.newBuilder()
+        .setOfferId(ProtobufUtils.uuidForUuid(offerId))
+        .setWhen(ProtobufUtils.timestampForInstant(offerDate))
+        .setPriceMap(ProtobufUtils.priceMapForPriceMapEmbed(offerPriceMap))
+        .setRoute(DerRoute.newBuilder()
+            .setExchangeUid(exchangeUid)
+            .setFacilityUid(facilityUid)
+            .setSignature(generateMessageSignature(CryptoUtils.STANDARD_HELPER, 
+                exchangeKeyPair, facilityKeyPair.getPublic(), 
+                asList(
+                    exchangeUid,
+                    facilityUid,
+                    new PriceMapOfferEventEntity(Instant.now(), offerId, offerDate, offerPriceMap))
+                ))
+            .build())
+        .build();
+    // @formatter:on
+
+    // when
+    PriceMapOfferEventEntity result = service.receivePriceMapOffer(offer);
+
+    // then
+    assertThat("Result avaialble", result, notNullValue());
+    assertThat("Offer rejected", result.isAccepted(), equalTo(false));
+    assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer waiting to execute", result.getExecutionState(),
+        equalTo(PriceMapOfferExecutionState.DECLINED));
+    assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
+
+    verify(eventPublisher, times(0)).publishEvent(any());
+  }
+
+  @Test
+  public void receivePriceMapOffer_RejectedTooMuchReduction() {
+    // given
+    final UUID offerId = UUID.randomUUID();
+    final Instant offerDate = Instant.now().plusSeconds(360);
+    final PriceMapEmbed offerPriceMap = new PriceMapEmbed();
+    offerPriceMap.setPowerComponents(new PowerComponentsEmbed(-1L, -2L));
+    offerPriceMap.setDuration(Duration.ofSeconds(3));
+    offerPriceMap.setResponseTime(DurationRangeEmbed.ofSeconds(4, 5));
+    offerPriceMap.setPriceComponents(PriceComponentsEmbed.of("USD", "6.78"));
+
+    String exchangeServerName = InProcessServerBuilder.generateName();
+    URI exchangeUri = URI.create("//" + exchangeServerName);
+    givenDefaultFacilityService(exchangeUri);
+
+    final PriceMapEmbed facPriceMapEmbed = offerPriceMap.copy();
+    facPriceMapEmbed.powerComponents().setReactivePower(0L);
+    FacilityPriceMap facPriceMap = new FacilityPriceMap(UUID.randomUUID().toString(),
+        facPriceMapEmbed);
+    given(facilityService.getPriceMaps()).willReturn(singleton(facPriceMap));
+
+    ArgumentCaptor<PriceMapOfferEventEntity> offerEventCaptor = ArgumentCaptor
+        .forClass(PriceMapOfferEventEntity.class);
+    given(offerEventDao.save(offerEventCaptor.capture()))
+        .willAnswer(invocationArg(0, PriceMapOfferEventEntity.class));
+
+    // @formatter:off
+    PriceMapOffer offer = PriceMapOffer.newBuilder()
+        .setOfferId(ProtobufUtils.uuidForUuid(offerId))
+        .setWhen(ProtobufUtils.timestampForInstant(offerDate))
+        .setPriceMap(ProtobufUtils.priceMapForPriceMapEmbed(offerPriceMap))
+        .setRoute(DerRoute.newBuilder()
+            .setExchangeUid(exchangeUid)
+            .setFacilityUid(facilityUid)
+            .setSignature(generateMessageSignature(CryptoUtils.STANDARD_HELPER, 
+                exchangeKeyPair, facilityKeyPair.getPublic(), 
+                asList(
+                    exchangeUid,
+                    facilityUid,
+                    new PriceMapOfferEventEntity(Instant.now(), offerId, offerDate, offerPriceMap))
+                ))
+            .build())
+        .build();
+    // @formatter:on
+
+    // when
+    PriceMapOfferEventEntity result = service.receivePriceMapOffer(offer);
+
+    // then
+    assertThat("Result avaialble", result, notNullValue());
+    assertThat("Offer rejected", result.isAccepted(), equalTo(false));
+    assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer waiting to execute", result.getExecutionState(),
+        equalTo(PriceMapOfferExecutionState.DECLINED));
+    assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
+
+    verify(eventPublisher, times(0)).publishEvent(any());
+  }
+
+  @Test
+  public void receivePriceMapOffer_RejectedDirectionMismatch() {
+    // given
+    final UUID offerId = UUID.randomUUID();
+    final Instant offerDate = Instant.now().plusSeconds(360);
+    final PriceMapEmbed offerPriceMap = new PriceMapEmbed();
+    offerPriceMap.setPowerComponents(new PowerComponentsEmbed(1L, 2L));
+    offerPriceMap.setDuration(Duration.ofSeconds(3));
+    offerPriceMap.setResponseTime(DurationRangeEmbed.ofSeconds(4, 5));
+    offerPriceMap.setPriceComponents(PriceComponentsEmbed.of("USD", "6.78"));
+
+    String exchangeServerName = InProcessServerBuilder.generateName();
+    URI exchangeUri = URI.create("//" + exchangeServerName);
+    givenDefaultFacilityService(exchangeUri);
+
+    final PriceMapEmbed facPriceMapEmbed = offerPriceMap.copy();
+    facPriceMapEmbed.powerComponents().setRealPower(-1L);
+    facPriceMapEmbed.powerComponents().setReactivePower(-2L);
+    FacilityPriceMap facPriceMap = new FacilityPriceMap(UUID.randomUUID().toString(),
+        facPriceMapEmbed);
+    given(facilityService.getPriceMaps()).willReturn(singleton(facPriceMap));
+
+    ArgumentCaptor<PriceMapOfferEventEntity> offerEventCaptor = ArgumentCaptor
+        .forClass(PriceMapOfferEventEntity.class);
+    given(offerEventDao.save(offerEventCaptor.capture()))
+        .willAnswer(invocationArg(0, PriceMapOfferEventEntity.class));
+
+    // @formatter:off
+    PriceMapOffer offer = PriceMapOffer.newBuilder()
+        .setOfferId(ProtobufUtils.uuidForUuid(offerId))
+        .setWhen(ProtobufUtils.timestampForInstant(offerDate))
+        .setPriceMap(ProtobufUtils.priceMapForPriceMapEmbed(offerPriceMap))
+        .setRoute(DerRoute.newBuilder()
+            .setExchangeUid(exchangeUid)
+            .setFacilityUid(facilityUid)
+            .setSignature(generateMessageSignature(CryptoUtils.STANDARD_HELPER, 
+                exchangeKeyPair, facilityKeyPair.getPublic(), 
+                asList(
+                    exchangeUid,
+                    facilityUid,
+                    new PriceMapOfferEventEntity(Instant.now(), offerId, offerDate, offerPriceMap))
+                ))
+            .build())
+        .build();
+    // @formatter:on
+
+    // when
+    PriceMapOfferEventEntity result = service.receivePriceMapOffer(offer);
+
+    // then
+    assertThat("Result avaialble", result, notNullValue());
+    assertThat("Offer rejected", result.isAccepted(), equalTo(false));
+    assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer waiting to execute", result.getExecutionState(),
+        equalTo(PriceMapOfferExecutionState.DECLINED));
+    assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
+
+    verify(eventPublisher, times(0)).publishEvent(any());
   }
 
 }

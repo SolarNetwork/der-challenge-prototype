@@ -130,22 +130,32 @@ public class DaoPriceMapService implements PriceMapService {
 
   private PriceMapEmbed acceptablePriceMapForEvent(FacilityPriceMap supportedPriceMap,
       PriceMapOfferEventEntity event) {
-    PriceMapEmbed priceMap = supportedPriceMap.priceMap();
-    PriceMapEmbed offerPriceMap = event.getPriceMap().getPriceMap();
+    final PriceMapEmbed priceMap = supportedPriceMap.priceMap();
+    final PriceMapEmbed offerPriceMap = event.getPriceMap().getPriceMap();
     if (offerPriceMap.duration().compareTo(priceMap.duration()) > 0) {
       // too long to support
       log.info("Price map offer {} not supported by price map {} because duration too long",
           event.getId(), supportedPriceMap.getId());
       return null;
     }
+
+    if ((offerPriceMap.powerComponents().isRealPowerNegative() != priceMap.powerComponents()
+        .isRealPowerNegative())
+        || (offerPriceMap.powerComponents().isReactivePowerNegative() != priceMap.powerComponents()
+            .isReactivePowerNegative())) {
+      log.info(
+          "Price map offer {} not supported by price map {} because of power direction mismatch",
+          event.getId(), supportedPriceMap.getId());
+      return null;
+    }
     if (offerPriceMap.powerComponents().derivedApparentPower() > priceMap.powerComponents()
         .derivedApparentPower()) {
-      // too much power
-      // TODO do we need to do a signed comparison here for load vs generation?
+      // too much power requested
       log.info("Price map offer {} not supported by price map {} because power to large",
           event.getId(), supportedPriceMap.getId());
       return null;
     }
+
     if (offerPriceMap.responseTime().min().compareTo(priceMap.responseTime().min()) < 0) {
       // minimum response time too short
       log.info(
