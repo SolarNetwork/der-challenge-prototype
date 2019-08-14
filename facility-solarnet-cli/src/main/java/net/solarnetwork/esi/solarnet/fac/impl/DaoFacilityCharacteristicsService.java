@@ -21,6 +21,7 @@ import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -113,14 +114,20 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
         () -> new IllegalArgumentException("Price map " + priceMapId + " not available."));
   }
 
-  private void postPriceMapsToExchange() {
+  @Override
+  public void registerPriceMap(String priceMapId) {
+    FacilityPriceMap priceMap = priceMap(priceMapId);
+    postPriceMapsToExchange(Collections.singleton(priceMap));
+  }
+
+  private void postPriceMapsToExchange(Iterable<FacilityPriceMap> priceMaps) {
     ExchangeEntity exchange = facilityService.getExchange();
     if (exchange != null) {
       List<Object> messageData = new ArrayList<>();
       messageData.add(exchange.getId());
       messageData.add(facilityService.getUid());
       PriceMapCharacteristics.Builder pmc = PriceMapCharacteristics.newBuilder();
-      for (FacilityPriceMap pm : facilityService.getPriceMaps()) {
+      for (FacilityPriceMap pm : priceMaps) {
         PriceMapEmbed pme = pm.priceMap();
         messageData.add(pme);
         pmc.addPriceMap(ProtobufUtils.priceMapForPriceMapEmbed(pme));
