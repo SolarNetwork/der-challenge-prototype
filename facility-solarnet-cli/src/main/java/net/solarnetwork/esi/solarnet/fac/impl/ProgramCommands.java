@@ -95,11 +95,9 @@ public class ProgramCommands extends BaseFacilityCharacteristicsShell {
    */
   private class ProgramName {
 
-    private final String name;
     private final String displayName;
 
     private ProgramName(String name) {
-      this.name = name;
       this.displayName = messageSource.getMessage(format("programs.%s.label", name),
           new Object[] { name },
           messageSource.getMessage("programs.UNRECOGNIZED.label", null, Locale.getDefault()),
