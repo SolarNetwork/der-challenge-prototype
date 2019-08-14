@@ -78,27 +78,31 @@ public class PriceMapSettingsCommands extends BaseFacilityCharacteristicsShell {
    */
   @ShellMethod("Post a price map to the exchange.")
   public void priceMapRegister() {
-    String priceMapId = promptForPriceMapIdFromList();
-    if (priceMapId == null) {
+    FacilityPriceMap priceMap = promptForPriceMapFromList();
+    if (priceMap == null) {
       return;
     }
     if (shell.confirm(
         messageSource.getMessage("priceMap.register.confirm.ask", null, Locale.getDefault()))) {
-      characteristicsService.registerPriceMap(priceMapId);
+      characteristicsService.registerPriceMap(priceMap);
       shell.printSuccess(
           messageSource.getMessage("priceMap.register.registered", null, Locale.getDefault()));
     }
   }
 
-  private String promptForPriceMapIdFromList() {
+  private FacilityPriceMap promptForPriceMapFromList() {
     Iterable<FacilityPriceMap> priceMaps = characteristicsService.priceMaps();
     List<FacilityPriceMap> sorted = StreamSupport.stream(priceMaps.spliterator(), false)
         .sorted(comparing(FacilityPriceMap::getDuration).thenComparing(FacilityPriceMap::getId))
         .collect(Collectors.toList());
-    return promptForNumberedObjectListItem(sorted, "priceMap.list", "id", new String[] { "info" },
-        (k, v) -> {
+    String id = promptForNumberedObjectListItem(sorted, "priceMap.list", "id",
+        new String[] { "info" }, (k, v) -> {
           shell.print(v.priceMap().toDetailedInfoString(messageSource));
           shell.print("");
         });
+    if (id == null) {
+      return null;
+    }
+    return sorted.stream().filter(p -> id.equals(p.getId())).findFirst().orElseGet(null);
   }
 }

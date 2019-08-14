@@ -17,25 +17,46 @@
 
 package net.solarnetwork.esi.solarnet.fac.impl.test;
 
+import static java.util.Arrays.asList;
+import static java.util.Collections.singleton;
+import static net.solarnetwork.esi.domain.support.ProtobufUtils.decimalValue;
 import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
+import static org.hamcrest.Matchers.equalTo;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.security.KeyPair;
+import java.time.Duration;
 import java.time.Instant;
+import java.util.Currency;
 import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import com.google.protobuf.Empty;
+
+import io.grpc.inprocess.InProcessServerBuilder;
+import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
+import net.solarnetwork.esi.domain.PriceMap;
+import net.solarnetwork.esi.domain.PriceMapCharacteristics;
+import net.solarnetwork.esi.domain.jpa.DurationRangeEmbed;
+import net.solarnetwork.esi.domain.jpa.PowerComponentsEmbed;
+import net.solarnetwork.esi.domain.jpa.PriceComponentsEmbed;
 import net.solarnetwork.esi.grpc.InProcessChannelProvider;
+import net.solarnetwork.esi.grpc.StaticInProcessChannelProvider;
+import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeImplBase;
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityPriceMapDao;
 import net.solarnetwork.esi.solarnet.fac.dao.FacilityResourceDao;
 import net.solarnetwork.esi.solarnet.fac.domain.ExchangeEntity;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
 import net.solarnetwork.esi.solarnet.fac.impl.DaoFacilityCharacteristicsService;
 import net.solarnetwork.esi.solarnet.fac.service.FacilityService;
 import net.solarnetwork.esi.util.CryptoUtils;
@@ -91,13 +112,89 @@ public class DaoFacilityCharacteristicsServiceTests {
   }
 
   @Test
-  public void provideDerCharacteristics() throws IOException {
-    // TODO
-  }
+  public void registerPriceMap() throws IOException {
+    // given
+    String exchangeServerName = InProcessServerBuilder.generateName();
+    URI exchangeUri = URI.create("//" + exchangeServerName);
+    givenDefaultFacilityService(exchangeUri);
 
-  @Test
-  public void provideSupportedDerPrograms() throws IOException {
-    // TODO
+    FacilityPriceMap priceMap = new FacilityPriceMap(UUID.randomUUID().toString());
+    priceMap.setPowerComponents(new PowerComponentsEmbed(1L, 2L));
+    priceMap.setDuration(Duration.ofMillis(12345L));
+    priceMap.setResponseTime(
+        new DurationRangeEmbed(Duration.ofMillis(2456L), Duration.ofMillis(4567L)));
+    priceMap.setPriceComponents(
+        new PriceComponentsEmbed(Currency.getInstance("USD"), new BigDecimal("234.23456")));
+
+    given(facilityService.getPriceMaps()).willReturn(singleton(priceMap));
+
+    DerFacilityExchangeImplBase exchangeService = new DerFacilityExchangeImplBase() {
+
+      @Override
+      public StreamObserver<PriceMapCharacteristics> providePriceMaps(
+          StreamObserver<Empty> responseObserver) {
+        return new StreamObserver<PriceMapCharacteristics>() {
+
+          @Override
+          public void onNext(PriceMapCharacteristics value) {
+            // @formatter:off
+            CryptoUtils.validateMessageSignature(CryptoUtils.STANDARD_HELPER,
+                value.getRoute().getSignature(), exchangeKeyPair, facilityKeyPair.getPublic(),
+                asList(
+                    exchangeUid, 
+                    facilityUid,
+                    priceMap));
+            // @formatter:on
+            PriceMap pm = value.getPriceMap(0);
+            assertThat("Real power", pm.getPowerComponents().getRealPower(),
+                equalTo(priceMap.getPowerComponents().getRealPower()));
+            assertThat("Reactive power", pm.getPowerComponents().getReactivePower(),
+                equalTo(priceMap.getPowerComponents().getReactivePower()));
+            assertThat("Duration seconds", pm.getDuration().getSeconds(),
+                equalTo(priceMap.getDuration().getSeconds()));
+            assertThat("Duration nanos", pm.getDuration().getNanos(),
+                equalTo(priceMap.getDuration().getNano()));
+            assertThat("Response time min seconds", pm.getResponseTime().getMin().getSeconds(),
+                equalTo(priceMap.getResponseTime().getMin().getSeconds()));
+            assertThat("Response time min nanos", pm.getResponseTime().getMin().getNanos(),
+                equalTo(priceMap.getResponseTime().getMin().getNano()));
+            assertThat("Response time max seconds", pm.getResponseTime().getMax().getSeconds(),
+                equalTo(priceMap.getResponseTime().getMax().getSeconds()));
+            assertThat("Response time max nanos", pm.getResponseTime().getMax().getNanos(),
+                equalTo(priceMap.getResponseTime().getMax().getNano()));
+            assertThat("Apparent energy price currency code",
+                pm.getPrice().getApparentEnergyPrice().getCurrencyCode(),
+                equalTo(priceMap.getPriceComponents().getCurrency().getCurrencyCode()));
+            assertThat("Apparent energy price",
+                decimalValue(pm.getPrice().getApparentEnergyPrice()),
+                equalTo(priceMap.getPriceComponents().getApparentEnergyPrice()));
+          }
+
+          @Override
+          public void onError(Throwable t) {
+            fail(t.toString());
+          }
+
+          @Override
+          public void onCompleted() {
+            responseObserver.onNext(Empty.getDefaultInstance());
+            responseObserver.onCompleted();
+          }
+        };
+      }
+
+    };
+
+    grpcCleanup.register(InProcessServerBuilder.forName(exchangeServerName).directExecutor()
+        .addService(exchangeService).build().start());
+
+    service
+        .setExchangeChannelProvider(new StaticInProcessChannelProvider(exchangeServerName, true));
+
+    // when
+    service.registerPriceMap(priceMap);
+
+    // then
   }
 
 }

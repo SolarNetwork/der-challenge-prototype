@@ -115,8 +115,7 @@ public class DaoFacilityCharacteristicsService implements FacilityCharacteristic
   }
 
   @Override
-  public void registerPriceMap(String priceMapId) {
-    FacilityPriceMap priceMap = priceMap(priceMapId);
+  public void registerPriceMap(FacilityPriceMap priceMap) {
     postPriceMapsToExchange(Collections.singleton(priceMap));
   }
 

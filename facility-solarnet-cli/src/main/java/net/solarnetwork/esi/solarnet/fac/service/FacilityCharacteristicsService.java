@@ -71,9 +71,9 @@ public interface FacilityCharacteristicsService {
   /**
    * Register a price map with the exchange.
    * 
-   * @param priceMapId
-   *        the ID of the price map to register
+   * @param priceMap
+   *        the price map to register
    */
-  void registerPriceMap(String priceMapId);
+  void registerPriceMap(FacilityPriceMap priceMap);
 
 }
