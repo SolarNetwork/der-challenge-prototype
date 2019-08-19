@@ -78,7 +78,7 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
    */
   public static final String STANDARD_DETAILED_INFO_FORMAT_S = "%-25s : %s";
 
-  private static final long serialVersionUID = -7129480554484502881L;
+  private static final long serialVersionUID = -8175511305516942720L;
 
   @Basic
   @Column(name = "START_AT")
@@ -115,6 +115,11 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
       foreignKey = @ForeignKey(name = "PRICE_MAP_OFFER_EVENTS_COUNTER_OFFER_FK"))
   private PriceMapEntity counterOffer;
   // @formatter:on
+
+  // CHECKSTYLE IGNORE LineLength FOR NEXT 2 LINES
+  @Basic
+  @Column(name = "FAC_PRICE_MAP_ID", nullable = true, insertable = true, updatable = false, length = 64)
+  private String facilityPriceMapId;
 
   /**
    * Default constructor.
@@ -459,6 +464,29 @@ public class PriceMapOfferEventEntity extends BaseUuidEntity implements Signable
    */
   public void setMessage(String message) {
     this.message = message;
+  }
+
+  /**
+   * Get the ID of the associated facility price map.
+   * 
+   * @return the facilityPriceMapId the facility price map ID
+   */
+  public String getFacilityPriceMapId() {
+    return facilityPriceMapId;
+  }
+
+  /**
+   * Set the ID of the associated facility price map.
+   * 
+   * <p>
+   * This must be configured if the offer is accepted.
+   * </p>
+   * 
+   * @param facilityPriceMapId
+   *        the facilityPriceMapId to set
+   */
+  public void setFacilityPriceMapId(String facilityPriceMapId) {
+    this.facilityPriceMapId = facilityPriceMapId;
   }
 
 }

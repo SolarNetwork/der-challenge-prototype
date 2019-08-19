@@ -17,6 +17,7 @@
 
 package net.solarnetwork.esi.solarnet.fac.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -55,6 +56,7 @@ public class SolarNetworkConfig {
     return new StaticAuthorizationCredentialsProvider(solarNetworkTokenId, solarNetworkTokenSecret);
   }
 
+  @Qualifier("solarnetwork")
   @Bean
   public RestTemplate solarNetworkRestTemplate() {
     return WebUtils.setupSolarNetworkClient(new RestTemplate(), solarNetworkCredentialsProvider());

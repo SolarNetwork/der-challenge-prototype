@@ -42,9 +42,11 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
 public class FacilityPriceMap extends BaseIdentity<String>
     implements SignableMessage, SolarNodeMetadataEntity {
 
-  private static final long serialVersionUID = 3850170946185087171L;
+  private static final long serialVersionUID = 5583797323664127094L;
 
+  private Long nodeId;
   private String groupUid;
+  private String controlId;
   private PriceMapEmbed priceMap;
 
   /**
@@ -103,7 +105,9 @@ public class FacilityPriceMap extends BaseIdentity<String>
     if (pm != null) {
       c.setPriceMap(pm.copy());
     }
+    c.setNodeId(getNodeId());
     c.setGroupUid(getGroupUid());
+    c.setControlId(getControlId());
     return c;
   }
 
@@ -166,6 +170,25 @@ public class FacilityPriceMap extends BaseIdentity<String>
   }
 
   /**
+   * Get the node ID.
+   * 
+   * @return the nodeId
+   */
+  public Long getNodeId() {
+    return nodeId;
+  }
+
+  /**
+   * Set the node ID.
+   * 
+   * @param nodeId
+   *        the nodeId to set
+   */
+  public void setNodeId(Long nodeId) {
+    this.nodeId = nodeId;
+  }
+
+  /**
    * Get the group ID.
    * 
    * @return the groupUid the group ID
@@ -182,6 +205,25 @@ public class FacilityPriceMap extends BaseIdentity<String>
    */
   public void setGroupUid(String groupUid) {
     this.groupUid = groupUid;
+  }
+
+  /**
+   * Get the associated SolarNode control ID for the device managed by this price map.
+   * 
+   * @return the control ID
+   */
+  public String getControlId() {
+    return controlId;
+  }
+
+  /**
+   * Set the associated SolarNode control ID for the device managed by this price map.
+   * 
+   * @param controlId
+   *        the control ID to set
+   */
+  public void setControlId(String controlId) {
+    this.controlId = controlId;
   }
 
   /**

@@ -32,8 +32,9 @@ import net.solarnetwork.esi.domain.support.SignableMessage;
 public class FacilityProgram extends BaseIdentity<String>
     implements SignableMessage, SolarNodeMetadataEntity {
 
-  private static final long serialVersionUID = -6562817725758573786L;
+  private static final long serialVersionUID = -4567434562049429502L;
 
+  private Long nodeId;
   private DerProgramType programType;
   private String priceMapId;
   private String priceMapGroupUid;
@@ -106,6 +107,26 @@ public class FacilityProgram extends BaseIdentity<String>
   public void addSignatureMessageBytes(ByteBuffer buf) {
     DerProgramType t = getProgramType();
     buf.putInt(t != null && t != DerProgramType.UNRECOGNIZED ? t.getNumber() : -1);
+  }
+
+  /**
+   * Get the node ID.
+   * 
+   * @return the nodeId
+   */
+  public Long getNodeId() {
+    return nodeId;
+  }
+
+  /**
+   * Set the node ID.
+   * 
+   * @param nodeId
+   *        the nodeId to set
+   */
+  @Override
+  public void setNodeId(Long nodeId) {
+    this.nodeId = nodeId;
   }
 
   /**

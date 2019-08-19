@@ -20,15 +20,21 @@ package net.solarnetwork.esi.solarnet.fac.config;
 import javax.annotation.Resource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.TaskScheduler;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.web.client.RestTemplate;
 
 import net.solarnetwork.esi.grpc.ChannelProvider;
 import net.solarnetwork.esi.solarnet.fac.dao.PriceMapOfferEventEntityDao;
-import net.solarnetwork.esi.solarnet.fac.impl.DaoPriceMapOfferExecutionService;
 import net.solarnetwork.esi.solarnet.fac.impl.DaoPriceMapService;
 import net.solarnetwork.esi.solarnet.fac.impl.PriceMapOfferExecutionManager;
+import net.solarnetwork.esi.solarnet.fac.impl.SnPriceMapOfferExecutionService;
 import net.solarnetwork.esi.solarnet.fac.service.FacilityService;
 import net.solarnetwork.esi.solarnet.fac.service.PriceMapOfferExecutionService;
 import net.solarnetwork.esi.solarnet.fac.service.PriceMapService;
@@ -42,6 +48,9 @@ import net.solarnetwork.esi.solarnet.fac.service.PriceMapService;
 @Configuration
 public class PriceMapOfferConfig {
 
+  @Value("${esi.facility.solarnetwork.instructionPollMs:2000")
+  private long instructionPollMs = 2000L;
+
   @Autowired
   private FacilityService facilityService;
 
@@ -53,6 +62,16 @@ public class PriceMapOfferConfig {
 
   @Resource(name = "afterCommitTransactionEventPublisher")
   private ApplicationEventPublisher eventPublisher;
+
+  @Qualifier("solarnetwork")
+  @Autowired
+  private RestTemplate solarNetworkClient;
+
+  @Autowired
+  private PlatformTransactionManager txManager;
+
+  @Autowired
+  private TaskScheduler taskScheduler;
 
   /**
    * The price map service.
@@ -73,10 +92,12 @@ public class PriceMapOfferConfig {
    */
   @Bean
   public PriceMapOfferExecutionService priceMapOfferExecutionService() {
-    DaoPriceMapOfferExecutionService service = new DaoPriceMapOfferExecutionService(facilityService,
-        offerEventDao);
+    SnPriceMapOfferExecutionService service = new SnPriceMapOfferExecutionService(taskScheduler,
+        facilityService, offerEventDao, solarNetworkClient);
     service.setEventPublisher(eventPublisher);
     service.setExchangeChannelProvider(exchangeChannelProvider);
+    service.setInstructionPollMs(instructionPollMs);
+    service.setTransactionTemplate(new TransactionTemplate(txManager));
     return service;
   }
 

@@ -35,4 +35,12 @@ public interface SolarNodeMetadataEntity extends Identity<String> {
    */
   void setId(String id);
 
+  /**
+   * Set the node ID.
+   * 
+   * @param nodeId
+   *        the node ID
+   */
+  void setNodeId(Long nodeId);
+
 }

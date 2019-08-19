@@ -11,6 +11,7 @@ esi:
       url: https://data.solarnetwork.net
       tokenId: PLEASE_PROVIDE_TOKEN_ID
       tokenSecret: PLEASE_PROVIDE_TOKEN_SECRET 
+      instructionPollMs: 2000
   registry:
     conn:
       uri: dns:///localhost:9090

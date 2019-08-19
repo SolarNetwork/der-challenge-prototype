@@ -100,6 +100,7 @@ public class DaoPriceMapService implements PriceMapService {
     for (FacilityPriceMap configuredPriceMap : facilityService.getPriceMaps()) {
       match = acceptablePriceMapForEvent(configuredPriceMap, event);
       if (match != null) {
+        event.setFacilityPriceMapId(configuredPriceMap.getId());
         break;
       }
     }

@@ -24,6 +24,7 @@ import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -160,6 +161,7 @@ public class DaoPriceMapServiceTests {
     assertThat("Result avaialble", result, notNullValue());
     assertThat("Offer accepted", result.isAccepted(), equalTo(false));
     assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer facility price map ID", result.getFacilityPriceMapId(), nullValue());
     assertThat("Offer waiting to execute", result.getExecutionState(),
         equalTo(PriceMapOfferExecutionState.DECLINED));
     assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
@@ -217,6 +219,8 @@ public class DaoPriceMapServiceTests {
     assertThat("Result avaialble", result, notNullValue());
     assertThat("Offer accepted", result.isAccepted(), equalTo(true));
     assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer facility price map ID", result.getFacilityPriceMapId(),
+        equalTo(facPriceMap.getId()));
     assertThat("Offer waiting to execute", result.getExecutionState(),
         equalTo(PriceMapOfferExecutionState.WAITING));
     assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
@@ -352,6 +356,8 @@ public class DaoPriceMapServiceTests {
     assertThat("Result avaialble", result, notNullValue());
     assertThat("Offer accepted", result.isAccepted(), equalTo(true));
     assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer facility price map ID", result.getFacilityPriceMapId(),
+        equalTo(facPriceMapOk.getId()));
     assertThat("Offer waiting to execute", result.getExecutionState(),
         equalTo(PriceMapOfferExecutionState.WAITING));
     assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
@@ -417,6 +423,8 @@ public class DaoPriceMapServiceTests {
     assertThat("Result avaialble", result, notNullValue());
     assertThat("Offer accepted", result.isAccepted(), equalTo(false));
     assertThat("Offer price map", result.offerPriceMap(), equalTo(facPriceMapExtort.priceMap()));
+    assertThat("Offer facility price map ID", result.getFacilityPriceMapId(),
+        equalTo(facPriceMapExtort.getId()));
     assertThat("Offer waiting to execute", result.getExecutionState(),
         equalTo(PriceMapOfferExecutionState.COUNTERED));
     assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
@@ -482,6 +490,7 @@ public class DaoPriceMapServiceTests {
     assertThat("Result avaialble", result, notNullValue());
     assertThat("Offer rejected", result.isAccepted(), equalTo(false));
     assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer facility price map ID", result.getFacilityPriceMapId(), nullValue());
     assertThat("Offer waiting to execute", result.getExecutionState(),
         equalTo(PriceMapOfferExecutionState.DECLINED));
     assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
@@ -541,6 +550,7 @@ public class DaoPriceMapServiceTests {
     assertThat("Result avaialble", result, notNullValue());
     assertThat("Offer rejected", result.isAccepted(), equalTo(false));
     assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer facility price map ID", result.getFacilityPriceMapId(), nullValue());
     assertThat("Offer waiting to execute", result.getExecutionState(),
         equalTo(PriceMapOfferExecutionState.DECLINED));
     assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));
@@ -601,6 +611,7 @@ public class DaoPriceMapServiceTests {
     assertThat("Result avaialble", result, notNullValue());
     assertThat("Offer rejected", result.isAccepted(), equalTo(false));
     assertThat("Offer price map", result.offerPriceMap(), equalTo(offerPriceMap));
+    assertThat("Offer facility price map ID", result.getFacilityPriceMapId(), nullValue());
     assertThat("Offer waiting to execute", result.getExecutionState(),
         equalTo(PriceMapOfferExecutionState.DECLINED));
     assertThat("Offer not completed", result.isCompletedSuccessfully(), equalTo(false));

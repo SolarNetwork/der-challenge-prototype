@@ -32,9 +32,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.StreamSupport;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -46,6 +43,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import net.solarnetwork.esi.solarnet.fac.dao.ReadableRepository;
 import net.solarnetwork.esi.solarnet.fac.domain.SolarNodeMetadataEntity;
+import net.solarnetwork.esi.solarnet.fac.impl.BaseSolarNetworkClientService;
 import net.solarnetwork.esi.solarnet.fac.impl.WebUtils;
 import net.solarnetwork.util.StringUtils;
 import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
@@ -61,15 +59,10 @@ import net.solarnetwork.web.security.AuthorizationCredentialsProvider;
  * @version 1.0
  */
 public abstract class BaseSolarNodeMetadataDao<T extends SolarNodeMetadataEntity>
-    implements ReadableRepository<T, String> {
+    extends BaseSolarNetworkClientService implements ReadableRepository<T, String> {
 
   private final Class<T> entityClass;
   private final String metadataRootKey;
-  private final RestTemplate client;
-  private String apiBaseUrl = "https://data.solarnetwork.net";
-
-  /** A class-level logger. */
-  protected final Logger log = LoggerFactory.getLogger(getClass());
 
   /**
    * Default constructor.
@@ -104,10 +97,9 @@ public abstract class BaseSolarNodeMetadataDao<T extends SolarNodeMetadataEntity
    */
   public BaseSolarNodeMetadataDao(Class<T> entityClass, String metadataRootKey,
       RestTemplate restTemplate) {
-    super();
+    super(restTemplate);
     this.entityClass = entityClass;
     this.metadataRootKey = metadataRootKey;
-    this.client = restTemplate;
   }
 
   /**
@@ -151,6 +143,7 @@ public abstract class BaseSolarNodeMetadataDao<T extends SolarNodeMetadataEntity
             if (e.getValue().isObject()) {
               T entity = mapper.treeToValue(e.getValue(), entityClass);
               entity.setId(e.getKey());
+              entity.setNodeId(nodeId.longValue());
               result.computeIfAbsent(nodeId, k -> new HashMap<>(8)).put(e.getKey(), entity);
             }
           }
@@ -225,45 +218,6 @@ public abstract class BaseSolarNodeMetadataDao<T extends SolarNodeMetadataEntity
       return json.path("data").path("results");
     }
     return MissingNode.getInstance();
-  }
-
-  /**
-   * Get a full API URL from a path segment.
-   * 
-   * @param path
-   *        the path
-   * @return the URL
-   */
-  protected String apiUrl(String path) {
-    return getApiBaseUrl() + path;
-  }
-
-  /**
-   * Get the configured RestOperations.
-   * 
-   * @return the RestOperations
-   */
-  public RestOperations getRestOperations() {
-    return client;
-  }
-
-  /**
-   * Set the SolarNetwork API base URL.
-   * 
-   * @param apiBaseUrl
-   *        the base URL to use
-   */
-  public void setApiBaseUrl(String apiBaseUrl) {
-    this.apiBaseUrl = apiBaseUrl;
-  }
-
-  /**
-   * Get the SolarNetwork API base URL.
-   * 
-   * @return the base URL to use; defaults to {@literal https://data.solarnetwork.net}
-   */
-  public String getApiBaseUrl() {
-    return apiBaseUrl;
   }
 
 }
