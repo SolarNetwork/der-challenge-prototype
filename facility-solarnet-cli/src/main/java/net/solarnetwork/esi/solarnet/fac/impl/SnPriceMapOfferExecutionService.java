@@ -76,7 +76,6 @@ import net.solarnetwork.esi.solarnet.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferEventEntity;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState;
-import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification.PriceMapOfferExecutionStateChanged;
 import net.solarnetwork.esi.solarnet.fac.service.FacilityService;
 import net.solarnetwork.esi.solarnet.fac.service.PriceMapOfferExecutionService;
@@ -163,7 +162,15 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
       FacilityPriceMap facPriceMap = StreamSupport
           .stream(facilityService.getPriceMaps().spliterator(), false)
           .filter(p -> facPriceMapId.equals(p.getId())).findFirst().get();
-      PriceMapOfferExecutionState newState = oldState;
+
+      // update state to Executing
+      offerEvent.setExecutionState(PriceMapOfferExecutionState.EXECUTING);
+      offerEvent = offerEventDao.save(offerEvent);
+      PriceMapOfferExecutionState newState = offerEvent.getExecutionState();
+      publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent, oldState, newState));
+      oldState = PriceMapOfferExecutionState.EXECUTING;
+
+      // now execute by issuing the appropriate instruction to SolarNetwork
       if (offerEvent.priceMap().getPowerComponents().isRealPowerNegative()) {
         MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<>(2);
         String controlId = facPriceMap.getControlId();
@@ -185,10 +192,6 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
                 .map(j -> j.path("id").longValue()).filter(l -> l > 0).collect(toSet());
             taskScheduler.schedule(new PriceMapInstructionPollTask(offerId, result, instructionIds),
                 Instant.now().plusMillis(instructionPollMs));
-            newState = PriceMapOfferExecutionState.EXECUTING;
-          } else {
-            offerEvent = resultEntity;
-            newState = offerEvent.getExecutionState();
           }
         } catch (JsonProcessingException | URISyntaxException e) {
           log.error("Error enqueuing ShedLoad node instruction for node {} parameters {}",
@@ -204,8 +207,7 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
       if (newState != oldState) {
         offerEvent.setExecutionState(newState);
         offerEvent = offerEventDao.save(offerEvent);
-        publishEvent(new PriceMapOfferNotification.PriceMapOfferExecutionStateChanged(offerEvent,
-            oldState, newState));
+        publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent, oldState, newState));
       }
     }
     result.complete(offerEvent);
@@ -296,7 +298,7 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
       offerEvent.setMessage(message);
     }
     offerEvent = offerEventDao.save(offerEvent);
-    publishEvent(new PriceMapOfferNotification.PriceMapOfferExecutionStateChanged(offerEvent,
+    publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent,
         PriceMapOfferExecutionState.EXECUTING, newState));
     return offerEvent;
   }
@@ -314,8 +316,7 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
       offerEvent.setExecutionState(newState);
       offerEvent.setCompletedSuccessfully(newState == PriceMapOfferExecutionState.COMPLETED);
       offerEvent = offerEventDao.save(offerEvent);
-      publishEvent(new PriceMapOfferNotification.PriceMapOfferExecutionStateChanged(offerEvent,
-          oldState, newState));
+      publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent, oldState, newState));
     }
     CompletableFuture<PriceMapOfferEventEntity> result = new CompletableFuture<>();
     result.complete(offerEvent);

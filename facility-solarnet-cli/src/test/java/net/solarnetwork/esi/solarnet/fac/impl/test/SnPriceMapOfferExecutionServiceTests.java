@@ -19,10 +19,17 @@ package net.solarnetwork.esi.solarnet.fac.impl.test;
 
 import static java.util.Collections.singleton;
 import static java.util.UUID.randomUUID;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.springframework.http.MediaType.APPLICATION_JSON_UTF8;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.header;
@@ -30,16 +37,17 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
-import java.io.IOException;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -56,6 +64,7 @@ import net.solarnetwork.esi.solarnet.fac.dao.PriceMapOfferEventEntityDao;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferEventEntity;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState;
+import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification.PriceMapOfferExecutionStateChanged;
 import net.solarnetwork.esi.solarnet.fac.impl.SnPriceMapOfferExecutionService;
 import net.solarnetwork.esi.solarnet.fac.impl.WebUtils;
 import net.solarnetwork.esi.solarnet.fac.service.FacilityService;
@@ -77,6 +86,7 @@ public class SnPriceMapOfferExecutionServiceTests {
   private TaskScheduler taskScheduler;
   private FacilityService facilityService;
   private PriceMapOfferEventEntityDao priceMapOfferDao;
+  private ApplicationEventPublisher eventPublisher;
   private SnPriceMapOfferExecutionService service;
 
   private MockRestServiceServer server;
@@ -89,15 +99,18 @@ public class SnPriceMapOfferExecutionServiceTests {
     taskScheduler = Mockito.mock(TaskScheduler.class);
     facilityService = Mockito.mock(FacilityService.class);
     priceMapOfferDao = Mockito.mock(PriceMapOfferEventEntityDao.class);
+    eventPublisher = mock(ApplicationEventPublisher.class);
+
     service = new SnPriceMapOfferExecutionService(taskScheduler, facilityService, priceMapOfferDao,
         restTemplate);
     service.setApiBaseUrl(TEST_BASE_URL);
+    service.setEventPublisher(eventPublisher);
 
     server = MockRestServiceServer.bindTo(restTemplate).build();
   }
 
   @Test
-  public void executeOffer() throws IOException {
+  public void executeOffer() throws Exception {
     // GIVEN
     final UUID offerId = UUID.randomUUID();
     final PriceMapEmbed offerPriceMap = new PriceMapEmbed();
@@ -115,14 +128,15 @@ public class SnPriceMapOfferExecutionServiceTests {
     offerEvent.setExecutionState(PriceMapOfferExecutionState.WAITING);
     given(priceMapOfferDao.findById(offerId)).willReturn(Optional.of(offerEvent));
 
-    Resource respResource = new ClassPathResource("instr-add-resp-01.json", getClass());
-    HttpHeaders respHeaders = new HttpHeaders();
-    respHeaders.setContentLength(respResource.contentLength());
-    MultiValueMap<String, String> expectedContent = new LinkedMultiValueMap<>(8);
-    expectedContent.add("topic", "ShedLoad");
-    expectedContent.add("nodeIds", facPriceMap.getNodeId().toString());
-    expectedContent.add("parameters[0].name", "/load/1");
-    expectedContent.add("parameters[0].value", "1000");
+    // invoke /instr/add API on SolarNetwork, which returns Completed state
+    Resource addResp = new ClassPathResource("instr-add-resp-01.json", getClass());
+    HttpHeaders addRespHeaders = new HttpHeaders();
+    addRespHeaders.setContentLength(addResp.contentLength());
+    MultiValueMap<String, String> addRespExpectedContent = new LinkedMultiValueMap<>(8);
+    addRespExpectedContent.add("topic", "ShedLoad");
+    addRespExpectedContent.add("nodeIds", facPriceMap.getNodeId().toString());
+    addRespExpectedContent.add("parameters[0].name", "/load/1");
+    addRespExpectedContent.add("parameters[0].value", "1000");
     // @formatter:off
     server.expect(requestTo(startsWith(TEST_BASE_URL + "/solaruser/api/v1/sec/instr/add")))
         .andExpect(method(HttpMethod.POST))
@@ -132,8 +146,8 @@ public class SnPriceMapOfferExecutionServiceTests {
             startsWith("SNWS2 Credential=" + credProvider.getAuthorizationId() 
                 + ",SignedHeaders=content-type;date;host,Signature=")))
         .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED))
-        .andExpect(content().formData(expectedContent))
-        .andRespond(withSuccess(respResource, APPLICATION_JSON_UTF8).headers(respHeaders));
+        .andExpect(content().formData(addRespExpectedContent))
+        .andRespond(withSuccess(addResp, APPLICATION_JSON_UTF8).headers(addRespHeaders));
     // @formatter:on
 
     given(priceMapOfferDao.save(offerEvent)).willReturn(offerEvent);
@@ -143,7 +157,138 @@ public class SnPriceMapOfferExecutionServiceTests {
 
     // THEN
     assertThat("Future returned", future, notNullValue());
-    Assert.fail("TODO");
+
+    Object result = future.get();
+    assertThat("Future result is offer entity", result, sameInstance(offerEvent));
+    assertThat("Offet state completed", offerEvent.getExecutionState(),
+        equalTo(PriceMapOfferExecutionState.COMPLETED));
+
+    // verify state notifications WAITING -> EXECUTING -> COMPLETED
+    ArgumentCaptor<PriceMapOfferExecutionStateChanged> eventCaptor = ArgumentCaptor
+        .forClass(PriceMapOfferExecutionStateChanged.class);
+    verify(eventPublisher, times(2)).publishEvent(eventCaptor.capture());
+
+    List<PriceMapOfferExecutionStateChanged> evts = eventCaptor.getAllValues();
+    PriceMapOfferExecutionStateChanged evt1 = evts.get(0);
+    assertThat("Event 1 source same as persisted", evt1.getSource(), sameInstance(offerEvent));
+    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 1 old state", evt1.getOldState(),
+        equalTo(PriceMapOfferExecutionState.WAITING));
+    assertThat("Event 1 new state", evt1.getNewState(),
+        equalTo(PriceMapOfferExecutionState.EXECUTING));
+
+    PriceMapOfferExecutionStateChanged evt2 = evts.get(1);
+    assertThat("Event 2 source same as persisted", evt2.getSource(), sameInstance(offerEvent));
+    assertThat("Event 2 entity same as persisted", evt2.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 2 old state", evt2.getOldState(),
+        equalTo(PriceMapOfferExecutionState.EXECUTING));
+    assertThat("Event 2 new state", evt2.getNewState(),
+        equalTo(PriceMapOfferExecutionState.COMPLETED));
+
+    // verify no task needed
+    verify(taskScheduler, never()).schedule(any(Runnable.class), any(Instant.class));
+  }
+
+  @Test
+  public void executeOfferViaQueuedStateDelay() throws Exception {
+    // GIVEN
+    final UUID offerId = UUID.randomUUID();
+    final PriceMapEmbed offerPriceMap = new PriceMapEmbed();
+    offerPriceMap.powerComponents().setRealPower(-1000L); // shed 1kW
+
+    final FacilityPriceMap facPriceMap = new FacilityPriceMap(UUID.randomUUID().toString(),
+        offerPriceMap);
+    facPriceMap.setControlId("/load/1");
+    facPriceMap.setNodeId(123L);
+    given(facilityService.getPriceMaps()).willReturn(singleton(facPriceMap));
+
+    final PriceMapOfferEventEntity offerEvent = new PriceMapOfferEventEntity(Instant.now(), offerId,
+        Instant.now(), offerPriceMap);
+    offerEvent.setFacilityPriceMapId(facPriceMap.getId());
+    offerEvent.setExecutionState(PriceMapOfferExecutionState.WAITING);
+    given(priceMapOfferDao.findById(offerId)).willReturn(Optional.of(offerEvent));
+
+    // invoke /instr/add API on SolarNetwork, which returns Queued state
+    Resource addResp = new ClassPathResource("instr-add-resp-02.json", getClass());
+    HttpHeaders addRespHeaders = new HttpHeaders();
+    addRespHeaders.setContentLength(addResp.contentLength());
+    MultiValueMap<String, String> addRespExpectedContent = new LinkedMultiValueMap<>(8);
+    addRespExpectedContent.add("topic", "ShedLoad");
+    addRespExpectedContent.add("nodeIds", facPriceMap.getNodeId().toString());
+    addRespExpectedContent.add("parameters[0].name", "/load/1");
+    addRespExpectedContent.add("parameters[0].value", "1000");
+    // @formatter:off
+    server.expect(requestTo(startsWith(TEST_BASE_URL + "/solaruser/api/v1/sec/instr/add")))
+        .andExpect(method(HttpMethod.POST))
+        .andExpect(header(HttpHeaders.HOST, "localhost"))
+        .andExpect(header(HttpHeaders.ACCEPT_ENCODING, "gzip,deflate"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, 
+            startsWith("SNWS2 Credential=" + credProvider.getAuthorizationId() 
+                + ",SignedHeaders=content-type;date;host,Signature=")))
+        .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED))
+        .andExpect(content().formData(addRespExpectedContent))
+        .andRespond(withSuccess(addResp, APPLICATION_JSON_UTF8).headers(addRespHeaders));
+    // @formatter:on
+
+    given(priceMapOfferDao.save(offerEvent)).willReturn(offerEvent);
+
+    ArgumentCaptor<Runnable> taskCaptor = ArgumentCaptor.forClass(Runnable.class);
+    given(taskScheduler.schedule(taskCaptor.capture(), any(Instant.class))).willReturn(null);
+
+    // invoke /instr/view API on SolarNetwork, which returns Completed state
+    Resource viewResp = new ClassPathResource("instr-view-resp-01.json", getClass());
+    HttpHeaders viewRespHeaders = new HttpHeaders();
+    viewRespHeaders.setContentLength(viewResp.contentLength());
+    MultiValueMap<String, String> viewRespExpectedContent = new LinkedMultiValueMap<>(8);
+    viewRespExpectedContent.add("ids", "123456799");
+    // @formatter:off
+    server.expect(requestTo(startsWith(TEST_BASE_URL + "/solaruser/api/v1/sec/instr/view")))
+        .andExpect(method(HttpMethod.GET))
+        .andExpect(header(HttpHeaders.HOST, "localhost"))
+        .andExpect(header(HttpHeaders.ACCEPT_ENCODING, "gzip,deflate"))
+        .andExpect(header(HttpHeaders.AUTHORIZATION, 
+            startsWith("SNWS2 Credential=" + credProvider.getAuthorizationId() 
+                + ",SignedHeaders=date;host,Signature=")))
+        .andRespond(withSuccess(viewResp, APPLICATION_JSON_UTF8).headers(viewRespHeaders));
+    // @formatter:on
+
+    // WHEN
+    CompletableFuture<?> future = service.executePriceMapOfferEvent(offerId);
+
+    // THEN
+    assertThat("Future returned", future, notNullValue());
+
+    assertThat("Instruction state poll task scheduled", taskCaptor.getValue(), notNullValue());
+
+    // run the task now, so we can wait for future result
+    taskCaptor.getValue().run();
+
+    Object result = future.get();
+    assertThat("Future result is offer entity", result, sameInstance(offerEvent));
+    assertThat("Offet state completed", offerEvent.getExecutionState(),
+        equalTo(PriceMapOfferExecutionState.COMPLETED));
+
+    // verify state notifications WAITING -> EXECUTING -> COMPLETED
+    ArgumentCaptor<PriceMapOfferExecutionStateChanged> eventCaptor = ArgumentCaptor
+        .forClass(PriceMapOfferExecutionStateChanged.class);
+    verify(eventPublisher, times(2)).publishEvent(eventCaptor.capture());
+
+    List<PriceMapOfferExecutionStateChanged> evts = eventCaptor.getAllValues();
+    PriceMapOfferExecutionStateChanged evt1 = evts.get(0);
+    assertThat("Event 1 source same as persisted", evt1.getSource(), sameInstance(offerEvent));
+    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 1 old state", evt1.getOldState(),
+        equalTo(PriceMapOfferExecutionState.WAITING));
+    assertThat("Event 1 new state", evt1.getNewState(),
+        equalTo(PriceMapOfferExecutionState.EXECUTING));
+
+    PriceMapOfferExecutionStateChanged evt2 = evts.get(1);
+    assertThat("Event 2 source same as persisted", evt2.getSource(), sameInstance(offerEvent));
+    assertThat("Event 2 entity same as persisted", evt2.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 2 old state", evt2.getOldState(),
+        equalTo(PriceMapOfferExecutionState.EXECUTING));
+    assertThat("Event 2 new state", evt2.getNewState(),
+        equalTo(PriceMapOfferExecutionState.COMPLETED));
   }
 
 }
