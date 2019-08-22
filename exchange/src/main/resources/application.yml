@@ -1,6 +1,7 @@
 logging:
   level:
     ROOT: INFO
+    org.apache.catalina.loader: OFF
   pattern:
     console: "${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39}: %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
     file:  "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
@@ -14,6 +15,14 @@ grpc:
   server:
     port: 9091
     address: "0.0.0.0"
+
+management:
+  endpoint.health:
+     sensitive: false
+     show-details: always
+  endpoints.web:
+    base-path: /manage
+    exposure.include: info, health, metrics
 
 server:
   port: 8081
