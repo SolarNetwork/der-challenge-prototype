@@ -20,6 +20,10 @@ package net.solarnetwork.esi.solarnet.fac.impl;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.stream.Collectors.toSet;
+import static net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState.ABORTED;
+import static net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState.COMPLETED;
+import static net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState.EXECUTING;
+import static net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState.WAITING;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static net.solarnetwork.esi.util.CryptoUtils.validateMessageSignature;
 
@@ -159,17 +163,20 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
 
     final CompletableFuture<PriceMapOfferEventEntity> result = new CompletableFuture<>();
     PriceMapOfferExecutionState oldState = offerEvent.executionState();
-    if (oldState == PriceMapOfferExecutionState.WAITING) {
+    if (oldState != WAITING) {
+      result.completeExceptionally(new IllegalArgumentException(
+          "Offer event " + offerId + " is not waiting to execute; current state is " + oldState));
+    } else {
       FacilityPriceMap facPriceMap = StreamSupport
           .stream(facilityService.getPriceMaps().spliterator(), false)
           .filter(p -> facPriceMapId.equals(p.getId())).findFirst().get();
 
-      // update state to Executing
-      offerEvent.setExecutionState(PriceMapOfferExecutionState.EXECUTING);
+      // update state to Executing right away
+      offerEvent.setExecutionState(EXECUTING);
       offerEvent = offerEventDao.save(offerEvent);
       PriceMapOfferExecutionState newState = offerEvent.getExecutionState();
       publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent, oldState, newState));
-      oldState = PriceMapOfferExecutionState.EXECUTING;
+      oldState = EXECUTING;
 
       // now execute by issuing the appropriate instruction to SolarNetwork
       if (offerEvent.priceMap().getPowerComponents().isRealPowerNegative()) {
@@ -187,31 +194,34 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
         try {
           JsonNode statuses = enqueueInstruction("ShedLoad", singleton(facPriceMap.getNodeId()),
               parameters);
-          PriceMapOfferEventEntity resultEntity = checkStatus(offerId, statuses);
-          if (resultEntity == null) {
+          PriceMapOfferEventEntity resultEntity = checkStatus(offerId, statuses, EXECUTING,
+              EXECUTING);
+          if (resultEntity != null) {
+            result.complete(offerEvent);
+          } else {
             Set<Long> instructionIds = StreamSupport.stream(statuses.spliterator(), false)
                 .map(j -> j.path("id").longValue()).filter(l -> l > 0).collect(toSet());
-            taskScheduler.schedule(new PriceMapInstructionPollTask(offerId, result, instructionIds),
-                Instant.now().plusMillis(instructionPollMs));
+            taskScheduler.schedule(new PriceMapInstructionPollTask(offerId, result, instructionIds,
+                EXECUTING, EXECUTING), Instant.now().plusMillis(instructionPollMs));
           }
         } catch (JsonProcessingException | URISyntaxException | IllegalArgumentException e) {
           log.error("Error enqueuing ShedLoad node instruction for node {} parameters {}: {}",
               facPriceMap.getNodeId(), parameters, e.toString());
-          newState = PriceMapOfferExecutionState.ABORTED;
+          newState = ABORTED;
           offerEvent.setMessage("Error enqueuing node instruction: " + e.toString());
         }
       } else {
         // TODO: we don't support supply load yet
-        newState = PriceMapOfferExecutionState.ABORTED;
+        newState = ABORTED;
         offerEvent.setMessage("Positive power (supply) not supported yet.");
       }
       if (newState != oldState) {
         offerEvent.setExecutionState(newState);
         offerEvent = offerEventDao.save(offerEvent);
         publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent, oldState, newState));
+        result.complete(offerEvent);
       }
     }
-    result.complete(offerEvent);
     return result;
   }
 
@@ -220,13 +230,18 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
     private final UUID offerId;
     private final CompletableFuture<PriceMapOfferEventEntity> result;
     private final Set<Long> instructionIds;
+    private final PriceMapOfferExecutionState currentState;
+    private final PriceMapOfferExecutionState successState;
 
     private PriceMapInstructionPollTask(UUID offerId,
-        CompletableFuture<PriceMapOfferEventEntity> result, Set<Long> instructionIds) {
+        CompletableFuture<PriceMapOfferEventEntity> result, Set<Long> instructionIds,
+        PriceMapOfferExecutionState currentState, PriceMapOfferExecutionState successState) {
       super();
       this.offerId = offerId;
       this.result = result;
       this.instructionIds = instructionIds;
+      this.currentState = currentState;
+      this.successState = successState;
     }
 
     @Override
@@ -240,11 +255,11 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
 
             @Override
             public PriceMapOfferEventEntity doInTransaction(TransactionStatus status) {
-              return checkStatus(offerId, statuses);
+              return checkStatus(offerId, statuses, currentState, successState);
             }
           });
         } else {
-          entity = checkStatus(offerId, statuses);
+          entity = checkStatus(offerId, statuses, currentState, successState);
         }
         if (entity == null) {
           // enqueue task again
@@ -254,37 +269,37 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
         }
       } catch (JsonProcessingException | URISyntaxException | IllegalArgumentException e) {
         log.error("Error viewing node instructions {} status: {}", instructionIds, e.toString());
-        updateOfferState(offerId, PriceMapOfferExecutionState.ABORTED,
-            "Error checking instruction status: " + e.toString());
+        updateOfferState(offerId, ABORTED, "Error checking instruction status: " + e.toString());
         result.completeExceptionally(e);
       }
     }
   }
 
-  private PriceMapOfferEventEntity checkStatus(UUID offerId, JsonNode statuses) {
+  private PriceMapOfferEventEntity checkStatus(UUID offerId, JsonNode statuses,
+      PriceMapOfferExecutionState currentState, PriceMapOfferExecutionState successState) {
     // if ANY instruction goes to Declined, then entire status is ABORTED;
-    // if ALL instructions go to Completed, then entire status is COMPLETED
-    PriceMapOfferExecutionState newState = PriceMapOfferExecutionState.EXECUTING;
+    // if ALL instructions go to Completed, then entire status is successState
+    PriceMapOfferExecutionState newState = null;
     String message = null;
     for (JsonNode instr : statuses) {
       Long instructionId = (instr != null ? instr.path("id").longValue() : null);
       if (instructionId == null) {
-        newState = PriceMapOfferExecutionState.ABORTED;
+        newState = ABORTED;
         message = "Error viewing node instruction status: no instruction ID available.";
         break;
       }
       String state = instr.path("state").asText();
       if (state.equals("Declined")) {
-        newState = PriceMapOfferExecutionState.ABORTED;
+        newState = ABORTED;
         message = "Node declined instruction.";
         break;
       } else if (state.equals("Completed")) {
-        newState = PriceMapOfferExecutionState.COMPLETED;
+        newState = successState;
       } else {
-        newState = PriceMapOfferExecutionState.EXECUTING;
+        newState = null;
       }
     }
-    if (newState == PriceMapOfferExecutionState.EXECUTING) {
+    if (newState == null) {
       return null;
     }
     return updateOfferState(offerId, newState, message);
@@ -294,13 +309,15 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
       PriceMapOfferExecutionState newState, String message) {
     PriceMapOfferEventEntity offerEvent = offerEventDao.findById(offerId).orElseThrow(
         () -> new IllegalArgumentException("Offer event " + offerId + " not available."));
-    offerEvent.setExecutionState(newState);
-    if (message != null) {
-      offerEvent.setMessage(message);
+    final PriceMapOfferExecutionState currState = offerEvent.getExecutionState();
+    if (newState != currState) {
+      offerEvent.setExecutionState(newState);
+      if (message != null) {
+        offerEvent.setMessage(message);
+      }
+      offerEvent = offerEventDao.save(offerEvent);
+      publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent, currState, newState));
     }
-    offerEvent = offerEventDao.save(offerEvent);
-    publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent,
-        PriceMapOfferExecutionState.EXECUTING, newState));
     return offerEvent;
   }
 
@@ -311,16 +328,58 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
     log.info("Finishing execution of price map offer {}", offerId);
     PriceMapOfferEventEntity offerEvent = offerEventDao.findById(offerId).orElseThrow(
         () -> new IllegalArgumentException("Offer event " + offerId + " not available."));
-    // we don't actually do anything to execute, other than mark the entity as executing
-    PriceMapOfferExecutionState oldState = offerEvent.executionState();
-    if (oldState == PriceMapOfferExecutionState.EXECUTING) {
-      offerEvent.setExecutionState(newState);
-      offerEvent.setCompletedSuccessfully(newState == PriceMapOfferExecutionState.COMPLETED);
-      offerEvent = offerEventDao.save(offerEvent);
-      publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent, oldState, newState));
+    final String facPriceMapId = offerEvent.getFacilityPriceMapId();
+    if (facPriceMapId == null) {
+      throw new IllegalArgumentException("The facility price map ID must be provided.");
     }
-    CompletableFuture<PriceMapOfferEventEntity> result = new CompletableFuture<>();
-    result.complete(offerEvent);
+
+    final CompletableFuture<PriceMapOfferEventEntity> result = new CompletableFuture<>();
+    PriceMapOfferExecutionState oldState = offerEvent.executionState();
+    if (oldState != EXECUTING) {
+      result.completeExceptionally(new IllegalArgumentException(
+          "Offer event " + offerId + " is not waiting to end; current state is " + oldState));
+    } else {
+      FacilityPriceMap facPriceMap = StreamSupport
+          .stream(facilityService.getPriceMaps().spliterator(), false)
+          .filter(p -> facPriceMapId.equals(p.getId())).findFirst().get();
+
+      // now end by issuing the appropriate instruction to SolarNetwork
+      MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<>(2);
+      String controlId = facPriceMap.getControlId();
+      if (controlId == null || controlId.trim().isEmpty()) {
+        throw new IllegalArgumentException("The facility price map has no control ID configured.");
+      }
+      Long nodeId = facPriceMap.getNodeId();
+      if (nodeId == null) {
+        throw new IllegalArgumentException("The facility price map has no node ID configured.");
+      }
+      parameters.add(controlId, 0); // 0 means stop load management
+      try {
+        JsonNode statuses = enqueueInstruction("ShedLoad", singleton(facPriceMap.getNodeId()),
+            parameters);
+        PriceMapOfferEventEntity resultEntity = checkStatus(offerId, statuses, EXECUTING,
+            COMPLETED);
+        if (resultEntity != null) {
+          result.complete(offerEvent);
+        } else {
+          Set<Long> instructionIds = StreamSupport.stream(statuses.spliterator(), false)
+              .map(j -> j.path("id").longValue()).filter(l -> l > 0).collect(toSet());
+          taskScheduler.schedule(new PriceMapInstructionPollTask(offerId, result, instructionIds,
+              EXECUTING, COMPLETED), Instant.now().plusMillis(instructionPollMs));
+        }
+      } catch (JsonProcessingException | URISyntaxException | IllegalArgumentException e) {
+        log.error("Error enqueuing ShedLoad node instruction for node {} parameters {}: {}",
+            facPriceMap.getNodeId(), parameters, e.toString());
+        newState = ABORTED;
+        offerEvent.setMessage("Error enqueuing node instruction: " + e.toString());
+      }
+      if (newState != oldState) {
+        offerEvent.setExecutionState(newState);
+        offerEvent = offerEventDao.save(offerEvent);
+        publishEvent(new PriceMapOfferExecutionStateChanged(offerEvent, oldState, newState));
+        result.complete(offerEvent);
+      }
+    }
     return result;
   }
 
