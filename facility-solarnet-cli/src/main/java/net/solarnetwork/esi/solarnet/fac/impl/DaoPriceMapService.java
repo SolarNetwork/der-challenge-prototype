@@ -140,10 +140,10 @@ public class DaoPriceMapService implements PriceMapService {
       return null;
     }
 
-    if ((offerPriceMap.powerComponents().isRealPowerNegative() != priceMap.powerComponents()
-        .isRealPowerNegative())
-        || (offerPriceMap.powerComponents().isReactivePowerNegative() != priceMap.powerComponents()
-            .isReactivePowerNegative())) {
+    if ((offerPriceMap.powerComponents().hasRealPower() && offerPriceMap.powerComponents()
+        .isRealPowerNegative() != priceMap.powerComponents().isRealPowerNegative())
+        || (offerPriceMap.powerComponents().hasReactivePower() && offerPriceMap.powerComponents()
+            .isReactivePowerNegative() != priceMap.powerComponents().isReactivePowerNegative())) {
       log.info(
           "Price map offer {} not supported by price map {} because of power direction mismatch",
           event.getId(), supportedPriceMap.getId());

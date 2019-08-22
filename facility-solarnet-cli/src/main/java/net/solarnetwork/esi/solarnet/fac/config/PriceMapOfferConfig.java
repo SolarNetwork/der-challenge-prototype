@@ -48,7 +48,7 @@ import net.solarnetwork.esi.solarnet.fac.service.PriceMapService;
 @Configuration
 public class PriceMapOfferConfig {
 
-  @Value("${esi.facility.solarnetwork.instructionPollMs:2000")
+  @Value("${esi.facility.solarnetwork.instructionPollMs:2000}")
   private long instructionPollMs = 2000L;
 
   @Autowired
@@ -66,6 +66,10 @@ public class PriceMapOfferConfig {
   @Qualifier("solarnetwork")
   @Autowired
   private RestTemplate solarNetworkClient;
+
+  @Qualifier("solarnetwork-base-url")
+  @Autowired
+  private String solarNetworkBaseUrl;
 
   @Autowired
   private PlatformTransactionManager txManager;
@@ -94,6 +98,7 @@ public class PriceMapOfferConfig {
   public PriceMapOfferExecutionService priceMapOfferExecutionService() {
     SnPriceMapOfferExecutionService service = new SnPriceMapOfferExecutionService(taskScheduler,
         facilityService, offerEventDao, solarNetworkClient);
+    service.setApiBaseUrl(solarNetworkBaseUrl);
     service.setEventPublisher(eventPublisher);
     service.setExchangeChannelProvider(exchangeChannelProvider);
     service.setInstructionPollMs(instructionPollMs);

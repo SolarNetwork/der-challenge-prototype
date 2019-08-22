@@ -184,10 +184,29 @@ public class PriceMapOfferExecutionManager {
               for (PriceMapExecutionScheduledEvent offer : offersToManage) {
                 // TODO: handle results, and re-schedule if they don't complete;
                 // must be handled by a different thread though
-                if (offer.newState == PriceMapOfferExecutionState.EXECUTING) {
-                  offerExecutionService.executePriceMapOfferEvent(offer.offerId);
-                } else {
-                  offerExecutionService.endPriceMapOfferEvent(offer.offerId, offer.newState);
+                try {
+                  if (offer.newState == PriceMapOfferExecutionState.EXECUTING) {
+                    offerExecutionService.executePriceMapOfferEvent(offer.offerId)
+                        .whenComplete((o, t) -> {
+                          if (t != null) {
+                            log.error("Offer {} execution threw an exception.", offer.offerId, t);
+                          } else {
+                            log.info("Offer {} execution completed with result: {}", offer.offerId,
+                                o);
+                          }
+                        });
+                  } else {
+                    offerExecutionService.endPriceMapOfferEvent(offer.offerId, offer.newState)
+                        .whenComplete((o, t) -> {
+                          if (t != null) {
+                            log.error("Offer {} ending threw an exception.", offer.offerId, t);
+                          } else {
+                            log.info("Offer {} ending completed with result: {}", offer.offerId, o);
+                          }
+                        });
+                  }
+                } catch (Exception e) {
+                  log.error("Error executing price map offer {}", offer.offerId, e);
                 }
               }
             }

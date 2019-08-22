@@ -56,6 +56,12 @@ public class SolarNetworkConfig {
     return new StaticAuthorizationCredentialsProvider(solarNetworkTokenId, solarNetworkTokenSecret);
   }
 
+  @Qualifier("solarnetwork-base-url")
+  @Bean
+  public String solarNetworkBaseUrl() {
+    return solarNetworkBaseUrl;
+  }
+
   @Qualifier("solarnetwork")
   @Bean
   public RestTemplate solarNetworkRestTemplate() {

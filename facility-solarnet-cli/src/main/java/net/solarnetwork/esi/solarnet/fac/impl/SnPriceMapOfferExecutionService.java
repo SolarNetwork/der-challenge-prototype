@@ -52,6 +52,7 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -193,9 +194,9 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
             taskScheduler.schedule(new PriceMapInstructionPollTask(offerId, result, instructionIds),
                 Instant.now().plusMillis(instructionPollMs));
           }
-        } catch (JsonProcessingException | URISyntaxException e) {
-          log.error("Error enqueuing ShedLoad node instruction for node {} parameters {}",
-              facPriceMap.getNodeId(), parameters, e);
+        } catch (JsonProcessingException | URISyntaxException | IllegalArgumentException e) {
+          log.error("Error enqueuing ShedLoad node instruction for node {} parameters {}: {}",
+              facPriceMap.getNodeId(), parameters, e.toString());
           newState = PriceMapOfferExecutionState.ABORTED;
           offerEvent.setMessage("Error enqueuing node instruction: " + e.toString());
         }
@@ -251,8 +252,8 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
         } else {
           result.complete(entity);
         }
-      } catch (JsonProcessingException | URISyntaxException e) {
-        log.error("Error viewing node instruction status: {}", e.toString(), e);
+      } catch (JsonProcessingException | URISyntaxException | IllegalArgumentException e) {
+        log.error("Error viewing node instructions {} status: {}", instructionIds, e.toString());
         updateOfferState(offerId, PriceMapOfferExecutionState.ABORTED,
             "Error checking instruction status: " + e.toString());
         result.completeExceptionally(e);
@@ -370,14 +371,19 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
     String url = uriBuilder.toUriString();
     log.info("Enqueuing SolarNetwork instruction {} for nodes {} with parameters: {}", topic,
         nodeIds, params);
-    ObjectNode json = getRestOperations().postForObject(new URI(url), request, ObjectNode.class);
-    if (json != null && json.findPath("success").booleanValue()) {
-      JsonNode data = json.path("data");
-      if (data.isArray() && data.size() > 0) {
-        return data;
+    try {
+      ObjectNode json = getRestOperations().postForObject(new URI(url), request, ObjectNode.class);
+      if (json != null && json.findPath("success").booleanValue()) {
+        JsonNode data = json.path("data");
+        if (data.isArray() && data.size() > 0) {
+          return data;
+        }
       }
+      return MissingNode.getInstance();
+    } catch (HttpClientErrorException.Unauthorized e) {
+      throw new IllegalArgumentException("Access denied by SolarNetwork on POST request to "
+          + uriBuilder.toUriString() + "; check the configured SolarNetwork credentials");
     }
-    return MissingNode.getInstance();
   }
 
   private JsonNode instructionStatus(Set<Long> instructionIds)
@@ -386,15 +392,20 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
         .fromHttpUrl(apiUrl("/solaruser/api/v1/sec/instr/view"))
         .queryParam("ids", StringUtils.commaDelimitedStringFromCollection(instructionIds));
     log.info("Checking SolarNetwork instruction statuses: {}", instructionIds);
-    ObjectNode json = getRestOperations().getForObject(new URI(uriBuilder.toUriString()),
-        ObjectNode.class);
-    if (json != null && json.findPath("success").booleanValue()) {
-      JsonNode data = json.path("data");
-      if (data.isArray() && data.size() > 0) {
-        return data;
+    try {
+      ObjectNode json = getRestOperations().getForObject(new URI(uriBuilder.toUriString()),
+          ObjectNode.class);
+      if (json != null && json.findPath("success").booleanValue()) {
+        JsonNode data = json.path("data");
+        if (data.isArray() && data.size() > 0) {
+          return data;
+        }
       }
+      return MissingNode.getInstance();
+    } catch (HttpClientErrorException.Unauthorized e) {
+      throw new IllegalArgumentException("Access denied by SolarNetwork on GET request to "
+          + uriBuilder.toUriString() + "; check the configured SolarNetwork credentials");
     }
-    return MissingNode.getInstance();
   }
 
   private void publishPriceMapOfferStatus(PriceMapOfferEventEntity entity,
