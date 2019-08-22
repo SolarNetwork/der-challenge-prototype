@@ -206,8 +206,8 @@ public class FacilityPriceMapOfferEntity extends BaseUuidEntity implements Signa
     return toDetailedInfoString(Locale.getDefault(), messageSource,
         PriceMapEmbed.STANDARD_DETAILED_INFO_FORMAT, STANDARD_DETAILED_INFO_FORMAT_S,
         STANDARD_DETAILED_INFO_CODE_PREFIX,
-        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT), ZoneId.systemDefault(),
-        PriceMapEmbed.STANDARD_DETAILED_INFO_CODE_PREFIX);
+        DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.MEDIUM),
+        ZoneId.systemDefault(), PriceMapEmbed.STANDARD_DETAILED_INFO_CODE_PREFIX);
   }
 
   /**
