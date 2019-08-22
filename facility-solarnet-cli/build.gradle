@@ -53,7 +53,7 @@ dependencies {
 
 	// SolarNetwork
 	implementation 'net.solarnetwork.common:net.solarnetwork.common:1.52.0'
-	implementation 'net.solarnetwork.common:net.solarnetwork.common.web:1.16.0'
+	implementation 'net.solarnetwork.common:net.solarnetwork.common.web:1.16.1'
 	implementation 'net.solarnetwork.central:net.solarnetwork.central.common:1.48.1'
 	implementation 'net.solarnetwork.central:net.solarnetwork.central.common.security:1.16.0'
 	implementation 'net.solarnetwork.central:net.solarnetwork.central.common.web:1.20.1'
