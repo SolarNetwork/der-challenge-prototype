@@ -25,7 +25,6 @@ import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -57,6 +56,7 @@ import net.solarnetwork.esi.domain.support.ProtobufUtils;
 import net.solarnetwork.esi.solarnet.fac.dao.PriceMapOfferEventEntityDao;
 import net.solarnetwork.esi.solarnet.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMapOfferEvent;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferEventEntity;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification.PriceMapOfferAccepted;
@@ -230,8 +230,8 @@ public class DaoPriceMapServiceTests {
     verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
     PriceMapOfferAccepted evt = eventCaptor.getValue();
-    assertThat("Event entity same as persisted", evt.getSource(),
-        sameInstance(offerEventCaptor.getValue()));
+    assertThat("Event entity equal to persisted", evt.getOfferEvent(),
+        equalTo(new FacilityPriceMapOfferEvent(offerEventCaptor.getValue())));
   }
 
   @Test
@@ -293,8 +293,8 @@ public class DaoPriceMapServiceTests {
     verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
     PriceMapOfferAccepted evt = eventCaptor.getValue();
-    assertThat("Event entity same as persisted", evt.getSource(),
-        sameInstance(offerEventCaptor.getValue()));
+    assertThat("Event entity same as persisted", evt.getOfferEvent(),
+        equalTo(new FacilityPriceMapOfferEvent(offerEventCaptor.getValue())));
   }
 
   @Test
@@ -367,8 +367,8 @@ public class DaoPriceMapServiceTests {
     verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
     PriceMapOfferAccepted evt = eventCaptor.getValue();
-    assertThat("Event entity same as persisted", evt.getSource(),
-        sameInstance(offerEventCaptor.getValue()));
+    assertThat("Event entity same as persisted", evt.getOfferEvent(),
+        equalTo(new FacilityPriceMapOfferEvent(offerEventCaptor.getValue())));
   }
 
   @Test
@@ -434,8 +434,8 @@ public class DaoPriceMapServiceTests {
     verify(eventPublisher, times(1)).publishEvent(eventCaptor.capture());
 
     PriceMapOfferCountered evt = eventCaptor.getValue();
-    assertThat("Event entity same as persisted", evt.getSource(),
-        sameInstance(offerEventCaptor.getValue()));
+    assertThat("Event entity same as persisted", evt.getOfferEvent(),
+        equalTo(new FacilityPriceMapOfferEvent(offerEventCaptor.getValue())));
   }
 
   @Test

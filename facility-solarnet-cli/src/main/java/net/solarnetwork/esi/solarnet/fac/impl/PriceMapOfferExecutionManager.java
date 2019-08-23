@@ -38,10 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
-import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferEventEntity;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMapOfferEvent;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification.PriceMapOfferAccepted;
 import net.solarnetwork.esi.solarnet.fac.service.PriceMapOfferExecutionService;
@@ -228,19 +226,19 @@ public class PriceMapOfferExecutionManager {
    */
   @Async
   @EventListener
-  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
   public void handlePriceMapOfferAccpeted(PriceMapOfferAccepted event) {
-    PriceMapOfferEventEntity entity = event.getOfferEvent();
-    if (!(entity.isAccepted()
-        && entity.getExecutionState() == PriceMapOfferExecutionState.WAITING)) {
+    FacilityPriceMapOfferEvent offerEvent = event.getOfferEvent();
+    if (!(offerEvent.isAccepted()
+        && offerEvent.getExecutionState() == PriceMapOfferExecutionState.WAITING)) {
       return;
     }
-    log.info("Scheduling execution task for offer {} @ {}", entity.getId(), entity.getStartDate());
+    log.info("Scheduling execution task for offer {} @ {}", offerEvent.getId(),
+        offerEvent.getStartDate());
     pending.addAll(asList(
-        new PriceMapExecutionScheduledEvent(entity.getId(), entity.getStartDate(),
+        new PriceMapExecutionScheduledEvent(offerEvent.getId(), offerEvent.getStartDate(),
             PriceMapOfferExecutionState.EXECUTING),
-        new PriceMapExecutionScheduledEvent(entity.getId(),
-            entity.getStartDate().plus(entity.offerPriceMap().duration()),
+        new PriceMapExecutionScheduledEvent(offerEvent.getId(),
+            offerEvent.getStartDate().plus(offerEvent.offerPriceMap().duration()),
             PriceMapOfferExecutionState.COMPLETED)));
     taskLock.lock();
     try {

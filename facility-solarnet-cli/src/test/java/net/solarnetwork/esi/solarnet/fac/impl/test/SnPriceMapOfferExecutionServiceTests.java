@@ -62,6 +62,7 @@ import org.springframework.web.client.RestTemplate;
 import net.solarnetwork.esi.domain.jpa.PriceMapEmbed;
 import net.solarnetwork.esi.solarnet.fac.dao.PriceMapOfferEventEntityDao;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMapOfferEvent;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferEventEntity;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification.PriceMapOfferExecutionStateChanged;
@@ -170,8 +171,8 @@ public class SnPriceMapOfferExecutionServiceTests {
 
     List<PriceMapOfferExecutionStateChanged> evts = eventCaptor.getAllValues();
     PriceMapOfferExecutionStateChanged evt1 = evts.get(0);
-    assertThat("Event 1 source same as persisted", evt1.getSource(), sameInstance(offerEvent));
-    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(),
+        equalTo(new FacilityPriceMapOfferEvent(offerEvent)));
     assertThat("Event 1 old state", evt1.getOldState(),
         equalTo(PriceMapOfferExecutionState.WAITING));
     assertThat("Event 1 new state", evt1.getNewState(),
@@ -267,8 +268,8 @@ public class SnPriceMapOfferExecutionServiceTests {
 
     List<PriceMapOfferExecutionStateChanged> evts = eventCaptor.getAllValues();
     PriceMapOfferExecutionStateChanged evt1 = evts.get(0);
-    assertThat("Event 1 source same as persisted", evt1.getSource(), sameInstance(offerEvent));
-    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(),
+        equalTo(new FacilityPriceMapOfferEvent(offerEvent)));
     assertThat("Event 1 old state", evt1.getOldState(),
         equalTo(PriceMapOfferExecutionState.WAITING));
     assertThat("Event 1 new state", evt1.getNewState(),
@@ -316,6 +317,9 @@ public class SnPriceMapOfferExecutionServiceTests {
         .andRespond(withSuccess(addResp, APPLICATION_JSON_UTF8).headers(addRespHeaders));
     // @formatter:on
 
+    final FacilityPriceMapOfferEvent executingOfferEvent = new FacilityPriceMapOfferEvent(
+        offerEvent);
+    executingOfferEvent.setExecutionState(PriceMapOfferExecutionState.EXECUTING);
     given(priceMapOfferDao.save(offerEvent)).willReturn(offerEvent);
 
     ArgumentCaptor<Runnable> taskCaptor = ArgumentCaptor.forClass(Runnable.class);
@@ -361,16 +365,16 @@ public class SnPriceMapOfferExecutionServiceTests {
 
     List<PriceMapOfferExecutionStateChanged> evts = eventCaptor.getAllValues();
     PriceMapOfferExecutionStateChanged evt1 = evts.get(0);
-    assertThat("Event 1 source same as persisted", evt1.getSource(), sameInstance(offerEvent));
-    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(),
+        equalTo(executingOfferEvent));
     assertThat("Event 1 old state", evt1.getOldState(),
         equalTo(PriceMapOfferExecutionState.WAITING));
     assertThat("Event 1 new state", evt1.getNewState(),
         equalTo(PriceMapOfferExecutionState.EXECUTING));
 
     PriceMapOfferExecutionStateChanged evt2 = evts.get(1);
-    assertThat("Event 2 source same as persisted", evt2.getSource(), sameInstance(offerEvent));
-    assertThat("Event 2 entity same as persisted", evt2.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 2 entity same as persisted", evt2.getOfferEvent(),
+        equalTo(new FacilityPriceMapOfferEvent(offerEvent)));
     assertThat("Event 2 old state", evt2.getOldState(),
         equalTo(PriceMapOfferExecutionState.EXECUTING));
     assertThat("Event 2 new state", evt2.getNewState(),
@@ -439,8 +443,8 @@ public class SnPriceMapOfferExecutionServiceTests {
 
     List<PriceMapOfferExecutionStateChanged> evts = eventCaptor.getAllValues();
     PriceMapOfferExecutionStateChanged evt1 = evts.get(0);
-    assertThat("Event 1 source same as persisted", evt1.getSource(), sameInstance(offerEvent));
-    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(),
+        equalTo(new FacilityPriceMapOfferEvent(offerEvent)));
     assertThat("Event 1 old state", evt1.getOldState(),
         equalTo(PriceMapOfferExecutionState.EXECUTING));
     assertThat("Event 1 new state", evt1.getNewState(),
@@ -537,8 +541,8 @@ public class SnPriceMapOfferExecutionServiceTests {
 
     List<PriceMapOfferExecutionStateChanged> evts = eventCaptor.getAllValues();
     PriceMapOfferExecutionStateChanged evt1 = evts.get(0);
-    assertThat("Event 1 source same as persisted", evt1.getSource(), sameInstance(offerEvent));
-    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(), sameInstance(offerEvent));
+    assertThat("Event 1 entity same as persisted", evt1.getOfferEvent(),
+        equalTo(new FacilityPriceMapOfferEvent(offerEvent)));
     assertThat("Event 1 old state", evt1.getOldState(),
         equalTo(PriceMapOfferExecutionState.EXECUTING));
     assertThat("Event 1 new state", evt1.getNewState(),

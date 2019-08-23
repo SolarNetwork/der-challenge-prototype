@@ -25,15 +25,11 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.Locale;
 
-import javax.persistence.EntityManager;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.shell.standard.ShellCommandGroup;
 import org.springframework.shell.standard.ShellMethod;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.github.fonimus.ssh.shell.PromptColor;
 import com.github.fonimus.ssh.shell.SshShellHelper;
@@ -41,7 +37,7 @@ import com.github.fonimus.ssh.shell.commands.SshShellComponent;
 
 import net.solarnetwork.esi.cli.BaseShellSupport;
 import net.solarnetwork.esi.cli.ShellUtils;
-import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferEventEntity;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMapOfferEvent;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification.PriceMapOfferAccepted;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification.PriceMapOfferCountered;
@@ -56,9 +52,6 @@ import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification.PriceM
 @SshShellComponent
 @ShellCommandGroup("Price map events")
 public class PriceMapCommands extends BaseShellSupport {
-
-  @Autowired
-  private EntityManager em;
 
   /**
    * Constructor.
@@ -91,21 +84,18 @@ public class PriceMapCommands extends BaseShellSupport {
    */
   @Async
   @EventListener
-  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
   public void handlePriceMapOfferAccepted(PriceMapOfferAccepted event) {
-    PriceMapOfferEventEntity entity = em.merge(event.getOfferEvent());
+    FacilityPriceMapOfferEvent offerEvent = event.getOfferEvent();
 
     DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
-    LocalDateTime offerEventDate = LocalDateTime.ofInstant(entity.getStartDate(),
+    LocalDateTime offerEventDate = LocalDateTime.ofInstant(offerEvent.getStartDate(),
         ZoneId.systemDefault());
 
-    String msg = wrap(
-        messageSource.getMessage(
-            "priceMap.event.accepted", new Object[] { entity.getId(),
-                entity.offerPriceMap().getInfo(), dtf.format(offerEventDate) },
-            Locale.getDefault()),
-        ShellUtils.SHELL_MAX_COLS);
-    String details = entity.toDetailedInfoString(messageSource);
+    String msg = wrap(messageSource.getMessage(
+        "priceMap.event.accepted", new Object[] { offerEvent.getId(),
+            offerEvent.offerPriceMap().getInfo(), dtf.format(offerEventDate) },
+        Locale.getDefault()), ShellUtils.SHELL_MAX_COLS);
+    String details = offerEvent.toDetailedInfoString(messageSource);
     wallBanner(msg + "\n" + details, PromptColor.GREEN);
   }
 
@@ -121,18 +111,17 @@ public class PriceMapCommands extends BaseShellSupport {
    */
   @Async
   @EventListener
-  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
   public void handlePriceMapOfferExecutionStateChanged(PriceMapOfferExecutionStateChanged event) {
-    PriceMapOfferEventEntity entity = em.merge(event.getOfferEvent());
+    FacilityPriceMapOfferEvent offerEvent = event.getOfferEvent();
 
     PriceMapOfferExecutionState oldState = event.getOldState();
     PriceMapOfferExecutionState newState = event.getNewState();
 
     String msg = wrap(
         messageSource.getMessage("priceMap.event.stateChanged",
-            new Object[] { entity.getId(), oldState, newState }, Locale.getDefault()),
+            new Object[] { offerEvent.getId(), oldState, newState }, Locale.getDefault()),
         ShellUtils.SHELL_MAX_COLS);
-    String details = entity.toDetailedInfoString(messageSource);
+    String details = offerEvent.toDetailedInfoString(messageSource);
     wallBanner(msg + "\n" + details, PromptColor.CYAN);
   }
 
@@ -148,17 +137,16 @@ public class PriceMapCommands extends BaseShellSupport {
    */
   @Async
   @EventListener
-  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
   public void handlePriceMapOfferCountered(PriceMapOfferCountered event) {
-    PriceMapOfferEventEntity entity = em.merge(event.getOfferEvent());
+    FacilityPriceMapOfferEvent offerEvent = event.getOfferEvent();
 
     DateTimeFormatter dtf = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT);
-    LocalDateTime offerEventDate = LocalDateTime.ofInstant(entity.getStartDate(),
+    LocalDateTime offerEventDate = LocalDateTime.ofInstant(offerEvent.getStartDate(),
         ZoneId.systemDefault());
 
     String msg = wrap(messageSource.getMessage("priceMap.event.countered",
-        new Object[] { entity.getId(), entity.getPriceMap().getInfo(), dtf.format(offerEventDate),
-            entity.getCounterOffer().getPriceMap().getInfo() },
+        new Object[] { offerEvent.getId(), offerEvent.getPriceMap().getInfo(),
+            dtf.format(offerEventDate), offerEvent.getCounterOffer().getInfo() },
         Locale.getDefault()), ShellUtils.SHELL_MAX_COLS);
     wallBanner(msg, PromptColor.MAGENTA);
   }

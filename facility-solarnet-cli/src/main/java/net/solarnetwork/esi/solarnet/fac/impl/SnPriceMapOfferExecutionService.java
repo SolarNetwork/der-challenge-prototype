@@ -78,6 +78,7 @@ import net.solarnetwork.esi.service.DerFacilityExchangeGrpc.DerFacilityExchangeB
 import net.solarnetwork.esi.solarnet.fac.dao.PriceMapOfferEventEntityDao;
 import net.solarnetwork.esi.solarnet.fac.domain.ExchangeEntity;
 import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMap;
+import net.solarnetwork.esi.solarnet.fac.domain.FacilityPriceMapOfferEvent;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferEventEntity;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferExecutionState;
 import net.solarnetwork.esi.solarnet.fac.domain.PriceMapOfferNotification.PriceMapOfferExecutionStateChanged;
@@ -390,11 +391,10 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
    */
   @Async
   @EventListener
-  @Transactional(readOnly = true, propagation = Propagation.REQUIRED)
   public void handlePriceMapOfferExecutionStateChanged(PriceMapOfferExecutionStateChanged event) {
-    PriceMapOfferEventEntity entity = event.getOfferEvent();
+    FacilityPriceMapOfferEvent offerEvent = event.getOfferEvent();
     PriceMapOfferExecutionState executionState = event.getNewState();
-    publishPriceMapOfferStatus(entity, executionState);
+    publishPriceMapOfferStatus(offerEvent, executionState);
   }
 
   private JsonNode enqueueInstruction(String topic, Set<Long> nodeIds,
@@ -466,7 +466,7 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
     }
   }
 
-  private void publishPriceMapOfferStatus(PriceMapOfferEventEntity entity,
+  private void publishPriceMapOfferStatus(FacilityPriceMapOfferEvent offerEvent,
       PriceMapOfferExecutionState executionState) {
     ExchangeEntity exchange = facilityService.getExchange();
     if (exchange == null) {
@@ -496,17 +496,17 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
         status = PriceMapOfferStatus.Status.UNKNOWN;
         break;
     }
-    log.info("Provding price map offer {} status {} to exchange {}", entity.getId(), status,
+    log.info("Provding price map offer {} status {} to exchange {}", offerEvent.getId(), status,
         exchange.getId());
 
     ByteBuffer signatureData = ByteBuffer
         .allocate(SignableMessage.uuidSignatureMessageSize() + Integer.BYTES);
-    SignableMessage.addUuidSignatureMessageBytes(signatureData, entity.getId());
+    SignableMessage.addUuidSignatureMessageBytes(signatureData, offerEvent.getId());
     signatureData.putInt(status.getNumber());
 
     // @formatter:off
     PriceMapOfferStatus pmoStatus = PriceMapOfferStatus.newBuilder()
-        .setOfferId(ProtobufUtils.uuidForUuid(entity.getId()))
+        .setOfferId(ProtobufUtils.uuidForUuid(offerEvent.getId()))
         .setStatus(status)
         .setRoute(DerRoute.newBuilder()
             .setExchangeUid(exchange.getId())
@@ -528,7 +528,7 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
       ByteBuffer responseSignatureData = ByteBuffer
           .allocate(SignableMessage.uuidSignatureMessageSize()
               + SignableMessage.booleanSignatureMessageSize());
-      SignableMessage.addUuidSignatureMessageBytes(responseSignatureData, entity.getId());
+      SignableMessage.addUuidSignatureMessageBytes(responseSignatureData, offerEvent.getId());
       SignableMessage.addBooleanSignatureMessageBytes(responseSignatureData,
           response.getAccepted());
 
@@ -542,7 +542,7 @@ public class SnPriceMapOfferExecutionService extends BaseSolarNetworkClientServi
       // @formatter:off
       
       log.info("Successfully published price map offer {} status {} to exchange {}, update was {}",
-          entity.getId(), executionState, exchange.getId(),
+          offerEvent.getId(), executionState, exchange.getId(),
           response.getAccepted() ? "accepted" : "rejected");
     } catch (StatusRuntimeException e) {
       if (e.getStatus().getCode() == Status.Code.INVALID_ARGUMENT) {

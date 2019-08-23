@@ -48,7 +48,7 @@ public abstract class PriceMapOfferNotification extends ApplicationEvent {
     private static final long serialVersionUID = -636410790824000953L;
 
     private PriceMapOfferEventEntityNotification(PriceMapOfferEventEntity source) {
-      super(source);
+      super(new FacilityPriceMapOfferEvent(source));
     }
 
     /**
@@ -56,8 +56,8 @@ public abstract class PriceMapOfferNotification extends ApplicationEvent {
      * 
      * @return the entity
      */
-    public PriceMapOfferEventEntity getOfferEvent() {
-      return (PriceMapOfferEventEntity) getSource();
+    public FacilityPriceMapOfferEvent getOfferEvent() {
+      return (FacilityPriceMapOfferEvent) getSource();
     }
 
   }
