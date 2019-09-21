@@ -1,0 +1,78 @@
+{
+  "success": true,
+  "data": {
+    "totalResults": 1,
+    "startingOffset": 0,
+    "returnedResultCount": 1,
+    "results": [
+      {
+        "nodeId": 179,
+        "created": "2019-05-22 18:43:15.260Z",
+        "updated": "2019-08-13 02:51:16.422Z",
+        "pm": {
+          "esi-program": {
+            "prgrm1": {
+              "priceMapId": "",
+              "resourceId": "rsrc1",
+              "priceMapGroupUid": "Demand Response",
+              "programTypeNumber": 7
+            }
+          },
+          "esi-pricemap": {
+            "pm1": {
+              "groupUid": "Demand Response",
+              "priceMap": {
+                "responseTime": {
+                  "maxMillis": 60000,
+                  "minMillis": 10000
+                },
+                "durationMillis": 600000,
+                "powerComponents": {
+                  "realPower": -2000,
+                  "reactivePower": -1000
+                },
+                "priceComponents": {
+                  "currencyCode": "USD",
+                  "apparentEnergyPriceValue": "0.123456789"
+                }
+              }
+            },
+            "pm2": {
+              "groupUid": "Demand Response",
+              "priceMap": {
+                "responseTime": {
+                  "maxMillis": 30000,
+                  "minMillis": 10000
+                },
+                "durationMillis": 3600000,
+                "powerComponents": {
+                  "realPower": -1000,
+                  "reactivePower": 0
+                },
+                "priceComponents": {
+                  "currencyCode": "USD",
+                  "apparentEnergyPriceValue": "0.2345678"
+                }
+              }
+            }
+          },
+          "esi-resource": {
+            "rsrc1": {
+              "characteristics": {
+                "loadPowerMax": 1000,
+                "responseTime": {
+                  "maxMillis": 60000,
+                  "minMillis": 5000
+                },
+                "supplyPowerMax": 0,
+                "loadPowerFactor": 0.8,
+                "supplyPowerFactor": 0,
+                "storageEnergyCapacity": 0
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

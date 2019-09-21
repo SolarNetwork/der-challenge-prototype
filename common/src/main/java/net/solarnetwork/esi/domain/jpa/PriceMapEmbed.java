@@ -342,6 +342,26 @@ public class PriceMapEmbed implements SignableMessage, Cloning<PriceMapEmbed> {
   }
 
   /**
+   * Get the duration, in milliseconds.
+   * 
+   * @return the duration, in milliseconds
+   */
+  public long getDurationMillis() {
+    Duration d = getDuration();
+    return (d != null ? d.toMillis() : 0);
+  }
+
+  /**
+   * Set the duration, in milliseconds.
+   * 
+   * @param dur
+   *        the duration to set, in milliseconds
+   */
+  public void setDurationMillis(long dur) {
+    setDuration(Duration.ofMillis(dur));
+  }
+
+  /**
    * Get the response time range.
    * 
    * @return the response time range

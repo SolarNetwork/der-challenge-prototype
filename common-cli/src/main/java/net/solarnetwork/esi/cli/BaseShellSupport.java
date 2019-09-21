@@ -114,7 +114,7 @@ public abstract class BaseShellSupport extends BaseMessageSourceSupport {
   }
 
   /**
-   * Prompt the shell to read a number value.
+   * Prompt the shell to read a string value.
    * 
    * @param propName
    *        the message key for the property to read a number value for

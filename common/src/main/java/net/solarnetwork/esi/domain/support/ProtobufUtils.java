@@ -30,10 +30,10 @@ import com.google.protobuf.Duration;
 import com.google.protobuf.DurationOrBuilder;
 import com.google.protobuf.Timestamp;
 import com.google.protobuf.TimestampOrBuilder;
-import com.google.type.Money;
-import com.google.type.MoneyOrBuilder;
 
 import net.solarnetwork.esi.domain.DurationRange;
+import net.solarnetwork.esi.domain.Money;
+import net.solarnetwork.esi.domain.MoneyOrBuilder;
 import net.solarnetwork.esi.domain.PowerComponents;
 import net.solarnetwork.esi.domain.PriceComponents;
 import net.solarnetwork.esi.domain.PriceMap;

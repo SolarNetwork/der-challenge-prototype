@@ -23,15 +23,15 @@ option java_outer_classname = "MoneyRangeProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
-import "google/type/money.proto";
+import "solarnetwork/esi/domain/money.proto";
 
 // A money range.
 message MoneyRange {
 
   // The minimum value.
-  google.type.Money min = 1;
+  Money min = 1;
 
   // The maximum value.
-  google.type.Money max = 2;
+  Money max = 2;
 
 }

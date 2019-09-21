@@ -1,0 +1,70 @@
+esi:
+  exchange:
+    conn:
+      usePlaintext: true
+  facility:
+    uid: sn-facility
+    conn:
+      uri: dns:///localhost:9094
+      usePlaintext: true
+    solarnetwork:
+      url: https://data.solarnetwork.net
+      tokenId: PLEASE_PROVIDE_TOKEN_ID
+      tokenSecret: PLEASE_PROVIDE_TOKEN_SECRET 
+      instructionPollMs: 2000
+  registry:
+    conn:
+      uri: dns:///localhost:9090
+      usePlaintext: true
+
+grpc:
+  server:
+    port: 9094
+    address: "0.0.0.0"
+
+logging:
+  level:
+    ROOT: INFO
+  pattern:
+    console: "${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39}: %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+    file:  "%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:%5p} %-40.40logger{39} : %m%n${LOG_EXCEPTION_CONVERSION_WORD:%wEx}"
+
+spring:
+  datasource:
+    hikari:
+      minimumIdle: 1
+      connectionTimeout: 30000
+      idleTimeout: 600000
+      maxLifetime: 1800000
+  jpa:
+    hibernate.ddl-auto: none
+    properties:
+      hibernate:
+        current_session_context_class: org.springframework.orm.hibernate5.SpringSessionContext
+        dialect: org.hibernate.dialect.DerbyTenSevenDialect
+        jdbc.time_zone: UTC
+
+ssh:
+  shell:
+    enabled: true
+    authentication: simple
+    port: 2224
+    prompt:
+      color: blue
+      text: 'SNFac> '
+
+---
+debugMode: true
+
+logging:
+  level:
+    org.springframework.boot.autoconfigure: INFO
+
+spring:
+  profiles: development
+  datasource:
+    url: jdbc:derby:esi-sn-facility;create=true
+    username: esi
+    password: esi
+    platform: derby
+    initialize: true

@@ -23,12 +23,12 @@ option java_outer_classname = "PriceComponentsProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
-import "google/type/money.proto";
+import "solarnetwork/esi/domain/money.proto";
 
 // Defines a price in terms of power characteristics.
 message PriceComponents {
 
   // The price per volt-amp hours (VAh).
-  google.type.Money apparent_energy_price = 1;
+  Money apparent_energy_price = 1;
 
 }

@@ -23,7 +23,7 @@ option java_outer_classname = "LocationProto";
 option java_package = "net.solarnetwork.esi.domain";
 option objc_class_prefix = "ESI";
 
-import "google/type/latlng.proto";
+import "solarnetwork/esi/domain/latlng.proto";
 
 // A discreet unit of time, using Gregorian calendar units where appropriate.
 message Location {
@@ -55,6 +55,6 @@ message Location {
   repeated string street_address = 8;
   
   // A latitude/longitude coordinate.
-  google.type.LatLng latlng = 9;
+  LatLng latlng = 9;
 
 }

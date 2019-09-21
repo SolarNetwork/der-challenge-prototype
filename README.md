@@ -24,6 +24,14 @@ Each sub-project will produce its own build artifact(s). The `-x test` argument 
 unit tests as part of the build process. If you'd like to run the tests, omit that part from the
 command.
 
+## Publishing
+
+Copy the `config/example/gradle.properties` file to this directory, and modify the credentials
+appropriately.
+
+TODO
+
+
 # Simulation example: register a facility with an exchange
 
 This example shows how to register a simulated facility with a simulated exchange, using the command

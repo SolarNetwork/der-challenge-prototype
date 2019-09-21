@@ -52,14 +52,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.google.type.Money;
-
 import io.grpc.testing.GrpcCleanupRule;
 import net.solarnetwork.esi.domain.DerCharacteristics;
 import net.solarnetwork.esi.domain.DerProgramSet;
 import net.solarnetwork.esi.domain.DerProgramType;
 import net.solarnetwork.esi.domain.DerRoute;
 import net.solarnetwork.esi.domain.DurationRange;
+import net.solarnetwork.esi.domain.Money;
 import net.solarnetwork.esi.domain.PowerComponents;
 import net.solarnetwork.esi.domain.PriceComponents;
 import net.solarnetwork.esi.domain.PriceMap;

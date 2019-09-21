@@ -110,6 +110,43 @@ public class PowerComponentsEmbed implements SignableMessage, Cloning<PowerCompo
     return Math.sqrt(p * p + q * q);
   }
 
+  /**
+   * Test if the real power component is defined and has a value other than zero.
+   * 
+   * @return {@literal true} if {@code realPower} is not {@literal null} or equal to {@literal 0}
+   */
+  public boolean hasRealPower() {
+    return (realPower != null && realPower.longValue() != 0L);
+  }
+
+  /**
+   * Test if the real power component is negative.
+   * 
+   * @return {@literal true} if {@code realPower} is negative
+   */
+  public boolean isRealPowerNegative() {
+    return (realPower != null && realPower.doubleValue() < 0.0);
+  }
+
+  /**
+   * Test if the reactive power component is defined and has a value other than zero.
+   * 
+   * @return {@literal true} if {@code reactivePower} is not {@literal null} or equal to
+   *         {@literal 0}
+   */
+  public boolean hasReactivePower() {
+    return (reactivePower != null && reactivePower.longValue() != 0L);
+  }
+
+  /**
+   * Test if the reactive power component is negative.
+   * 
+   * @return {@literal true} if {@code realPower} is negative
+   */
+  public boolean isReactivePowerNegative() {
+    return (reactivePower != null && reactivePower.doubleValue() < 0.0);
+  }
+
   @Override
   public int signatureMessageBytesSize() {
     return Long.BYTES * 2;

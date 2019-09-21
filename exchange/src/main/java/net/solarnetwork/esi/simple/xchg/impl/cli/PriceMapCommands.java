@@ -246,12 +246,12 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
       BigDecimal n;
 
       PowerComponentsEmbed p = priceMap.powerComponents();
-      n = readNumber("priceMap.power.real", "kW", scaled(p.getRealPower(), -3), 0L,
-          Long.MAX_VALUE / 1000);
+      n = readNumber("priceMap.power.real", "kW", scaled(p.getRealPower(), -3),
+          Long.MIN_VALUE / 1000, Long.MAX_VALUE / 1000);
       p.setRealPower(scaled(n, 3).longValue());
 
-      n = readNumber("priceMap.power.reactive", "kVAR", scaled(p.getReactivePower(), -3), 0L,
-          Long.MAX_VALUE / 1000);
+      n = readNumber("priceMap.power.reactive", "kVAR", scaled(p.getReactivePower(), -3),
+          Long.MIN_VALUE / 1000, Long.MAX_VALUE / 1000);
       p.setReactivePower(scaled(n, 3).longValue());
       priceMap.setPowerComponents(p);
 
@@ -270,7 +270,7 @@ public class PriceMapCommands extends BaseFacilityCharacteristicsShell {
 
       PriceComponentsEmbed pr = priceMap.priceComponents();
       String s = readString("priceMap.price.currency", "3-character code",
-          pr.getCurrency().getCurrencyCode());
+          pr.getCurrency().getCurrencyCode()).toUpperCase();
       pr.setCurrency(Currency.getInstance(s));
 
       n = readNumber("priceMap.price.apparent", pr.getCurrency().getCurrencyCode() + "/kVAh",

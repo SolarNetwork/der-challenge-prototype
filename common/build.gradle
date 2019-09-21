@@ -9,7 +9,7 @@ apply plugin: 'checkstyle'
 apply plugin: 'io.spring.dependency-management'
 
 description = 'ESI: Common'
-version = '0.1.0'
+version = '0.2.0'
 archivesBaseName = 'esi-common'
 
 checkstyle {
@@ -32,6 +32,7 @@ dependencies {
 	// Spring
 	implementation 'org.springframework:spring-context'
 	implementation 'org.springframework:spring-tx'
+	implementation 'org.springframework:spring-web'
 	
 	// DB
 	implementation 'org.hibernate.javax.persistence:hibernate-jpa-2.1-api:1.0.2.Final'
