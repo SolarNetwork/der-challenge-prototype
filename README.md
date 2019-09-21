@@ -13,6 +13,7 @@ This top-level directory serves as an umbrella project for various sub-projects:
  * [exchange-registry](exchange-registry/) - Facility Exchange Registry server proof-of-concept
  * [exchange-registry-cli](exchange-registry-cli/) - Facility Exchange Registry client proof-of-concept
  * [facility-sim-cli](facility-sim-cli/) - Facility proof-of-concept
+ * [facility-solarnet-cli](facility-solarnet-cli/) - SolarNetwork Facility proof-of-concept
 
 ## Building
 
