@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE module PUBLIC "-//Checkstyle//DTD Check Configuration 1.3//EN" "https://checkstyle.org/dtds/configuration_1_3.dtd">
-
+<!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.3//EN" "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
 <!--
     This configuration file was written by the eclipse-cs plugin configuration editor
 -->
@@ -23,10 +22,6 @@
       <property name="allowEscapesForControlCharacters" value="true"/>
       <property name="allowByTailComment" value="true"/>
       <property name="allowNonPrintableEscapes" value="true"/>
-    </module>
-    <module name="LineLength">
-      <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
-      <property name="max" value="100"/>
     </module>
     <module name="AvoidStarImport"/>
     <module name="OneTopLevelClass"/>
@@ -95,6 +90,7 @@
     </module>
     <module name="LocalVariableName">
       <property name="format" value="^[a-z]([a-z0-9][a-zA-Z0-9]*)?$"/>
+      <property name="tokens" value="VARIABLE_DEF"/>
       <message key="name.invalidPattern" value="Local variable name ''{0}'' must match pattern ''{1}''."/>
     </module>
     <module name="ClassTypeParameterName">
@@ -109,9 +105,7 @@
       <property name="format" value="(^[A-Z]{1,2}[0-9]?)$|([A-Z][a-zA-Z0-9]*[T]$)"/>
       <message key="name.invalidPattern" value="Interface type name ''{0}'' must match pattern ''{1}''."/>
     </module>
-    <module name="NoFinalizer">
-      <property name="id" value="checkstyle:nofinalizer"/>
-    </module>
+    <module name="NoFinalizer"/>
     <module name="GenericWhitespace">
       <message key="ws.notPreceded" value="GenericWhitespace ''{0}'' is not preceded with whitespace."/>
       <message key="ws.followed" value="GenericWhitespace ''{0}'' is followed by whitespace."/>
@@ -155,13 +149,17 @@
       <property name="tagOrder" value="@param, @return, @throws, @deprecated"/>
     </module>
     <module name="JavadocMethod">
-      <property name="minLineCount" value="2"/>
       <property name="allowedAnnotations" value="Override, Test, Before, ApiOperation"/>
       <property name="scope" value="public"/>
-      <property name="allowThrowsTagsForSubclasses" value="true"/>
       <property name="allowMissingParamTags" value="true"/>
-      <property name="allowMissingThrowsTags" value="true"/>
       <property name="allowMissingReturnTag" value="true"/>
+      <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF"/>
+    </module>
+    <module name="MissingJavadocMethod">
+      <property name="allowedAnnotations" value="Override, Test, Before, ApiOperation"/>
+      <property name="scope" value="public"/>
+      <property name="minLineCount" value="2"/>
+      <property name="tokens" value="METHOD_DEF, CTOR_DEF, ANNOTATION_FIELD_DEF"/>
     </module>
     <module name="MethodName">
       <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>
@@ -174,18 +172,28 @@
       <property name="exceptionVariableName" value="expected"/>
     </module>
     <module name="CommentsIndentation"/>
-    <module name="CustomImportOrder">
-      <property name="customImportOrderRules" value="STATIC###STANDARD_JAVA_PACKAGE###SPECIAL_IMPORTS###THIRD_PARTY_PACKAGE"/>
-      <property name="specialImportsRegExp" value="^org\."/>
-      <property name="thirdPartyPackageRegExp" value="^com\."/>
-      <property name="sortImportsInGroupAlphabetically" value="true"/>
-      <property name="separateLineBetweenGroups" value="true"/>
-    </module>
+    <module name="ImportOrder">
+	  <property name="groups" value="/^java\./,javax,org,com"/>
+	  <property name="ordered" value="true"/>
+	  <property name="separated" value="true"/>
+	  <property name="option" value="top"/>
+	  <property name="sortStaticImportsAlphabetically" value="true"/>
+	</module>
     <module name="SuppressWithNearbyCommentFilter">
       <property name="commentFormat" value="CHECKSTYLE IGNORE (\w+) FOR NEXT (\d+) LINE"/>
       <property name="checkFormat" value="$1"/>
       <property name="influenceFormat" value="$2"/>
     </module>
+  </module>
+  <module name="LineLength">
+    <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
+    <property name="max" value="100"/>
+    <property name="fileExtensions" value="java"/>
+  </module>
+  <module name="SuppressWithPlainTextCommentFilter">
+    <property name="offCommentFormat" value="CHECKSTYLE OFF\: ([\w\|]+)"/>
+    <property name="onCommentFormat" value="CHECKSTYLE ON\: ([\w\|]+)"/>
+    <property name="checkFormat" value="$1"/>
   </module>
   <module name="FileTabCharacter">
     <property name="eachLine" value="true"/>

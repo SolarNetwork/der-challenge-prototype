@@ -62,7 +62,7 @@ subprojects {
 
     ext {
 
-		checkstyleVersion = '8.5'
+		checkstyleVersion = '8.34'
         nettyVersion = '4.1.34.Final'
         googleauthVersion = '0.13.0'
         grpcVersion = '1.21.0'
