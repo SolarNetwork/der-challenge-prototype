@@ -22,7 +22,7 @@ import static org.springframework.transaction.support.TransactionSynchronization
 import javax.annotation.ParametersAreNonnullByDefault;
 
 import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import net.solarnetwork.esi.util.Callback;
@@ -64,7 +64,7 @@ public final class TransactionUtils {
    */
   public static void afterPhase(TransactionPhase phase, Callback callback) {
     if (TransactionSynchronizationManager.isSynchronizationActive()) {
-      registerSynchronization(new TransactionSynchronizationAdapter() {
+      registerSynchronization(new TransactionSynchronization() {
 
         @Override
         public void beforeCommit(boolean readOnly) {

@@ -18,9 +18,9 @@
 package net.solarnetwork.esi.dao.support;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.core.Ordered;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
@@ -68,7 +68,7 @@ public class TransactionalApplicationEventPublisher implements ApplicationEventP
     }
   }
 
-  private static class Adapter extends TransactionSynchronizationAdapter {
+  private static class Adapter implements TransactionSynchronization, Ordered {
 
     private final ApplicationEventPublisher eventAdmin;
     private final Object event;
