@@ -17,7 +17,7 @@
 
 package net.solarnetwork.esi.simple.xchg.test;
 
-import org.springframework.boot.test.context.ConfigFileApplicationContextInitializer;
+import org.springframework.boot.test.context.ConfigDataApplicationContextInitializer;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ContextConfiguration;
 
@@ -28,7 +28,7 @@ import org.springframework.test.context.ContextConfiguration;
  * @version 1.0
  */
 @SpringBootTest(classes = { TestApplication.class })
-@ContextConfiguration(initializers = ConfigFileApplicationContextInitializer.class)
+@ContextConfiguration(initializers = ConfigDataApplicationContextInitializer.class)
 public abstract class SpringContextTestSupport extends SpringTestSupport {
 
 }

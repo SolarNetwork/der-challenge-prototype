@@ -1,14 +1,8 @@
-buildscript {
- 	dependencies {
-		classpath "org.springframework.boot:spring-boot-gradle-plugin:2.1.5.RELEASE"
-	}
-}
-
 plugins {
     id 'checkstyle'
     id 'java'
     id 'eclipse'
-    id 'org.springframework.boot' version '2.1.5.RELEASE'
+    id 'org.springframework.boot' version '2.7.14'
 }
 
 apply plugin: 'checkstyle'
@@ -44,7 +38,7 @@ dependencies {
 	// DB
 	implementation 'org.flywaydb:flyway-core'
 	implementation "org.hibernate:hibernate-entitymanager"
-	runtime 'org.apache.derby:derby:10.14.2.0'
+	runtimeOnly 'org.apache.derby:derby:10.14.2.0'
 	
 	// Utils
 	implementation 'commons-codec:commons-codec:1.12'

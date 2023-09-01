@@ -3,8 +3,8 @@ buildscript {
     mavenCentral()
   }
   dependencies {
-    classpath 'com.google.protobuf:protobuf-gradle-plugin:0.8.8'
-    classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:4.2.0'
+    classpath 'com.google.protobuf:protobuf-gradle-plugin:0.9.4'
+    classpath 'biz.aQute.bnd:biz.aQute.bnd.gradle:6.4.0'
   }
 }
 

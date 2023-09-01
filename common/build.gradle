@@ -2,7 +2,7 @@ plugins {
     id 'checkstyle'
     id 'java-library'
     id 'eclipse'
-    id 'org.springframework.boot' version '2.1.5.RELEASE' apply false
+    id 'org.springframework.boot' version '2.7.14' apply false
 }
 
 apply plugin: 'checkstyle'

@@ -1,14 +1,8 @@
-buildscript {
- 	dependencies {
-		classpath "org.springframework.boot:spring-boot-gradle-plugin:2.1.5.RELEASE"
-	}
-}
-
 plugins {
     id 'checkstyle'
     id 'java'
     id 'eclipse'
-    id 'org.springframework.boot' version '2.1.5.RELEASE'
+    id 'org.springframework.boot' version '2.7.14'
 }
 
 apply plugin: 'checkstyle'
