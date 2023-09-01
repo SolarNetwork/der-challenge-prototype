@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
+        
     <wb-module deploy-name="esi-api">
+                
         <wb-resource deploy-path="/" source-path="/src/main/java"/>
+                
         <wb-resource deploy-path="/" source-path="/build/generated/source/proto/main/java"/>
+                
         <wb-resource deploy-path="/" source-path="/build/generated/source/proto/main/grpc"/>
+        <wb-resource deploy-path="/" source-path="/build/generated/source/proto/test/java"/>
+        <wb-resource deploy-path="/" source-path="/build/generated/source/proto/test/grpc"/>
+            
     </wb-module>
+    
 </project-modules>

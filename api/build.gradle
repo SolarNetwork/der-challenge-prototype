@@ -68,3 +68,8 @@ sourceSets {
     }
 }
 
+eclipse {
+	jdt {
+		javaRuntimeName 'JavaSE-17'
+	}
+}

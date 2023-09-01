@@ -43,6 +43,9 @@ dependencies {
 }
 
 eclipse {
+	jdt {
+		javaRuntimeName 'JavaSE-17'
+	}
 	project {
 		natures 'net.sf.eclipsecs.core.CheckstyleNature'
 		buildCommand 'net.sf.eclipsecs.core.CheckstyleBuilder'
