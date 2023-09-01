@@ -7,8 +7,6 @@
         <wb-resource deploy-path="/" source-path="/build/generated/source/proto/main/java"/>
                 
         <wb-resource deploy-path="/" source-path="/build/generated/source/proto/main/grpc"/>
-        <wb-resource deploy-path="/" source-path="/build/generated/source/proto/test/java"/>
-        <wb-resource deploy-path="/" source-path="/build/generated/source/proto/test/grpc"/>
             
     </wb-module>
     
