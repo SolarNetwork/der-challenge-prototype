@@ -61,6 +61,7 @@ public class PriceMapCommands extends BaseShellSupport {
   @Autowired
   private EntityManager em;
 
+  @SuppressWarnings("unused")
   private final PriceMapService priceMapService;
 
   /**
