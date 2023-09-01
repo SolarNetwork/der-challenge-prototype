@@ -23,7 +23,7 @@ import static net.solarnetwork.esi.util.CryptoUtils.STANDARD_HELPER;
 import static net.solarnetwork.esi.util.CryptoUtils.generateMessageSignature;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;

@@ -18,7 +18,7 @@
 package net.solarnetwork.esi.simple.xchg.domain.test;
 
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
